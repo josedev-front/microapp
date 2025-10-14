@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Middy ChatBot 🚀</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>💬 Chatea con Middy</h2>
+            <div class="auth-status" id="auth-status"></div>
+        </div>
+        <div id="chat-box"></div>
+        <form id="chat-form">
+            <div class="input-container">
+                <input type="text" id="message" placeholder="Escribe tu consulta..." required>
+                <button type="submit">Enviar</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById("chat-form");
+        const chatBox = document.getElementById("chat-box");
+        const authStatus = document.getElementById("auth-status");
+
+        function getTokenFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('token');
+        }
+
+        function getToken() {
+            const urlToken = getTokenFromURL();
+            if (urlToken) {
+                localStorage.setItem('jwt_token', urlToken);
+                window.history.replaceState({}, document.title, window.location.pathname);
+                updateAuthStatus(true);
+                return urlToken;
+            }
+            return localStorage.getItem('jwt_token');
+        }
+
+        function updateAuthStatus(isAuthenticated) {
+            if (isAuthenticated) {
+                authStatus.innerHTML = '<span class="status-connected">✅ Conectado</span>';
+            } else {
+                authStatus.innerHTML = '<span class="status-disconnected">❌ No autenticado</span>';
+            }
+        }
+
+        async function validateToken(token) {
+            try {
+                const response = await fetch('http://localhost:8000/api/token/verify/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                return response.status === 200;
+            } catch (error) {
+                return false;
+            }
+        }
+        form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const messageInput = document.getElementById("message");
+    const message = messageInput.value.trim();
+    
+    if (!message) return;
+
+    const token = getToken();
+
+    // Verificar autenticación
+    if (!token) {
+        chatBox.innerHTML += `<div class="error-msg">
+            <b>❌ Error:</b> No has iniciado sesión. 
+            <a href="http://localhost:8000/" target="_blank">Inicia sesión aquí</a>
+        </div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return;
+    }
+
+    // Mostrar mensaje del usuario
+    chatBox.innerHTML += `<div class="user-msg"><b>👤 Tú:</b> ${message}</div>`;
+    messageInput.value = "";
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    try {
+        // Mostrar indicador de typing
+        const typingIndicator = `<div class="typing-msg" id="typing-indicator"><b>🤖 Middy:</b> Escribiendo...</div>`;
+        chatBox.innerHTML += typingIndicator;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Authorization": "Bearer " + token
+            },
+            body: new URLSearchParams({ message })
+        });
+
+        // Remover indicador de typing
+        document.getElementById('typing-indicator')?.remove();
+
+        if (response.status === 401) {
+            localStorage.removeItem('jwt_token');
+            updateAuthStatus(false);
+            chatBox.innerHTML += `<div class="error-msg">
+                <b>❌ Sesión expirada:</b> 
+                <a href="http://localhost:8000/" target="_blank">Inicia sesión nuevamente</a>
+            </div>`;
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("📦 Data recibida:", data); // ← DEBUG
+        
+        // ✅ CORREGIR: Usar data.answer en lugar de data.result
+        if (data.error) {
+            chatBox.innerHTML += `<div class="error-msg"><b>❌ Error:</b> ${data.error}</div>`;
+        } else {
+            // ⚠️ ESTA ES LA LÍNEA CRÍTICA - CAMBIAR data.result por data.answer
+            chatBox.innerHTML += `<div class="bot-msg"><b>🤖 Middy:</b> ${data.answer}</div>`;
+        }
+
+    } catch (error) {
+        document.getElementById('typing-indicator')?.remove();
+        chatBox.innerHTML += `<div class="error-msg">
+            <b>❌ Error de conexión:</b> No se pudo conectar con Middy
+        </div>`;
+        console.error('Error:', error);
+    }
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+        
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const token = getToken();
+            if (token) {
+                const isValid = await validateToken(token);
+                if (isValid) {
+                    updateAuthStatus(true);
+                    chatBox.innerHTML += `<div class="success-msg">✅ Sesión iniciada correctamente</div>`;
+                } else {
+                    localStorage.removeItem('jwt_token');
+                    updateAuthStatus(false);
+                    chatBox.innerHTML += `<div class="warning-msg">
+                        <b>⚠️ Sesión expirada:</b> 
+                        <a href="http://localhost:8000/" target="_blank">Inicia sesión nuevamente</a>
+                    </div>`;
+                }
+            } else {
+                updateAuthStatus(false);
+                chatBox.innerHTML += `<div class="warning-msg">
+                    <b>👋 Hola:</b> Para usar Middy, primero 
+                    <a href="http://localhost:8000/middy-chat/" target="_blank">inicia sesión en la app principal</a>
+                </div>`;
+            }
+        });
+
+        function checkDjangoSession() {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) return;
+            fetch('http://localhost:8000/api/user/me/', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    localStorage.removeItem('jwt_token');
+                    updateAuthStatus(false);
+                    chatBox.innerHTML += `<div class="info-msg">
+                        <b>🔒 Sesión cerrada:</b> 
+                        <a href="http://localhost:8000/middy-chat/" target="_blank">Iniciar sesión nuevamente</a>
+                    </div>`;
+                }
+            });
+        }
+
+        setInterval(checkDjangoSession, 30000);
+    </script>
+</body>
+</html>
