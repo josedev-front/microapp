@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.php": "php",
+    "/app_core/templates/*": "php"
+  }
+}
