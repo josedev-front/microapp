@@ -24,7 +24,7 @@ global $rutaVista, $vistas_sin_nav;
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 
-<body class="bg-dark text-light">
+<body class="bg-dark text-light" style="background-image: url('<?php echo defined('ASSETS_URL') ? ASSETS_URL . 'img/fondo.png' : './img/fondo.png'; ?>'); background-size: cover; background-position: center; background-attachment: fixed;">
     <?php include __DIR__ . '/header.php'; ?>
 
     <main class="container-fluid p-4 mt-5">

@@ -41,7 +41,7 @@ $flash = getFlash();
     <title>Iniciar sesión - MicroApps</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="bg-dark text-light">
+<body class="bg-dark text-light" style="background-image: url('<?php echo defined('ASSETS_URL') ? ASSETS_URL . 'img/fondo.png' : './img/fondo.png'; ?>'); background-size: cover; background-position: center; background-attachment: fixed;">
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-md-5">

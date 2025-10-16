@@ -25,8 +25,8 @@ if (session_status() === PHP_SESSION_NONE) session_start();
           <li class="nav-item"><a class="nav-link" href="?vista=news">Noticias</a></li>
           <li class="nav-item"><a class="nav-link" href="?vista=myaccount">Mi perfil</a></li>
           <li class="nav-item">
-            <a href="?vista=logout" class="btn btn-danger ms-2">Cerrar sesión</a>
-          </li>
+            <a href="?vista=logout" class="btn btn-danger ms-2" onclick="return confirm('¿Estás seguro de que deseas cerrar sesión?')">Cerrar sesión</a>
+         </li>
         <?php else: ?>
           <li class="nav-item">
             <a href="?vista=login" class="btn btn-primary ms-2">Iniciar sesión</a>
