@@ -80,7 +80,7 @@ $usuario = obtenerUsuarioActual();
         </div>
         
         <div class="col-12 col-md-6 col-lg-5">
-            <a href="./?vista=equipo_user" class="text-decoration-none">
+            <a href="./?vista=equiposuser" class="text-decoration-none">
                 <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <h5 class="card-title">👨‍🔧👩‍🔧 Equipos</h5>
