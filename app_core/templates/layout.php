@@ -25,7 +25,7 @@ global $rutaVista, $vistas_sin_nav;
 </head>
 
 <body class="bg-dark text-light">
-    <?php include __DIR__ . '/nav.php'; ?>
+    <?php include __DIR__ . '/header.php'; ?>
 
     <main class="container-fluid p-4 mt-5">
         <?php include $rutaVista; ?>

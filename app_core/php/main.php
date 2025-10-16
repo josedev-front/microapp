@@ -110,3 +110,14 @@ function verificarPasswordDjango($passwordIngresada, $hashDjango) {
 
     return hash_equals($hashEsperado, $hashCalculado);
 }
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+$host = $_SERVER['HTTP_HOST'];
+$script = $_SERVER['SCRIPT_NAME'];
+
+// Calcular BASE_URL dinámicamente
+$base_path = dirname($script);
+$base_url = $protocol . '://' . $host . $base_path . '/';
+define('BASE_URL', $base_url);
+
+// Para assets
+define('ASSETS_URL', BASE_URL . 'assets/');
