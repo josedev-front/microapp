@@ -69,18 +69,43 @@ class UserController {
     try {
         if (in_array($usuario_actual['role'], ['developer', 'superuser'])) {
             // Acceso completo - ver TODOS los usuarios activos
-            $stmt = $pdo->query("SELECT * FROM core_customuser WHERE is_active = 1 ORDER BY first_name, last_name");
+            $stmt = $pdo->query("SELECT * FROM core_customuser WHERE is_active = 1 ORDER BY work_area, first_name, last_name");
             $usuarios = $stmt->fetchAll();
+            
         } elseif ($usuario_actual['role'] === 'supervisor') {
-            // Solo usuarios de su área
-            $stmt = $pdo->prepare("SELECT * FROM core_customuser WHERE work_area = ? AND is_active = 1 ORDER BY first_name, last_name");
-            $stmt->execute([$usuario_actual['work_area']]);
+            // Supervisores ven usuarios de su área y sus subordinados directos
+            $stmt = $pdo->prepare("
+                SELECT * FROM core_customuser 
+                WHERE (work_area = ? OR manager_id = ?) 
+                AND is_active = 1 
+                ORDER BY first_name, last_name
+            ");
+            $stmt->execute([$usuario_actual['work_area'], $usuario_actual['id']]);
             $usuarios = $stmt->fetchAll();
+            
         } else {
-            // Solo información básica de su área
-            $stmt = $pdo->prepare("SELECT id, first_name, middle_name, last_name, second_last_name, role, work_area, manager_id FROM core_customuser WHERE work_area = ? AND is_active = 1 ORDER BY first_name, last_name");
-            $stmt->execute([$usuario_actual['work_area']]);
-            $usuarios = $stmt->fetchAll();
+            // Ejecutivos, backups, QA ven usuarios de su área
+            if (!empty($usuario_actual['work_area'])) {
+                $stmt = $pdo->prepare("
+                    SELECT id, first_name, middle_name, last_name, second_last_name, 
+                           role, work_area, manager_id, employee_id, email, phone_number
+                    FROM core_customuser 
+                    WHERE work_area = ? AND is_active = 1 
+                    ORDER BY first_name, last_name
+                ");
+                $stmt->execute([$usuario_actual['work_area']]);
+                $usuarios = $stmt->fetchAll();
+            } else {
+                // Si no tiene área asignada, mostrar información básica del usuario actual
+                $stmt = $pdo->prepare("
+                    SELECT id, first_name, middle_name, last_name, second_last_name, 
+                           role, work_area, manager_id, employee_id, email, phone_number
+                    FROM core_customuser 
+                    WHERE id = ? AND is_active = 1
+                ");
+                $stmt->execute([$usuario_actual['id']]);
+                $usuarios = $stmt->fetchAll();
+            }
         }
         
     } catch (Exception $e) {
@@ -96,18 +121,17 @@ class UserController {
     $estadisticas = [
         'total_usuarios' => count($usuarios),
         'usuarios_mi_area' => 0,
-        'mis_subordinados' => 0
+        'mis_subordinados' => 0,
+        'mi_manager' => null
     ];
     
     try {
         if (in_array($usuario_actual['role'], ['developer', 'superuser'])) {
-            // Para superuser/developer, usuarios en su área
+            // Para superuser/developer
             if ($usuario_actual['work_area']) {
                 $stmt = $pdo->prepare("SELECT COUNT(*) FROM core_customuser WHERE work_area = ? AND is_active = 1");
                 $stmt->execute([$usuario_actual['work_area']]);
                 $estadisticas['usuarios_mi_area'] = $stmt->fetchColumn();
-            } else {
-                $estadisticas['usuarios_mi_area'] = 0;
             }
             
             // Subordinados directos
@@ -124,7 +148,18 @@ class UserController {
             $estadisticas['mis_subordinados'] = $stmt->fetchColumn();
             
         } else {
+            // Para ejecutivos, backups, QA
             $estadisticas['usuarios_mi_area'] = $estadisticas['total_usuarios'];
+            
+            // Obtener información del manager
+            if ($usuario_actual['manager_id']) {
+                $stmt = $pdo->prepare("SELECT first_name, last_name FROM core_customuser WHERE id = ?");
+                $stmt->execute([$usuario_actual['manager_id']]);
+                $manager = $stmt->fetch();
+                if ($manager) {
+                    $estadisticas['mi_manager'] = $manager['first_name'] . ' ' . $manager['last_name'];
+                }
+            }
         }
     } catch (Exception $e) {
         error_log("Error en obtenerEstadisticas: " . $e->getMessage());
@@ -132,5 +167,183 @@ class UserController {
     
     return $estadisticas;
 }
+  public static function obtenerUsuarioPorId($id) {
+        $pdo = conexion();
+        
+        try {
+            $stmt = $pdo->prepare("
+                SELECT 
+                    u.*,
+                    m.first_name as manager_first_name,
+                    m.last_name as manager_last_name
+                FROM core_customuser u
+                LEFT JOIN core_customuser m ON u.manager_id = m.id
+                WHERE u.id = ? AND u.is_active = 1
+            ");
+            $stmt->execute([$id]);
+            return $stmt->fetch();
+        } catch (Exception $e) {
+            error_log("Error en obtenerUsuarioPorId: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public static function obtenerAreas() {
+        $pdo = conexion();
+        
+        try {
+            $stmt = $pdo->query("
+                SELECT DISTINCT work_area 
+                FROM core_customuser 
+                WHERE work_area IS NOT NULL AND work_area != ''
+                ORDER BY work_area
+            ");
+            return $stmt->fetchAll();
+        } catch (Exception $e) {
+            error_log("Error en obtenerAreas: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public static function obtenerJefesPotenciales() {
+        $pdo = conexion();
+        
+        try {
+            $stmt = $pdo->prepare("
+                SELECT id, first_name, last_name, role, work_area
+                FROM core_customuser 
+                WHERE is_active = 1 
+                AND role IN ('supervisor', 'superuser', 'developer')
+                ORDER BY first_name, last_name
+            ");
+            $stmt->execute();
+            return $stmt->fetchAll();
+        } catch (Exception $e) {
+            error_log("Error en obtenerJefesPotenciales: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public static function actualizarUsuario($usuario_id, $datos) {
+        // Verificar permisos
+        $usuario_actual = obtenerUsuarioActual();
+        if (!$usuario_actual || !in_array($usuario_actual['role'], ['superuser', 'developer', 'supervisor'])) {
+            return ['success' => false, 'message' => 'No tienes permisos para editar usuarios'];
+        }
+
+        // Validaciones básicas
+        if (empty($datos['first_name']) || empty($datos['last_name']) || empty($datos['employee_id']) || empty($datos['email'])) {
+            return ['success' => false, 'message' => 'Los campos obligatorios no pueden estar vacíos'];
+        }
+
+        $pdo = conexion();
+        
+        try {
+            // Preparar datos para la actualización
+            $campos = [];
+            $valores = [];
+
+            // Campos básicos
+            $campos[] = "first_name = ?";
+            $valores[] = trim($datos['first_name']);
+
+            $campos[] = "middle_name = ?";
+            $valores[] = !empty($datos['middle_name']) ? trim($datos['middle_name']) : null;
+
+            $campos[] = "last_name = ?";
+            $valores[] = trim($datos['last_name']);
+
+            $campos[] = "second_last_name = ?";
+            $valores[] = !empty($datos['second_last_name']) ? trim($datos['second_last_name']) : null;
+
+            $campos[] = "employee_id = ?";
+            $valores[] = trim($datos['employee_id']);
+
+            $campos[] = "email = ?";
+            $valores[] = trim($datos['email']);
+
+            $campos[] = "username = ?";
+            $valores[] = trim($datos['username']);
+
+            // Campos opcionales
+            if (isset($datos['phone_number'])) {
+                $campos[] = "phone_number = ?";
+                $valores[] = !empty($datos['phone_number']) ? trim($datos['phone_number']) : null;
+            }
+
+            if (isset($datos['birth_date'])) {
+                $campos[] = "birth_date = ?";
+                $valores[] = !empty($datos['birth_date']) ? $datos['birth_date'] : null;
+            }
+
+            if (isset($datos['gender'])) {
+                $campos[] = "gender = ?";
+                $valores[] = $datos['gender'];
+            }
+
+            // Rol y área (solo para superuser y developer)
+            if (in_array($usuario_actual['role'], ['superuser', 'developer'])) {
+                if (isset($datos['role'])) {
+                    $campos[] = "role = ?";
+                    $valores[] = $datos['role'];
+                }
+
+                if (isset($datos['work_area'])) {
+                    $campos[] = "work_area = ?";
+                    $valores[] = $datos['work_area'];
+                }
+            } elseif ($usuario_actual['role'] === 'supervisor') {
+                // Los supervisores solo pueden editar usuarios de su área
+                $usuario_a_editar = self::obtenerUsuarioPorId($usuario_id);
+                if ($usuario_a_editar && $usuario_a_editar['work_area'] !== $usuario_actual['work_area']) {
+                    return ['success' => false, 'message' => 'Solo puedes editar usuarios de tu área'];
+                }
+            }
+
+            // Jefe directo
+            if (isset($datos['manager_id'])) {
+                $campos[] = "manager_id = ?";
+                $valores[] = !empty($datos['manager_id']) ? intval($datos['manager_id']) : null;
+            }
+
+            // Estado activo
+            if (isset($datos['is_active'])) {
+                $campos[] = "is_active = ?";
+                $valores[] = $datos['is_active'] ? 1 : 0;
+            }
+
+            // Avatar predefinido
+            if (isset($datos['avatar_predefinido'])) {
+                $campos[] = "avatar_predefinido = ?";
+                $valores[] = $datos['avatar_predefinido'];
+            }
+
+            // Agregar ID al final de los valores
+            $valores[] = $usuario_id;
+
+            // Construir y ejecutar la consulta
+            $sql = "UPDATE core_customuser SET " . implode(', ', $campos) . " WHERE id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($valores);
+
+            return ['success' => true, 'message' => 'Usuario actualizado correctamente'];
+
+        } catch (Exception $e) {
+            error_log("Error en actualizarUsuario: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error al actualizar el usuario: ' . $e->getMessage()];
+        }
+    }
+
+    public static function obtenerRoles() {
+        return [
+            'ejecutivo',
+            'supervisor', 
+            'backup',
+            'developer',
+            'superuser',
+            'agente_qa'
+        ];
+    }
+
 
 }

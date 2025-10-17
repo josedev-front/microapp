@@ -273,3 +273,14 @@ $pdo = conexion();
         </div>
     </div>
 </div>
+<!-- Información adicional para ejecutivos -->
+<?php if (!in_array($usuario_actual['role'], ['developer', 'superuser', 'supervisor']) && $estadisticas['mi_manager']): ?>
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <strong><i class="fas fa-user-tie me-2"></i>Mi Jefe Directo:</strong> 
+            <?php echo htmlspecialchars($estadisticas['mi_manager']); ?>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
