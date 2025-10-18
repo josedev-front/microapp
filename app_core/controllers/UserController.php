@@ -345,5 +345,24 @@ class UserController {
         ];
     }
 
+    public static function obtenerUsuariosActivos() {
+    $pdo = conexion();
+    
+    try {
+        $stmt = $pdo->query("
+            SELECT id, first_name, last_name, employee_id, work_area, role
+            FROM core_customuser 
+            WHERE is_active = 1 
+            ORDER BY first_name, last_name
+        ");
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        error_log("Error en obtenerUsuariosActivos: " . $e->getMessage());
+        return [];
+    }
+}
+
+
+
 
 }
