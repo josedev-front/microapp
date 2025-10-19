@@ -532,13 +532,13 @@ if (isset($_GET['creado']) && $_GET['creado'] == 1) {
                   <table class="table table-striped table-hover">
                     <thead class="table-dark">
                       <tr>
-                        <th>Comunicado</th>
-                        <th>Tipo</th>
-                        <th>Emisor</th>
-                        <th>Fecha Comunicado</th>
-                        <th>Fecha Acuse</th>
-                        <th>Días Visibilidad</th>
-                        <th>Estado</th>
+                        <th class="text-primary">Comunicado</th>
+                        <th class="text-primary">Tipo</th>
+                        <th class="text-primary">Emisor</th>
+                        <th class="text-primary">Fecha Comunicado</th>
+                        <th class="text-primary">Fecha Acuse</th>
+                        <th class="text-primary">Días Visibilidad</th>
+                        <th class="text-primary">Estado</th>
                       </tr>
                     </thead>
                     <tbody>

@@ -61,6 +61,27 @@ class ComunicadoController {
             return [];
         }
     }
+    public function obtenerComunicadoPorId($comunicado_id) {
+    $pdo = conexion();
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT 
+                c.*,
+                CONCAT(u.first_name, ' ', u.last_name) as creador_nombre,
+                CONCAT(d.first_name, ' ', d.last_name) as destinatario_nombre
+            FROM core_comunicado c
+            INNER JOIN core_customuser u ON c.created_by_id = u.id
+            LEFT JOIN core_customuser d ON c.destinatario_id = d.id
+            WHERE c.id = ?
+        ");
+        $stmt->execute([$comunicado_id]);
+        return $stmt->fetch();
+    } catch (Exception $e) {
+        error_log("Error en obtenerComunicadoPorId: " . $e->getMessage());
+        return null;
+    }
+}
     
     // Obtener comunicados personales pendientes de acuse
     public function obtenerComunicadosPersonalesPendientes($usuario_id) {
@@ -410,4 +431,153 @@ public function obtenerAcusesComunicado($comunicado_id) {
             return ['success' => false, 'message' => 'Error al eliminar el comunicado: ' . $e->getMessage()];
         }
     }
+public function actualizarComunicado($comunicado_id, $datos, $usuario_id) {
+    // Validaciones básicas
+    if (empty($datos['titulo']) || empty($datos['contenido']) || empty($datos['tipo'])) {
+        return ['success' => false, 'message' => 'Todos los campos obligatorios deben ser completados'];
+    }
+
+    $pdo = conexion();
+    
+    try {
+        // Verificar que el comunicado existe y pertenece al usuario
+        $comunicado_actual = $this->obtenerComunicadoPorId($comunicado_id);
+        if (!$comunicado_actual) {
+            return ['success' => false, 'message' => 'Comunicado no encontrado'];
+        }
+        
+        if ($comunicado_actual['created_by_id'] != $usuario_id) {
+            return ['success' => false, 'message' => 'No tienes permisos para editar este comunicado'];
+        }
+
+        // Procesar imagen si se subió una nueva
+        $nombre_imagen = $comunicado_actual['imagen'];
+        
+        if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
+            // Eliminar imagen anterior si existe
+            if (!empty($nombre_imagen)) {
+                $ruta_anterior = __DIR__ . '/../../public/' . $nombre_imagen;
+                if (file_exists($ruta_anterior)) {
+                    unlink($ruta_anterior);
+                }
+            }
+            
+            // Subir nueva imagen
+            $imagen = $_FILES['imagen'];
+            $tipos_permitidos = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            $tamano_maximo = 5 * 1024 * 1024;
+            
+            if (!in_array($imagen['type'], $tipos_permitidos)) {
+                return ['success' => false, 'message' => 'Formato de imagen no permitido'];
+            }
+            
+            if ($imagen['size'] > $tamano_maximo) {
+                return ['success' => false, 'message' => 'La imagen es demasiado grande. Máximo 5MB'];
+            }
+            
+            $directorio_imagenes = __DIR__ . '/../../public/assets/comunicados';
+            if (!is_dir($directorio_imagenes)) {
+                mkdir($directorio_imagenes, 0755, true);
+            }
+            
+            $extension = pathinfo($imagen['name'], PATHINFO_EXTENSION);
+            $nombre_imagen = uniqid() . '_' . time() . '.' . $extension;
+            $ruta_completa = $directorio_imagenes . '/' . $nombre_imagen;
+            
+            if (!move_uploaded_file($imagen['tmp_name'], $ruta_completa)) {
+                return ['success' => false, 'message' => 'Error al subir la imagen'];
+            }
+            
+            $nombre_imagen = 'assets/comunicados/' . $nombre_imagen;
+        } elseif (isset($datos['eliminar_imagen']) && $datos['eliminar_imagen']) {
+            // Eliminar imagen si se solicitó
+            if (!empty($nombre_imagen)) {
+                $ruta_anterior = __DIR__ . '/../../public/' . $nombre_imagen;
+                if (file_exists($ruta_anterior)) {
+                    unlink($ruta_anterior);
+                }
+            }
+            $nombre_imagen = null;
+        }
+
+        // Actualizar comunicado
+        $stmt = $pdo->prepare("
+            UPDATE core_comunicado 
+            SET titulo = ?, contenido = ?, imagen = ?, tipo = ?, 
+                destinatario_id = ?, requiere_acuse = ?, activo = ?, dias_visibilidad = ?,
+                updated_at = NOW()
+            WHERE id = ?
+        ");
+        
+        $destinatario_id = ($datos['tipo'] === 'personal' && isset($datos['destinatario_id'])) 
+            ? intval($datos['destinatario_id']) 
+            : null;
+            
+        $stmt->execute([
+            trim($datos['titulo']),
+            trim($datos['contenido']),
+            $nombre_imagen,
+            $datos['tipo'],
+            $destinatario_id,
+            isset($datos['requiere_acuse']) ? 1 : 0,
+            isset($datos['activo']) ? 1 : 0,
+            isset($datos['dias_visibilidad']) ? intval($datos['dias_visibilidad']) : 7,
+            $comunicado_id
+        ]);
+        
+        return [
+            'success' => true, 
+            'message' => 'Comunicado actualizado exitosamente'
+        ];
+        
+    } catch (Exception $e) {
+        error_log("Error en actualizarComunicado: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Error al actualizar el comunicado: ' . $e->getMessage()];
+    }
 }
+
+// Obtener estadísticas del comunicado
+public function obtenerEstadisticasComunicado($comunicado_id) {
+    $pdo = conexion();
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) as total_acuses 
+            FROM core_acuserecibo 
+            WHERE comunicado_id = ?
+        ");
+        $stmt->execute([$comunicado_id]);
+        return $stmt->fetch();
+    } catch (Exception $e) {
+        error_log("Error en obtenerEstadisticasComunicado: " . $e->getMessage());
+        return ['total_acuses' => 0];
+    }
+}
+
+public function obtenerComunicadosGlobalesParaCarousel() {
+    $pdo = conexion();
+    
+    try {
+        $stmt = $pdo->prepare("
+            SELECT 
+                c.*,
+                CONCAT(u.first_name, ' ', u.last_name) as creador_nombre
+            FROM core_comunicado c
+            INNER JOIN core_customuser u ON c.created_by_id = u.id
+            WHERE c.tipo = 'global' 
+            AND c.activo = 1
+            AND c.created_at >= DATE_SUB(NOW(), INTERVAL c.dias_visibilidad DAY)
+            ORDER BY c.created_at DESC
+            LIMIT 5
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        error_log("Error en obtenerComunicadosGlobalesParaCarousel: " . $e->getMessage());
+        return [];
+    }
+}
+
+}
+
+
