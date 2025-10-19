@@ -264,7 +264,7 @@ class ComunicadoController {
             
             return [
                 'success' => true, 
-                'message' => 'Comunicado creado exitosamente',   # esto no lo quiero porque daña la experiencia del usuario
+                'message' => 'Comunicado creado exitosamente',
                 'comunicado_id' => $comunicado_id
             ];
             
@@ -334,7 +334,7 @@ class ComunicadoController {
             ");
             $stmt->execute([$comunicado_id, $usuario_id, $ip_address]);
             
-            return ['success' => true, 'message' => 'Acuse de recibo registrado correctamente'];   # esto no lo quiero porque daña la experiencia del usuario
+            return ['success' => true, 'message' => 'Acuse de recibo registrado correctamente'];
             
         } catch (Exception $e) {
             error_log("Error en registrarAcuseRecibo: " . $e->getMessage());
@@ -342,12 +342,14 @@ class ComunicadoController {
         }
     }
     
-    // Obtener lista de acuses para un comunicado
-    // En ComunicadoController.php - actualizar el método obtenerAcusesComunicado
+    // Obtener lista de acuses para un comunicado - MÉTODO CORREGIDO
+    // En ComunicadoController.php - función mejorada
 public function obtenerAcusesComunicado($comunicado_id) {
     $pdo = conexion();
     
     try {
+        error_log("=== INICIANDO OBTENER ACUSES PARA COMUNICADO: $comunicado_id ===");
+        
         $stmt = $pdo->prepare("
             SELECT 
                 ar.*,
@@ -363,9 +365,18 @@ public function obtenerAcusesComunicado($comunicado_id) {
             ORDER BY ar.fecha_acuse DESC
         ");
         $stmt->execute([$comunicado_id]);
-        return $stmt->fetchAll();
+        $resultados = $stmt->fetchAll();
+        
+        // Debug detallado
+        error_log("Número de acuses encontrados: " . count($resultados));
+        if (count($resultados) > 0) {
+            error_log("Primer acuse: " . print_r($resultados[0], true));
+        }
+        
+        return $resultados;
+        
     } catch (Exception $e) {
-        error_log("Error en obtenerAcusesComunicado: " . $e->getMessage());
+        error_log("ERROR en obtenerAcusesComunicado: " . $e->getMessage());
         return [];
     }
 }

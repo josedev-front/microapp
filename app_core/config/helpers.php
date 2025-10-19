@@ -53,3 +53,19 @@ function formatDate($date, $format = 'd/m/Y') {
     }
     return date($format, strtotime($date));
 }
+
+function obtenerUsuarioActual() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    if (isset($_SESSION['user_id'])) {
+        // Aquí tu lógica para obtener el usuario de la base de datos
+        $pdo = conexion();
+        $stmt = $pdo->prepare("SELECT * FROM core_customuser WHERE id = ?");
+        $stmt->execute([$_SESSION['user_id']]);
+        return $stmt->fetch();
+    }
+    
+    return null;
+}

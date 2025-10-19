@@ -1,6 +1,70 @@
 <?php
 // app_core/templates/news.php
 
+// === MANEJO AJAX - VERSIÓN ULTRA SEGURA ===
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'obtener_acuses') {
+    
+    // FORZAR limpieza de buffers
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    
+    // Iniciar sesión de manera AGGRESIVA
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+    
+    // DEBUG: Log de sesión
+    error_log("=== AJAX REQUEST ===");
+    error_log("Session ID: " . session_id());
+    error_log("Session Data: " . print_r($_SESSION, true));
+    error_log("POST Data: " . print_r($_POST, true));
+    
+    // Cargar configuración MINIMA
+    require_once __DIR__ . '/../../app_core/config/database.php';
+    require_once __DIR__ . '/../../app_core/config/helpers.php';
+    
+    // Verificar autenticación usando la misma función que la app principal
+    $usuario_actual = obtenerUsuarioActual();
+    
+    if (!$usuario_actual) {
+        error_log("USUARIO NO AUTENTICADO EN AJAX");
+        header('Content-Type: application/json');
+        http_response_code(401);
+        echo json_encode([
+            'success' => false, 
+            'message' => 'No autenticado',
+            'debug' => [
+                'session_id' => session_id(),
+                'session_data' => $_SESSION
+            ]
+        ]);
+        exit;
+    }
+    
+    error_log("Usuario autenticado: " . $usuario_actual['id']);
+    
+    // Cargar controlador y procesar
+    require_once __DIR__ . '/../../app_core/controllers/ComunicadoController.php';
+    
+    $comunicado_id = intval($_POST['comunicado_id']);
+    $comunicadoController = new ComunicadoController();
+    $acuses = $comunicadoController->obtenerAcusesComunicado($comunicado_id);
+    
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'acuses' => $acuses,
+        'debug' => [
+            'comunicado_id' => $comunicado_id,
+            'total_acuses' => count($acuses),
+            'usuario_actual' => $usuario_actual['id']
+        ]
+    ]);
+    exit;
+}
+
+// === CÓDIGO NORMAL DE LA PÁGINA ===
 // Obtener datos del usuario actual
 $usuario_actual = obtenerUsuarioActual();
 if (!$usuario_actual) {
@@ -28,49 +92,102 @@ $historial_comunicados = $comunicadoController->obtenerHistorialComunicados($usu
 // Obtener usuarios para comunicados personales (solo si puede crear)
 $usuarios_para_comunicados = $puedeCrearComunicados ? $userController->obtenerUsuariosActivos() : [];
 
-// Procesar formulario de crear comunicado
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear_comunicado']) && $puedeCrearComunicados) {
-    $resultado = $comunicadoController->crearComunicado($_POST, $usuario_actual['id']);
+// Inicializar variables de mensajes
+$mensaje = '';
+$tipo_mensaje = '';
+
+// PROCESAMIENTO DE FORMULARIOS REGULARES
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
-    if ($resultado['success']) {
-        // Recargar la página silenciosamente en lugar de mostrar alerta
-        echo '<script>window.location.reload();</script>';
-        exit;
-    } else {
-        $mensaje = "Error: " . $resultado['message'];
-        $tipo_mensaje = "danger";
+    // Procesar eliminación de comunicado
+    if (isset($_POST['eliminar_comunicado']) && $puedeCrearComunicados) {
+        $comunicado_id = intval($_POST['comunicado_id']);
+        $resultado = $comunicadoController->eliminarComunicado($comunicado_id, $usuario_actual['id']);
+        
+        if ($resultado['success']) {
+            header('Location: ./?vista=news&eliminado=1');
+            exit;
+        } else {
+            $mensaje = "Error: " . $resultado['message'];
+            $tipo_mensaje = "danger";
+        }
+    }
+    
+    // Procesar acuse de recibo
+    elseif (isset($_POST['dar_acuse'])) {
+        $comunicado_id = intval($_POST['comunicado_id']);
+        $resultado = $comunicadoController->registrarAcuseRecibo($comunicado_id, $usuario_actual['id']);
+        
+        if ($resultado['success']) {
+            header('Location: ./?vista=news&acuse=1');
+            exit;
+        } else {
+            $mensaje = "Error: " . $resultado['message'];
+            $tipo_mensaje = "danger";
+        }
+    }
+    
+    // Procesar creación de comunicado
+    elseif (isset($_POST['crear_comunicado']) && $puedeCrearComunicados) {
+        $resultado = $comunicadoController->crearComunicado($_POST, $usuario_actual['id']);
+        
+        if ($resultado['success']) {
+            header('Location: ./?vista=news&creado=1');
+            exit;
+        } else {
+            $mensaje = "Error: " . $resultado['message'];
+            $tipo_mensaje = "danger";
+        }
     }
 }
 
-// Procesar acuse de recibo
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['dar_acuse'])) {
-    $comunicado_id = intval($_POST['comunicado_id']);
-    $resultado = $comunicadoController->registrarAcuseRecibo($comunicado_id, $usuario_actual['id']);
-    
-    if ($resultado['success']) {
-        // Recargar la página silenciosamente
-        echo '<script>window.location.reload();</script>';
-        exit;
-    } else {
-        $mensaje = "Error: " . $resultado['message'];
-        $tipo_mensaje = "danger";
-    }
+// MOSTRAR MENSAJES DE ÉXITO DESPUÉS DE REDIRECCIONES
+if (isset($_GET['eliminado']) && $_GET['eliminado'] == 1) {
+    $mensaje = "Comunicado eliminado correctamente";
+    $tipo_mensaje = "success";
 }
-// Procesar eliminación de comunicado
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_comunicado']) && $puedeCrearComunicados) {
-    $comunicado_id = intval($_POST['comunicado_id']);
-    $resultado = $comunicadoController->eliminarComunicado($comunicado_id, $usuario_actual['id']);
-    
-    if ($resultado['success']) {
-        // Recargar la página silenciosamente
-        echo '<script>window.location.reload();</script>';
-        exit;
-    } else {
-        $mensaje = "Error: " . $resultado['message'];
-        $tipo_mensaje = "danger";
-    }
+if (isset($_GET['acuse']) && $_GET['acuse'] == 1) {
+    $mensaje = "Acuse de recibo registrado correctamente";
+    $tipo_mensaje = "success";
+}
+if (isset($_GET['creado']) && $_GET['creado'] == 1) {
+    $mensaje = "Comunicado creado correctamente";
+    $tipo_mensaje = "success";
 }
 ?>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noticias & Comunicados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="bg-dark text-light" style="background-image: url('http://localhost:3000/public/assets/img/fondo.png'); background-size: cover; background-position: center; background-attachment: fixed;">
+    
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="?vista=home">
+      <img src="http://localhost:3000/public/assets/img/microapps-simbol.png" alt="Micro apps" width="80" class="me-2">
+      Micro apps
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="?vista=home">Inicio</a></li>
+        <li class="nav-item"><a class="nav-link" href="?vista=news">Noticias</a></li>
+        <li class="nav-item"><a class="nav-link" href="?vista=myaccount">Mi perfil</a></li>
+        <li class="nav-item">
+          <a href="?vista=logout" class="btn btn-danger ms-2" onclick="return confirm('¿Estás seguro de que deseas cerrar sesión?')">Cerrar sesión</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
 
 <div class="container" style="margin-top: 10%; margin-bottom: 10%;">
   <div class="row justify-content-center">
@@ -79,6 +196,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_comunicado']
         <div class="card-body p-4 p-md-5">
 
           <h2 class="fw-bold mb-4 text-primary"><i class="fas fa-newspaper me-2"></i>Noticias & Comunicados</h2>
+
+          <!-- Mostrar mensajes -->
+          <?php if ($mensaje): ?>
+          <div class="alert alert-<?php echo $tipo_mensaje; ?> alert-dismissible fade show" role="alert">
+            <?php echo $mensaje; ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+          <?php endif; ?>
 
           <ul class="nav nav-tabs mb-4" id="comunicadosTabs" role="tablist">
             <li class="nav-item" role="presentation">
@@ -287,7 +412,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_comunicado']
               <?php else: ?>
                 <div class="table-responsive">
                   <table class="table table-striped table-hover">
-                    <thead class="table-dark text-primary">
+                    <thead class="table-dark">
                       <tr>
                         <th class="text-primary">Título</th>
                         <th class="text-primary">Tipo</th>
@@ -331,7 +456,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_comunicado']
                         <td><?php echo date('d/m/Y H:i', strtotime($comunicado['created_at'])); ?></td>
                         <td>
                           <span class="badge <?php echo $comunicado['activo'] ? 'bg-success' : 'bg-secondary'; ?>">
-                            <?php echo $comunicado['activo'] ? 'Activo' : 'Inactivo'; ?>
+                            <?php echo $comunicado['activo'] ? 'Activo' : 'Eliminado'; ?>
                           </span>
                         </td>
                         <td>
@@ -407,13 +532,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_comunicado']
                   <table class="table table-striped table-hover">
                     <thead class="table-dark">
                       <tr>
-                        <th class="text-primary">Comunicado</th>
-                        <th class="text-primary">Tipo</th>
-                        <th class="text-primary">Emisor</th>
-                        <th class="text-primary">Fecha Comunicado</th>
-                        <th class="text-primary">Fecha Acuse</th>
-                        <th class="text-primary">Días Visibilidad</th>
-                        <th class="text-primary">Estado</th>
+                        <th>Comunicado</th>
+                        <th>Tipo</th>
+                        <th>Emisor</th>
+                        <th>Fecha Comunicado</th>
+                        <th>Fecha Acuse</th>
+                        <th>Días Visibilidad</th>
+                        <th>Estado</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -557,7 +682,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_comunicado']
       </div>
     </div>
   </div>
-  <!-- Modal para ver acuses -->
+</div>
+
+<!-- Modal para ver acuses -->
 <div class="modal fade" id="modalAcuses" tabindex="-1" aria-labelledby="modalAcusesLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -579,13 +706,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_comunicado']
                         <table class="table table-striped table-hover">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>Usuario</th>
-                                    <th>ID Empleado</th>
-                                    <th>Área</th>
-                                    <th>Rol</th>
-                                    <th>Jefe Directo</th>
-                                    <th>Fecha Acuse</th>
-                                    <th>IP</th>
+                                    <th class="text-primary">Usuario</th>
+                                    <th class="text-primary">ID Empleado</th>
+                                    <th class="text-primary">Área</th>
+                                    <th class="text-primary">Rol</th>
+                                    <th class="text-primary">Jefe Directo</th>
+                                    <th class="text-primary">Fecha Acuse</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaAcuses">
@@ -605,8 +731,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_comunicado']
         </div>
     </div>
 </div>
-</div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 function actualizarDestinatario() {
   const tipo = document.getElementById('tipo').value;
@@ -624,66 +750,61 @@ function actualizarDestinatario() {
 }
 
 function verAcuses(comunicadoId) {
-    // Mostrar modal
+    console.log('=== INICIANDO verAcuses ===');
+    
     const modal = new bootstrap.Modal(document.getElementById('modalAcuses'));
     modal.show();
     
-    // Mostrar loading y ocultar contenido
     document.getElementById('loadingAcuses').style.display = 'block';
     document.getElementById('contenidoAcuses').style.display = 'none';
     document.getElementById('sinAcuses').style.display = 'none';
     
-    // Hacer petición AJAX para obtener los acuses
-    fetch(`./app_core/php/obtener_acuses.php?comunicado_id=${comunicadoId}`)
-        .then(response => response.json())
-        .then(data => {
-            // Ocultar loading
-            document.getElementById('loadingAcuses').style.display = 'none';
+    const formData = new FormData();
+    formData.append('comunicado_id', comunicadoId);
+    formData.append('user_id', <?php echo $usuario_actual['id']; ?>); // ← USER_ID MANUAL
+    
+    console.log('Enviando petición con user_id manual...');
+    
+    fetch('ajax/acuses.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Datos recibidos:', data);
+        
+        document.getElementById('loadingAcuses').style.display = 'none';
+        
+        if (data.success && data.acuses && data.acuses.length > 0) {
+            const tabla = document.getElementById('tablaAcuses');
+            tabla.innerHTML = '';
             
-            if (data.success && data.acuses.length > 0) {
-                // Mostrar acuses en la tabla
-                const tabla = document.getElementById('tablaAcuses');
-                tabla.innerHTML = '';
-                
-                data.acuses.forEach(acuse => {
-                    const fila = document.createElement('tr');
-                    fila.innerHTML = `
-                        <td>
-                            <strong>${acuse.usuario_nombre}</strong>
-                        </td>
-                        <td>${acuse.employee_id}</td>
-                        <td>
-                            <span class="badge bg-info">${acuse.work_area || 'N/A'}</span>
-                        </td>
-                        <td>
-                            <span class="badge bg-secondary">${acuse.role || 'N/A'}</span>
-                        </td>
-                        <td>${acuse.jefe_nombre || 'No asignado'}</td>
-                        <td>
-                            <small>${new Date(acuse.fecha_acuse).toLocaleString('es-ES')}</small>
-                        </td>
-                        <td>
-                            <code class="small">${acuse.ip_address || 'N/A'}</code>
-                        </td>
-                    `;
-                    tabla.appendChild(fila);
-                });
-                
-                document.getElementById('contenidoAcuses').style.display = 'block';
-            } else {
-                // Mostrar mensaje de no hay acuses
-                document.getElementById('sinAcuses').style.display = 'block';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('loadingAcuses').style.display = 'none';
+            data.acuses.forEach((acuse) => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td><strong>${acuse.usuario_nombre || 'N/A'}</strong></td>
+                    <td>${acuse.employee_id || 'N/A'}</td>
+                    <td><span class="badge bg-info">${acuse.work_area || 'N/A'}</span></td>
+                    <td><span class="badge bg-secondary">${acuse.role || 'N/A'}</span></td>
+                    <td>${acuse.jefe_nombre || 'No asignado'}</td>
+                    <td><small>${acuse.fecha_acuse ? new Date(acuse.fecha_acuse).toLocaleString('es-ES') : 'N/A'}</small></td>
+                `;
+                tabla.appendChild(fila);
+            });
+            
+            document.getElementById('contenidoAcuses').style.display = 'block';
+        } else {
             document.getElementById('sinAcuses').style.display = 'block';
-            document.getElementById('sinAcuses').innerHTML = `
-                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-3"></i>
-                <p class="text-danger">Error al cargar los acuses de recibo.</p>
-            `;
-        });
+            if (data.message) {
+                document.getElementById('sinAcuses').innerHTML += `<p class="text-warning">${data.message}</p>`;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('loadingAcuses').style.display = 'none';
+        document.getElementById('sinAcuses').style.display = 'block';
+    });
 }
 
 // Inicializar el formulario
@@ -710,3 +831,5 @@ document.addEventListener('DOMContentLoaded', function() {
   background-color: #f8f9fa;
 }
 </style>
+</body>
+</html>

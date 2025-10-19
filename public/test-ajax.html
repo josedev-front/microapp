@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test AJAX - Debug Acuses</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px 20px; margin: 10px; }
+        pre { background: #f5f5f5; padding: 10px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Test Endpoint AJAX - Debug Acuses</h1>
+    
+    <div>
+        <label>Comunicado ID: </label>
+        <input type="number" id="comunicadoId" value="23" placeholder="Ej: 23">
+        <button onclick="testAcuses()">Probar Acuses</button>
+        <button onclick="checkSession()">Verificar Sesión</button>
+        <button onclick="clearResults()">Limpiar</button>
+    </div>
+
+    <div id="result" style="margin-top: 20px;"></div>
+
+    <script>
+    function log(message, type = 'info') {
+        const result = document.getElementById('result');
+        const timestamp = new Date().toLocaleTimeString();
+        result.innerHTML += `<div class="${type}"><strong>[${timestamp}]</strong> ${message}</div>`;
+    }
+
+    function clearResults() {
+        document.getElementById('result').innerHTML = '';
+    }
+
+    function checkSession() {
+        log('=== VERIFICANDO SESIÓN ===');
+        
+        // Verificar si hay cookies de sesión
+        log('Cookies: ' + document.cookie);
+        
+        // Hacer una petición simple para ver la sesión
+        fetch('ajax/acuses.php', {
+            method: 'POST',
+            body: new FormData(),
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            log(`Status: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            log('Respuesta: ' + JSON.stringify(data));
+        })
+        .catch(error => {
+            log('Error: ' + error.message, 'error');
+        });
+    }
+
+    function testAcuses() {
+        const comunicadoId = document.getElementById('comunicadoId').value || '23';
+        
+        log('=== TESTEANDO ACUSES ===');
+        log(`Comunicado ID: ${comunicadoId}`);
+        
+        const formData = new FormData();
+        formData.append('comunicado_id', comunicadoId);
+        
+        log('Enviando petición a ajax/acuses.php...');
+        
+        fetch('ajax/acuses.php', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            log(`Status: ${response.status}`);
+            log(`Content-Type: ${response.headers.get('content-type')}`);
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                log(`✅ ÉXITO: ${data.total} acuses encontrados`, 'success');
+                log('Datos: ' + JSON.stringify(data, null, 2));
+            } else {
+                log(`❌ ERROR: ${data.message}`, 'error');
+                if (data.debug) {
+                    log('Debug: ' + JSON.stringify(data.debug));
+                }
+            }
+        })
+        .catch(error => {
+            log('❌ Error de red: ' + error.message, 'error');
+        });
+    }
+
+    // Auto-test al cargar la página
+    setTimeout(() => {
+        log('Página cargada. Haz clic en "Verificar Sesión" para empezar.');
+    }, 1000);
+    </script>
+</body>
+</html>
