@@ -1,9 +1,7 @@
 <?php
 // app_core/config/helpers.php
 
-// Definir constantes de rutas
-define('BASE_URL', 'http://localhost:3000/');
-define('ASSETS_URL', BASE_URL . 'public/assets/');
+// NO definir BASE_URL y ASSETS_URL aquí - ya se definen en main.php
 define('APP_ROOT', dirname(__DIR__));
 
 // Función para generar URLs
@@ -14,14 +12,6 @@ function url($vista = '') {
 // Función para incluir assets
 function asset($path) {
     return ASSETS_URL . $path;
-}
-
-// Función para debug
-function debug($data, $die = true) {
-    echo '<pre>';
-    print_r($data);
-    echo '</pre>';
-    if ($die) die();
 }
 
 // Función para log de errores personalizado
@@ -54,28 +44,12 @@ function formatDate($date, $format = 'd/m/Y') {
     return date($format, strtotime($date));
 }
 
-function obtenerUsuarioActual() {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    
-    if (isset($_SESSION['user_id'])) {
-        // Aquí tu lógica para obtener el usuario de la base de datos
-        $pdo = conexion();
-        $stmt = $pdo->prepare("SELECT * FROM core_customuser WHERE id = ?");
-        $stmt->execute([$_SESSION['user_id']]);
-        return $stmt->fetch();
-    }
-    
-    return null;
-}
-
 // Mover los use statements al principio del archivo, fuera de cualquier función
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
 
-// En helpers.php - función corregida
+// Función para enviar email de recuperación
 function enviarEmailRecuperacion($email, $nombre, $reset_link) {
     // Verificar si PHPMailer está disponible
     if (!class_exists('PHPMailer\PHPMailer\PHPMailer')) {
@@ -96,12 +70,12 @@ function enviarEmailRecuperacion($email, $nombre, $reset_link) {
     try {
         // Configuración del servidor SMTP
         $mail->isSMTP();
-        $mail->Host = 'mail.jjdevelopers.net';  // Tu servidor SMTP
+        $mail->Host = 'mail.jjdevelopers.net';
         $mail->SMTPAuth = true;
-        $mail->Username = 'microapps@jjdevelopers.net';  // Tu email completo
-        $mail->Password = 'Micr0-buff';  // Tu contraseña
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;  // Encryption
-        $mail->Port = 587;  // Puerto para TLS
+        $mail->Username = 'microapps@jjdevelopers.net';
+        $mail->Password = 'Micr0-buff';
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = 587;
         
         // Configuración del remitente y destinatario
         $mail->setFrom('microapps@jjdevelopers.net', 'MicroApps System');
@@ -218,4 +192,12 @@ function enviarEmailRecuperacion($email, $nombre, $reset_link) {
         error_log("Error PHPMailer: " . $mail->ErrorInfo);
         return false;
     }
+}
+
+/**
+ * Verificar permisos para acceder a Middy
+ */
+function middy_check_permissions($user_role) {
+    $allowed_roles = ['ejecutivo', 'supervisor', 'backup', 'developer', 'superuser', 'agente_qa'];
+    return in_array($user_role, $allowed_roles);
 }

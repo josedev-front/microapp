@@ -1,0 +1,312 @@
+[2025-10-21 04:15:33] Ollama General Error - {"message":"cURL error 28: Operation timed out after 60005 milliseconds with 0 bytes received (see https:\/\/curl.haxx.se\/libcurl\/c\/libcurl-errors.html) for http:\/\/localhost:11434\/api\/generate","prompt_length":35}
+[2025-10-21 04:20:33] Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":35}
+[2025-10-21 04:21:33] Ollama Exception - {"error":"Error general: cURL error 28: Operation timed out after 60009 milliseconds with 0 bytes received (see https:\/\/curl.haxx.se\/libcurl\/c\/libcurl-errors.html) for http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 04:21:34] Generando respuesta - {"question":"\u00bfQu\u00e9 es la gesti\u00f3n de servicios?","context_fragments":0}
+[2025-10-21 04:21:34] Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":131}
+[2025-10-21 04:22:34] Ollama Exception - {"error":"Error general: cURL error 28: Operation timed out after 60014 milliseconds with 0 bytes received (see https:\/\/curl.haxx.se\/libcurl\/c\/libcurl-errors.html) for http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 04:22:34] Error en Ollama - {"error":"Error general: cURL error 28: Operation timed out after 60014 milliseconds with 0 bytes received (see https:\/\/curl.haxx.se\/libcurl\/c\/libcurl-errors.html) for http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 04:22:34] Conversación - {"user_id":"test_user","question":"\u00bfQu\u00e9 es la gesti\u00f3n de servicios?","response":"ERROR","sources":0}
+[2025-10-21 04:22:35] Generando respuesta - {"question":"\u00bfC\u00f3mo reportar una incidencia?","context_fragments":0}
+[2025-10-21 04:22:35] Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":128}
+[2025-10-21 04:23:35] Ollama Exception - {"error":"Error general: cURL error 28: Operation timed out after 60010 milliseconds with 0 bytes received (see https:\/\/curl.haxx.se\/libcurl\/c\/libcurl-errors.html) for http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 04:23:35] Error en Ollama - {"error":"Error general: cURL error 28: Operation timed out after 60010 milliseconds with 0 bytes received (see https:\/\/curl.haxx.se\/libcurl\/c\/libcurl-errors.html) for http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 04:23:35] Conversación - {"user_id":"test_user","question":"\u00bfC\u00f3mo reportar una incidencia?","response":"ERROR","sources":0}
+[2025-10-21 04:23:37] Generando respuesta - {"question":"\u00bfCu\u00e1les son los procedimientos de fibra \u00f3ptica?","context_fragments":0}
+[2025-10-21 04:23:37] Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":146}
+[2025-10-21 04:24:37] Ollama Exception - {"error":"Error general: cURL error 28: Operation timed out after 60001 milliseconds with 0 bytes received (see https:\/\/curl.haxx.se\/libcurl\/c\/libcurl-errors.html) for http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 04:24:37] Error en Ollama - {"error":"Error general: cURL error 28: Operation timed out after 60001 milliseconds with 0 bytes received (see https:\/\/curl.haxx.se\/libcurl\/c\/libcurl-errors.html) for http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 04:24:37] Conversación - {"user_id":"test_user","question":"\u00bfCu\u00e1les son los procedimientos de fibra \u00f3ptica?","response":"ERROR","sources":0}
+[2025-10-21 04:24:38] Generando respuesta - {"question":"Hola, \u00bfpuedes ayudarme?","context_fragments":0}
+[2025-10-21 04:24:38] Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":120}
+[2025-10-21 04:24:38] Respuesta recibida de Ollama - {"response_length":236,"model":"llama3.2:3b"}
+[2025-10-21 04:24:38] Conversación - {"user_id":"test_user","question":"Hola, \u00bfpuedes ayudarme?","response":"\u00a1Claro que s\u00ed! Estoy aqu\u00ed para ayudarte. Sin embargo, necesito un poco m\u00e1s de informaci\u00f3n sobre","sources":0}
+[2025-10-21 04:24:40] Generando respuesta - {"question":"Test <script>alert('xss')<\/script> gesti\u00f3n","context_fragments":0}
+[2025-10-21 04:24:40] Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":139}
+[2025-10-21 04:24:42] Respuesta recibida de Ollama - {"response_length":1197,"model":"llama3.2:3b"}
+[2025-10-21 04:24:42] Conversación - {"user_id":"test_user","question":"Test <script>alert('xss')<\/script> gesti\u00f3n","response":"Lo siento, pero no puedo proporcionar una respuesta espec\u00edfica sin m\u00e1s informaci\u00f3n. La pregunta p","sources":0}
+[2025-10-21 04:35:08] Health check failed - {"error":"Client error: `GET http:\/\/localhost:11434\/api\/generate\/api\/tags` resulted in a `404 Not Found` response:\n404 page not found\n"}
+[2025-10-21 04:35:08] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\/data\/docs\/datos.txt"}
+[2025-10-21 04:35:08] Archivo leído exitosamente - {"file":"datos.txt","size":0}
+[2025-10-21 04:35:08] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\/data\/docs\/informe.txt"}
+[2025-10-21 04:35:08] Archivo leído exitosamente - {"file":"informe.txt","size":0}
+[2025-10-21 05:08:22] Health check failed - {"error":"Client error: `GET http:\/\/localhost:11434\/api\/generate\/api\/tags` resulted in a `404 Not Found` response:\n404 page not found\n"}
+[2025-10-21 05:16:10] Enviando a Ollama - {"url":"http:\/\/localhost:11434\/api\/generate","model":"llama3.2:3b","prompt_length":19}
+[2025-10-21 05:16:11] Enviando a Ollama - {"url":"http:\/\/localhost:11434\/api\/generate","model":"llama3.2:3b","prompt_length":15}
+[2025-10-21 05:16:12] Enviando a Ollama - {"url":"http:\/\/localhost:11434\/api\/generate","model":"llama3.2:3b","prompt_length":21}
+[2025-10-21 05:16:12] Enviando a Ollama - {"url":"http:\/\/localhost:11434\/api\/generate","model":"llama3.2:3b","prompt_length":18}
+[2025-10-21 05:19:51] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 05:19:51] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 05:19:51] Archivo leído exitosamente - {"file":"datos.txt","size":0}
+[2025-10-21 05:19:51] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 05:19:51] Archivo leído exitosamente - {"file":"informe.txt","size":0}
+[2025-10-21 05:19:51] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 05:19:51] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 05:19:51] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 05:19:51] Generando respuesta - {"question":"Hola","context_fragments":0}
+[2025-10-21 05:19:51] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":100,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 05:19:51] 🟢 Respuesta exitosa - {"response_length":31,"model":"llama3.2:3b"}
+[2025-10-21 05:19:51] Conversación - {"user_id":"test_user","question":"Hola","response":"Hola, \u00bfen qu\u00e9 puedo ayudarte?","sources":0}
+[2025-10-21 05:19:51] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 05:19:51] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 05:19:51] Archivo leído exitosamente - {"file":"datos.txt","size":0}
+[2025-10-21 05:19:51] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 05:19:51] Archivo leído exitosamente - {"file":"informe.txt","size":0}
+[2025-10-21 05:19:51] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 05:19:51] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 05:19:51] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 05:19:51] Generando respuesta - {"question":"\u00bfQu\u00e9 es la gesti\u00f3n de servicios?","context_fragments":0}
+[2025-10-21 05:19:51] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":131,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 05:19:54] 🟢 Respuesta exitosa - {"response_length":1077,"model":"llama3.2:3b"}
+[2025-10-21 05:19:54] Conversación - {"user_id":"test_user","question":"\u00bfQu\u00e9 es la gesti\u00f3n de servicios?","response":"Lo siento, pero no tengo informaci\u00f3n espec\u00edfica sobre la pregunta \"\u00bfQu\u00e9 es la gesti\u00f3n de servic","sources":0}
+[2025-10-21 05:19:54] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 05:19:54] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 05:19:54] Archivo leído exitosamente - {"file":"datos.txt","size":0}
+[2025-10-21 05:19:54] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 05:19:54] Archivo leído exitosamente - {"file":"informe.txt","size":0}
+[2025-10-21 05:19:54] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 05:19:54] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 05:19:54] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 05:19:54] Generando respuesta - {"question":"\u00bfC\u00f3mo reportar una incidencia?","context_fragments":0}
+[2025-10-21 05:19:54] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":128,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 05:19:54] 🟢 Respuesta exitosa - {"response_length":266,"model":"llama3.2:3b"}
+[2025-10-21 05:19:54] Conversación - {"user_id":"test_user","question":"\u00bfC\u00f3mo reportar una incidencia?","response":"Lo siento, pero no tengo informaci\u00f3n espec\u00edfica sobre c\u00f3mo reportar una incidencia en este contex","sources":0}
+[2025-10-21 05:19:54] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 05:19:54] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 05:19:54] Archivo leído exitosamente - {"file":"datos.txt","size":0}
+[2025-10-21 05:19:54] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 05:19:54] Archivo leído exitosamente - {"file":"informe.txt","size":0}
+[2025-10-21 05:19:54] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 05:19:54] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 05:19:54] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 05:19:54] Generando respuesta - {"question":"Informaci\u00f3n sobre fibra \u00f3ptica","context_fragments":0}
+[2025-10-21 05:19:54] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":128,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 05:19:58] 🟢 Respuesta exitosa - {"response_length":1451,"model":"llama3.2:3b"}
+[2025-10-21 05:19:58] Conversación - {"user_id":"test_user","question":"Informaci\u00f3n sobre fibra \u00f3ptica","response":"Lo siento, pero no tengo informaci\u00f3n espec\u00edfica disponible sobre fibra \u00f3ptica en los documentos q","sources":0}
+[2025-10-21 05:30:19] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 05:30:19] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 05:30:19] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 05:30:19] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 05:30:19] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 05:30:19] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 05:30:19] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 05:30:19] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 05:30:19] Generando respuesta - {"question":"Hola","context_fragments":0}
+[2025-10-21 05:30:19] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":100,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 05:30:20] 🟢 Respuesta exitosa - {"response_length":31,"model":"llama3.2:3b"}
+[2025-10-21 05:30:20] Conversación - {"user_id":1,"question":"Hola","response":"Hola, \u00bfen qu\u00e9 puedo ayudarte?","sources":0}
+[2025-10-21 05:30:21] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 05:30:21] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 05:30:21] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 05:30:21] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 05:30:21] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 05:30:21] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 05:30:21] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 05:30:21] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 05:30:21] Generando respuesta - {"question":"\u00bfC\u00f3mo reportar una incidencia?","context_fragments":1}
+[2025-10-21 05:30:21] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":496,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 05:30:22] 🟢 Respuesta exitosa - {"response_length":347,"model":"llama3.2:3b"}
+[2025-10-21 05:30:22] Conversación - {"user_id":1,"question":"\u00bfC\u00f3mo reportar una incidencia?","response":"Seg\u00fan el documento informe.txt, para reportar una incidencia es necesario seguir los siguientes pas","sources":1}
+[2025-10-21 05:30:22] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 05:30:22] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 05:30:22] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 05:30:22] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 05:30:22] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 05:30:22] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 05:30:22] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 05:30:22] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 05:30:22] Generando respuesta - {"question":"Informaci\u00f3n sobre fibra \u00f3ptica","context_fragments":2}
+[2025-10-21 05:30:22] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":929,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 05:30:23] 🟢 Respuesta exitosa - {"response_length":252,"model":"llama3.2:3b"}
+[2025-10-21 05:30:23] Conversación - {"user_id":1,"question":"Informaci\u00f3n sobre fibra \u00f3ptica","response":"Seg\u00fan el documento datos.txt, hay un tipo de incidencia relacionada con la fibra \u00f3ptica:\n\n\"Corte f","sources":2}
+[2025-10-21 05:30:23] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 05:30:23] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 05:30:23] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 05:30:23] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 05:30:23] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 05:30:23] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 05:30:23] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 05:30:23] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 05:30:23] Generando respuesta - {"question":"\u00bfQu\u00e9 es la gesti\u00f3n de servicios?","context_fragments":2}
+[2025-10-21 05:30:23] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":786,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 05:30:25] 🟢 Respuesta exitosa - {"response_length":872,"model":"llama3.2:3b"}
+[2025-10-21 05:30:25] Conversación - {"user_id":1,"question":"\u00bfQu\u00e9 es la gesti\u00f3n de servicios?","response":"La respuesta correcta es que no se menciona expl\u00edcitamente en el documento proporcionado. Sin embar","sources":2}
+[2025-10-21 05:54:39] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 05:54:39] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 05:54:39] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 05:54:39] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 05:54:39] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 05:54:39] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 05:54:39] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 05:54:39] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 05:54:39] Generando respuesta - {"question":"hola","context_fragments":0}
+[2025-10-21 05:54:39] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":100,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 05:54:41] 🟢 Respuesta exitosa - {"response_length":31,"model":"llama3.2:3b"}
+[2025-10-21 05:54:41] Conversación - {"user_id":1,"question":"hola","response":"Hola, \u00bfen qu\u00e9 puedo ayudarte?","sources":0}
+[2025-10-21 06:02:27] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:02:27] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:02:27] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:02:27] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:02:27] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:02:27] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:02:27] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:02:27] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:02:27] Generando respuesta - {"question":"Hola desde endpoint directo","context_fragments":0}
+[2025-10-21 06:02:27] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":123,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:02:29] 🟢 Respuesta exitosa - {"response_length":122,"model":"llama3.2:3b"}
+[2025-10-21 06:02:29] Conversación - 
+[2025-10-21 06:02:29] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:02:29] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:02:29] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:02:29] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:02:29] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:02:29] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:02:30] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:02:30] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:02:30] Generando respuesta - {"question":"Hola desde endpoint directo","context_fragments":0}
+[2025-10-21 06:02:30] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":123,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:02:30] 🟢 Respuesta exitosa - {"response_length":122,"model":"llama3.2:3b"}
+[2025-10-21 06:02:30] Conversación - 
+[2025-10-21 06:02:30] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:02:30] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:02:30] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:02:30] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:02:30] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:02:30] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:02:30] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:02:30] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:02:30] Generando respuesta - {"question":"Hola desde endpoint directo","context_fragments":0}
+[2025-10-21 06:02:30] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":123,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:02:30] 🟢 Respuesta exitosa - {"response_length":122,"model":"llama3.2:3b"}
+[2025-10-21 06:02:30] Conversación - 
+[2025-10-21 06:02:31] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:02:31] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:02:31] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:02:31] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:02:31] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:02:31] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:02:31] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:02:31] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:02:31] Generando respuesta - {"question":"Hola desde endpoint directo","context_fragments":0}
+[2025-10-21 06:02:31] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":123,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:02:31] 🟢 Respuesta exitosa - {"response_length":122,"model":"llama3.2:3b"}
+[2025-10-21 06:02:31] Conversación - 
+[2025-10-21 06:02:31] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:02:31] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:02:31] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:02:31] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:02:31] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:02:31] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:02:31] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:02:31] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:02:31] Generando respuesta - {"question":"Hola desde endpoint directo","context_fragments":0}
+[2025-10-21 06:02:31] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":123,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:02:32] 🟢 Respuesta exitosa - {"response_length":122,"model":"llama3.2:3b"}
+[2025-10-21 06:02:32] Conversación - 
+[2025-10-21 06:02:32] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:02:32] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:02:32] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:02:32] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:02:32] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:02:32] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:02:32] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:02:32] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:02:32] Generando respuesta - {"question":"Hola desde endpoint directo","context_fragments":0}
+[2025-10-21 06:02:32] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":123,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:02:32] 🟢 Respuesta exitosa - {"response_length":122,"model":"llama3.2:3b"}
+[2025-10-21 06:02:32] Conversación - 
+[2025-10-21 06:06:53] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:06:53] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:06:53] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:06:53] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:06:53] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:06:53] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:06:53] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:06:53] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:06:53] Generando respuesta - {"question":"Hola desde endpoint directo","context_fragments":0}
+[2025-10-21 06:06:53] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":123,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:06:53] 🟢 Respuesta exitosa - {"response_length":122,"model":"llama3.2:3b"}
+[2025-10-21 06:06:53] Conversación - 
+[2025-10-21 06:08:22] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:08:22] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:08:22] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:08:22] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:08:22] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:08:22] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:08:22] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:08:22] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:08:22] Generando respuesta - {"question":"Hola desde endpoint directo","context_fragments":0}
+[2025-10-21 06:08:22] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":123,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:08:23] 🟢 Respuesta exitosa - {"response_length":122,"model":"llama3.2:3b"}
+[2025-10-21 06:08:23] Conversación - 
+[2025-10-21 06:08:23] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:08:23] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:08:23] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:08:23] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:08:23] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:08:23] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:08:23] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:08:23] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:08:23] Generando respuesta - {"question":"Hola desde endpoint directo","context_fragments":0}
+[2025-10-21 06:08:23] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":123,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:08:23] 🟢 Respuesta exitosa - {"response_length":122,"model":"llama3.2:3b"}
+[2025-10-21 06:08:23] Conversación - 
+[2025-10-21 06:08:23] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:08:23] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:08:23] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:08:23] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:08:23] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:08:23] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:08:23] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:08:23] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:08:23] Generando respuesta - {"question":"Hola desde endpoint directo","context_fragments":0}
+[2025-10-21 06:08:23] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":123,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:08:24] 🟢 Respuesta exitosa - {"response_length":122,"model":"llama3.2:3b"}
+[2025-10-21 06:08:24] Conversación - 
+[2025-10-21 06:08:25] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:08:25] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:08:25] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:08:25] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:08:25] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:08:25] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:08:25] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:08:25] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:08:25] Generando respuesta - {"question":"Las incidencias deben reportarse","context_fragments":2}
+[2025-10-21 06:08:25] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":926,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:08:25] 🟢 Respuesta exitosa - {"response_length":111,"model":"llama3.2:3b"}
+[2025-10-21 06:08:25] Conversación - {"user_id":1,"question":"Las incidencias deben reportarse","response":"Seg\u00fan el documento informe.txt, las incidencias deben reportarse dentro de las primeras 2 horas de ","sources":2}
+[2025-10-21 06:09:49] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:09:49] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:09:49] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:09:49] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:09:49] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:09:49] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:09:49] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:09:49] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:09:49] Generando respuesta - {"question":"Las incidencias deben reportarse","context_fragments":2}
+[2025-10-21 06:09:49] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":926,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:09:50] 🟢 Respuesta exitosa - {"response_length":78,"model":"llama3.2:3b"}
+[2025-10-21 06:09:50] Conversación - {"user_id":1,"question":"Las incidencias deben reportarse","response":"Las incidencias deben reportarse dentro de las primeras 2 horas de detectadas.","sources":2}
+[2025-10-21 06:10:30] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:10:30] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:10:30] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:10:30] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:10:30] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:10:30] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:10:30] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:10:30] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:10:30] Generando respuesta - {"question":"Corte fibra \u00f3ptica","context_fragments":2}
+[2025-10-21 06:10:30] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":916,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:10:30] 🟢 Respuesta exitosa - {"response_length":124,"model":"llama3.2:3b"}
+[2025-10-21 06:10:30] Conversación - {"user_id":1,"question":"Corte fibra \u00f3ptica","response":"El corte de fibra \u00f3ptica es una incidencia que se resuelve en un tiempo promedio de 4 horas, seg\u00fan","sources":2}
+[2025-10-21 06:11:29] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:11:29] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:11:29] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:11:29] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:11:29] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:11:29] Intentando leer Excel - {"file":"resumen.xlsx"}
+[2025-10-21 06:11:29] Error leyendo Excel, intentando como CSV - {"error":"Unable to identify a reader for this file","file":"resumen.xlsx"}
+[2025-10-21 06:11:29] Archivo leído como CSV - {"file":"resumen.xlsx","rows":0}
+[2025-10-21 06:11:29] Generando respuesta - {"question":"Cambio plan cliente,","context_fragments":2}
+[2025-10-21 06:11:29] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":870,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:11:30] 🟢 Respuesta exitosa - {"response_length":587,"model":"llama3.2:3b"}
+[2025-10-21 06:11:30] Conversación - {"user_id":1,"question":"Cambio plan cliente,","response":"El procedimiento para un cambio de plan cliente es el siguiente:\n\n1. Realizar la solicitud de cambio","sources":2}

@@ -1,0 +1,25 @@
+PROCEDIMIENTOS DE GESTIÓN ENTEL
+
+1. GESTIÓN DE INCIDENCIAS
+- Las incidencias deben reportarse dentro de las primeras 2 horas de detectadas
+- Prioridad Alta: Afectan a más de 100 clientes
+- Prioridad Media: Afectan entre 10-100 clientes  
+- Prioridad Baja: Afectan a menos de 10 clientes
+
+2. PROCEDIMIENTOS DE FIBRA ÓPTICA
+- Verificación de señal en el OLT
+- Revisión de empalmes en cámara de empalmes
+- Test de pérdida con OTDR
+- Tiempo promedio de resolución: 4 horas
+
+3. PROTOCOLOS DE COMUNICACIÓN
+- Notificar al cliente dentro de 30 minutos
+- Actualizaciones cada 2 horas
+- Cierre con confirmación del cliente
+
+4. REPORTE DE INCIDENCIAS
+- Formulario: Sistema de Gestión Entel v3.2
+- Campos obligatorios: ID cliente, tipo incidencia, prioridad
+- Adjuntar evidencia cuando sea posible
+
+Estos procedimientos aplican para todos los analistas del piso de gestiones.

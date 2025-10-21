@@ -1,0 +1,15 @@
+{
+    "name": "microapps/middy",
+    "description": "Chatbot con Ollama para gestiones de Entel",
+    "type": "project",
+    "require": {
+        "vlucas/phpdotenv": "^5.5",
+        "guzzlehttp/guzzle": "^7.5",
+        "phpoffice/phpspreadsheet": "^1.28"
+    },
+    "autoload": {
+        "psr-4": {
+            "Middy\\": "./"
+        }
+    }
+}
