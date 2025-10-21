@@ -23,3 +23,5 @@ PROCEDIMIENTOS DE GESTIÓN ENTEL
 - Adjuntar evidencia cuando sea posible
 
 Estos procedimientos aplican para todos los analistas del piso de gestiones.
+
+una prueba de develop es la que hacen los developers

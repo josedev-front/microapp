@@ -267,54 +267,50 @@ if (in_array($usuario_actual['role'], $admin_roles)):
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const chatContainer = document.getElementById('chatContainer');
-        const questionInput = document.getElementById('questionInput');
-        const sendButton = document.getElementById('sendButton');
-        const typingIndicator = document.getElementById('typingIndicator');
+document.addEventListener('DOMContentLoaded', function() {
+    const chatContainer = document.getElementById('chatContainer');
+    const questionInput = document.getElementById('questionInput');
+    const sendButton = document.getElementById('sendButton');
+    const typingIndicator = document.getElementById('typingIndicator');
 
-        console.log("✅ JavaScript de Middy cargado");
+    console.log("✅ JavaScript de Middy cargado");
 
-        function addMessage(message, isUser = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-            messageDiv.innerHTML = `<strong>${isUser ? 'Tú' : 'Middy'}:</strong> ${message}`;
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+    function addMessage(message, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+        messageDiv.innerHTML = `<strong>${isUser ? 'Tú' : 'Middy'}:</strong> ${message}`;
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
 
-        function showTypingIndicator() {
-            typingIndicator.style.display = 'block';
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
+    function showTypingIndicator() {
+        typingIndicator.style.display = 'block';
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
 
-        function hideTypingIndicator() {
-            typingIndicator.style.display = 'none';
-        }
+    function hideTypingIndicator() {
+        typingIndicator.style.display = 'none';
+    }
 
-        async function sendMessage() {
+    async function sendMessage() {
     const question = questionInput.value.trim();
     if (!question) return;
 
-    // Agregar mensaje del usuario
     addMessage(question, true);
     questionInput.value = '';
     sendButton.disabled = true;
-
-    // Mostrar indicador de typing
     showTypingIndicator();
 
     try {
-        // USAR ENDPOINT DIRECTO QUE SÍ FUNCIONA
-        const apiUrl = 'http://localhost:3000/public/api/middy_chat.php';
-        console.log("🌐 Llamando a endpoint directo:", apiUrl);
-        console.log("📤 Pregunta:", question);
+        const apiUrl = 'http://localhost/dashboard/vsm/microapp/microservices/middy/api/chat.php';
+        console.log("🌐 Llamando a:", apiUrl);
 
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include', // ✅ INCLUIR CREDENTIALS PARA MANTENER SESIÓN
             body: JSON.stringify({ question: question })
         });
 
@@ -336,7 +332,6 @@ if (in_array($usuario_actual['role'], $admin_roles)):
             console.log("✅ Respuesta exitosa");
             addMessage(data.answer);
             
-            // Mostrar información de fuentes si está disponible
             if (data.sources > 0) {
                 const sourceInfo = document.createElement('div');
                 sourceInfo.className = 'small text-muted mt-1';
@@ -354,55 +349,54 @@ if (in_array($usuario_actual['role'], $admin_roles)):
 
     sendButton.disabled = false;
 }
-        // Event listeners
-        sendButton.addEventListener('click', function() {
-            console.log("🖱️ Botón enviar clickeado");
-            sendMessage();
-        });
-        
-        questionInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                console.log("⌨️ Enter presionado");
-                sendMessage();
-            }
-        });
-
-        // Verificar que los elementos existen
-        console.log("🔍 Elementos encontrados:", {
-            chatContainer: !!chatContainer,
-            questionInput: !!questionInput,
-            sendButton: !!sendButton,
-            typingIndicator: !!typingIndicator
-        });
-
-        console.log("🚀 Middy listo para usar");
+    // Event listeners
+    sendButton.addEventListener('click', sendMessage);
+    questionInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendMessage();
     });
-    let currentEditingFile = '';
+
+    console.log("🚀 Middy listo para usar");
+});
+
+let currentEditingFile = '';
+
+// ✅✅✅ URL CORREGIDA - ABSOLUTA DESDE LOCALHOST NORMAL ✅✅✅
+const MIDDY_API_BASE = 'http://localhost/dashboard/vsm/microapp/microservices/middy/api/';
 
 // Funciones de administración
 function loadFileForEdit(filename) {
     currentEditingFile = filename;
     
-    // Mostrar loading
     document.getElementById('fileContentEditor').value = 'Cargando...';
     
     const modal = new bootstrap.Modal(document.getElementById('editFileModal'));
     document.getElementById('editFileModalTitle').textContent = `Editando: ${filename}`;
     
-    // Cargar contenido del archivo
-    fetch(`<?php echo BASE_URL; ?>microservices/middy/api/admin_get_file.php?file=${filename}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('fileContentEditor').value = data.content;
-            } else {
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al cargar el archivo');
-        });
+    console.log("📁 Cargando archivo:", filename);
+    console.log("🔗 URL:", `${MIDDY_API_BASE}admin_get_file.php?file=${filename}`);
+    
+    fetch(`${MIDDY_API_BASE}admin_get_file.php?file=${filename}`, {
+        credentials: 'include' // Incluir cookies de sesión
+    })
+    .then(response => {
+        console.log("📥 Respuesta archivo:", response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("📦 Datos archivo:", data);
+        if (data.success) {
+            document.getElementById('fileContentEditor').value = data.content;
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error cargando archivo:', error);
+        alert('Error al cargar el archivo: ' + error.message);
+    });
     
     modal.show();
 }
@@ -415,147 +409,185 @@ function saveFileContent() {
         return;
     }
     
-    fetch(`<?php echo BASE_URL; ?>microservices/middy/api/admin_save_file.php`, {
+    console.log("💾 Guardando archivo:", currentEditingFile);
+    console.log("🔗 URL:", `${MIDDY_API_BASE}admin_save_file.php`);
+    
+    fetch(`${MIDDY_API_BASE}admin_save_file.php`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
+        credentials: 'include', // Incluir cookies de sesión
         body: JSON.stringify({
             filename: currentEditingFile,
             content: content
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log("📥 Respuesta guardado:", response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log("📦 Datos guardado:", data);
         if (data.success) {
             alert('Archivo guardado correctamente');
             bootstrap.Modal.getInstance(document.getElementById('editFileModal')).hide();
-            
-            // Actualizar la interfaz si es necesario
-            addMessage(`📝 Se actualizó el archivo ${currentEditingFile}`, false);
         } else {
             alert('Error: ' + data.error);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Error al guardar el archivo');
+        console.error('Error guardando archivo:', error);
+        alert('Error al guardar el archivo: ' + error.message);
     });
 }
 
 function showDocumentLogs() {
     const modal = new bootstrap.Modal(document.getElementById('logsModal'));
     
-    fetch(`<?php echo BASE_URL; ?>microservices/middy/api/admin_get_logs.php`)
-        .then(response => response.json())
-        .then(data => {
-            const logsContent = document.getElementById('logsContent');
+    console.log("📊 Cargando logs");
+    console.log("🔗 URL:", `${MIDDY_API_BASE}admin_get_logs.php`);
+    
+    fetch(`${MIDDY_API_BASE}admin_get_logs.php`, {
+        credentials: 'include' // Incluir cookies de sesión
+    })
+    .then(response => {
+        console.log("📥 Respuesta logs:", response.status, response.statusText);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log("📦 Datos logs:", data);
+        const logsContent = document.getElementById('logsContent');
+        
+        if (data.success) {
+            let html = `
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Estadísticas de Archivos</h6>
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Archivo</th>
+                                            <th>Tamaño</th>
+                                            <th>Líneas</th>
+                                            <th>Última modificación</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+            `;
             
-            if (data.success) {
-                let html = `
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h6>Estadísticas de Archivos</h6>
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Archivo</th>
-                                                <th>Tamaño</th>
-                                                <th>Líneas</th>
-                                                <th>Última modificación</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                `;
-                
-                for (const [filename, stats] of Object.entries(data.stats)) {
-                    html += `
-                        <tr>
-                            <td>${filename}</td>
-                            <td>${(stats.size / 1024).toFixed(2)} KB</td>
-                            <td>${stats.lines} líneas</td>
-                            <td>${stats.last_modified || 'N/A'}</td>
-                        </tr>
-                    `;
-                }
-                
+            for (const [filename, stats] of Object.entries(data.stats)) {
                 html += `
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h6>Resumen de Actividad</h6>
-                                    <p>Total de registros: ${data.logs.length}</p>
-                                    <p>Última modificación: ${data.logs[0] ? data.logs[0].created_at : 'N/A'}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <h6>Historial de Modificaciones</h6>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Usuario</th>
-                                    <th>Rol</th>
-                                    <th>Archivo</th>
-                                    <th>Acción</th>
-                                    <th>Detalles</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                    <tr>
+                        <td>${filename}</td>
+                        <td>${(stats.size / 1024).toFixed(2)} KB</td>
+                        <td>${stats.lines} líneas</td>
+                        <td>${stats.last_modified || 'N/A'}</td>
+                    </tr>
                 `;
-                
-                data.logs.forEach(log => {
-                    html += `
-                        <tr>
-                            <td>${new Date(log.created_at).toLocaleString()}</td>
-                            <td>${log.first_name || 'Usuario'} ${log.last_name || ''}</td>
-                            <td><span class="badge bg-secondary">${log.user_role}</span></td>
-                            <td>${log.document_name}</td>
-                            <td><span class="badge bg-info">${log.action}</span></td>
-                            <td>${log.changes || '-'}</td>
-                        </tr>
-                    `;
-                });
-                
-                html += `
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-                
-                logsContent.innerHTML = html;
-            } else {
-                logsContent.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('logsContent').innerHTML = '<div class="alert alert-danger">Error al cargar los logs</div>';
-        });
+            
+            html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6>Resumen de Actividad</h6>
+                                <p>Total de registros: ${data.logs.length}</p>
+                                <p>Última modificación: ${data.logs[0] ? data.logs[0].created_at : 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h6>Historial de Modificaciones</h6>
+                <div class="table-responsive">
+                    <table class="table table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Archivo</th>
+                                <th>Acción</th>
+                                <th>Detalles</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            data.logs.forEach(log => {
+                html += `
+                    <tr>
+                        <td>${new Date(log.created_at).toLocaleString()}</td>
+                        <td>${log.first_name || 'Usuario'} ${log.last_name || ''}</td>
+                        <td><span class="badge bg-secondary">${log.user_role}</span></td>
+                        <td>${log.document_name}</td>
+                        <td><span class="badge bg-info">${log.action}</span></td>
+                        <td>${log.changes || '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            logsContent.innerHTML = html;
+        } else {
+            logsContent.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        console.error('Error cargando logs:', error);
+        document.getElementById('logsContent').innerHTML = `
+            <div class="alert alert-danger">
+                <h6>Error al cargar los logs</h6>
+                <p>${error.message}</p>
+                <small>URL intentada: ${MIDDY_API_BASE}admin_get_logs.php</small>
+                <br><small>Verifica que estés accediendo por http://localhost/ no por puerto 3000</small>
+            </div>
+        `;
+    });
     
     modal.show();
 }
 
 function showSystemStats() {
-    // Puedes expandir esta función para mostrar más estadísticas
     showDocumentLogs();
 }
 
 // Verificar permisos de administración al cargar la página
 console.log("🔐 Permisos de administración:", {
     userRole: '<?php echo $usuario_actual["role"] ?? ""; ?>',
-    isAdmin: <?php echo in_array($usuario_actual["role"] ?? "", ['supervisor', 'developer', 'backup', 'agente_qa', 'superuser']) ? 'true' : 'false'; ?>
+    isAdmin: <?php echo in_array($usuario_actual["role"] ?? "", ['supervisor', 'developer', 'backup', 'agente_qa', 'superuser']) ? 'true' : 'false'; ?>,
+    apiBaseUrl: MIDDY_API_BASE
 });
+
+// Probar manualmente desde consola
+window.testMiddyAPI = function() {
+    console.log("🧪 Probando API manualmente...");
+    fetch('http://localhost/dashboard/vsm/microapp/microservices/middy/api/admin_get_logs.php', {
+        credentials: 'include'
+    })
+    .then(r => r.json())
+    .then(data => console.log("✅ Resultado:", data))
+    .catch(err => console.error("❌ Error:", err));
+};
 </script>
 </body>
 </html>

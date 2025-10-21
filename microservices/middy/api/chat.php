@@ -1,34 +1,28 @@
 <?php
-// microservices/middy/api/chat.php - VERSIÓN ULTRA-ROBUSTA
+// microservices/middy/api/chat.php - VERSIÓN LIMPIA
 
-// Evitar cualquier output antes de los headers
-if (ob_get_level()) ob_clean();
-
-// HEADERS PRIMERO - crítico
+// HEADERS PRIMERO - sin output antes
+header('Access-Control-Allow-Origin: http://localhost:3000');
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Content-Type: application/json; charset=utf-8');
 
-// Manejar sesión de manera segura
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+// Manejar preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
 }
 
-// Forzar BASE_URL si no está definida
-if (!defined('BASE_URL')) {
-    define('BASE_URL', 'http://localhost:3000/');
-}
+// Limpiar buffer de salida
+while (ob_get_level()) ob_end_clean();
 
 try {
-    // 1. Verificar método HTTP
-    if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new Exception('Método no permitido. Use POST.');
-    }
-
-    // 2. Cargar archivos del core
-    $base_path = 'C:/xampp/htdocs/dashboard/vsm/microapp';
-    $core_path = $base_path . '/app_core';
+    // 1. Cargar configurador de rutas (SILENCIOSO)
+    require_once __DIR__ . '/../config/paths.php';
     
-    require_once $core_path . '/config/helpers.php';
-    require_once $core_path . '/php/main.php';
+    // 2. Cargar archivos del core (SILENCIOSO)
+    MiddyPathResolver::requireCoreFiles();
 
     // 3. Verificar autenticación
     if (!validarSesion()) {
@@ -58,7 +52,7 @@ try {
     $controller = new Middy\Controllers\ChatController();
     $result = $controller->handleChat($_SESSION['id'], $question);
     
-    // 7. Devolver resultado
+    // 7. Devolver resultado en JSON
     echo json_encode($result);
 
 } catch (Exception $e) {
@@ -67,8 +61,6 @@ try {
     
     if (strpos($e->getMessage(), 'No autorizado') !== false) {
         http_response_code(401);
-    } elseif (strpos($e->getMessage(), 'Método no permitido') !== false) {
-        http_response_code(405);
     } else {
         http_response_code(400);
     }

@@ -328,3 +328,84 @@
 [2025-10-21 06:43:12] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":913,"url":"http:\/\/localhost:11434\/api\/generate"}
 [2025-10-21 06:43:14] 🟢 Respuesta exitosa - {"response_length":414,"model":"llama3.2:3b"}
 [2025-10-21 06:43:14] Conversación - {"user_id":1,"question":"Cambio plan cliente","response":"El cambio de plan cliente es una incidencia que requiere un tiempo de resoluci\u00f3n de 24 horas, lo cu","sources":2}
+[2025-10-21 13:44:25] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 13:44:25] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 13:44:25] Archivo leído exitosamente - {"file":"datos.txt","size":433}
+[2025-10-21 13:44:25] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 13:44:25] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-21 13:44:25] Generando respuesta - {"question":"Corte fibra \u00f3ptica","context_fragments":2}
+[2025-10-21 13:44:25] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":916,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 13:44:27] 🟢 Respuesta exitosa - {"response_length":314,"model":"llama3.2:3b"}
+[2025-10-21 13:44:27] Conversación - {"user_id":84,"question":"Corte fibra \u00f3ptica","response":"El procedimiento para un corte fibra \u00f3ptica es el siguiente:\n\n1. Verificaci\u00f3n de se\u00f1al en el OLT ","sources":2}
+[2025-10-21 13:44:58] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 13:44:58] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 13:44:58] Archivo leído exitosamente - {"file":"datos.txt","size":433}
+[2025-10-21 13:44:58] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 13:44:58] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-21 13:44:58] Generando respuesta - {"question":"test","context_fragments":1}
+[2025-10-21 13:44:58] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":471,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 13:45:00] 🟢 Respuesta exitosa - {"response_length":955,"model":"llama3.2:3b"}
+[2025-10-21 13:45:00] Conversación - {"user_id":84,"question":"test","response":"Parece que est\u00e1s analizando un documento relacionado con la gesti\u00f3n de problemas y procedimientos ","sources":1}
+[2025-10-21 13:45:11] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 13:45:11] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 13:45:11] Archivo leído exitosamente - {"file":"datos.txt","size":433}
+[2025-10-21 13:45:11] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 13:45:11] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-21 13:45:11] Generando respuesta - {"question":"test","context_fragments":1}
+[2025-10-21 13:45:11] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":471,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 13:45:14] 🟢 Respuesta exitosa - {"response_length":1096,"model":"llama3.2:3b"}
+[2025-10-21 13:45:14] Conversación - {"user_id":84,"question":"test","response":"Parece que est\u00e1s analizando un documento relacionado con la gesti\u00f3n de problemas y procedimientos ","sources":1}
+[2025-10-21 13:45:17] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 13:45:17] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 13:45:17] Archivo leído exitosamente - {"file":"datos.txt","size":433}
+[2025-10-21 13:45:17] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 13:45:17] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-21 13:45:17] Generando respuesta - {"question":"T\u00fa: Corte fibra \u00f3ptica","context_fragments":2}
+[2025-10-21 13:45:17] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":921,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 13:45:19] 🟢 Respuesta exitosa - {"response_length":608,"model":"llama3.2:3b"}
+[2025-10-21 13:45:19] Conversación - {"user_id":84,"question":"T\u00fa: Corte fibra \u00f3ptica","response":"\u00a1Hola! Me refiero al corte de la fibra \u00f3ptica en nuestro sistema. Seg\u00fan el informe, este incident","sources":2}
+[2025-10-21 13:45:58] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 13:45:58] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 13:45:58] Archivo leído exitosamente - {"file":"datos.txt","size":433}
+[2025-10-21 13:45:58] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 13:45:58] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-21 13:45:58] Generando respuesta - {"question":"test","context_fragments":1}
+[2025-10-21 13:45:58] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":471,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 13:46:01] 🟢 Respuesta exitosa - {"response_length":1366,"model":"llama3.2:3b"}
+[2025-10-21 13:46:01] Conversación - {"user_id":84,"question":"test","response":"Parece que est\u00e1s analizando un documento relacionado con la gesti\u00f3n de problemas en una empresa de","sources":1}
+[2025-10-21 13:46:52] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 13:46:52] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 13:46:52] Archivo leído exitosamente - {"file":"datos.txt","size":433}
+[2025-10-21 13:46:52] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 13:46:52] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-21 13:46:52] Generando respuesta - {"question":"una prueba de develop","context_fragments":1}
+[2025-10-21 13:46:52] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":333,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 13:46:54] 🟢 Respuesta exitosa - {"response_length":526,"model":"llama3.2:3b"}
+[2025-10-21 13:46:54] Conversación - {"user_id":84,"question":"una prueba de develop","response":"Una prueba de desarrollo (tambi\u00e9n conocida como prueba de develop) es un tipo de prueba que se real","sources":1}
+[2025-10-21 13:47:15] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 13:47:15] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 13:47:15] Archivo leído exitosamente - {"file":"datos.txt","size":433}
+[2025-10-21 13:47:15] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 13:47:15] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-21 13:47:15] Generando respuesta - {"question":"Corte fibra \u00f3ptica","context_fragments":2}
+[2025-10-21 13:47:15] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":916,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 13:47:16] 🟢 Respuesta exitosa - {"response_length":137,"model":"llama3.2:3b"}
+[2025-10-21 13:47:16] Conversación - {"user_id":84,"question":"Corte fibra \u00f3ptica","response":"El corte de fibra \u00f3ptica es una incidencia que requiere un tiempo de resoluci\u00f3n de 10 horas, y est","sources":2}
+[2025-10-21 13:47:40] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 13:47:40] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 13:47:40] Archivo leído exitosamente - {"file":"datos.txt","size":433}
+[2025-10-21 13:47:40] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 13:47:40] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-21 13:47:40] Generando respuesta - {"question":"Cambio plan cliente","context_fragments":2}
+[2025-10-21 13:47:40] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":913,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 13:47:42] 🟢 Respuesta exitosa - {"response_length":642,"model":"llama3.2:3b"}
+[2025-10-21 13:47:42] Conversación - {"user_id":84,"question":"Cambio plan cliente","response":"Seg\u00fan el documento datos.txt, el cambio de plan cliente se report\u00f3 con un tiempo de resoluci\u00f3n de","sources":2}
+[2025-10-21 13:48:58] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 13:48:58] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 13:48:58] Archivo leído exitosamente - {"file":"datos.txt","size":433}
+[2025-10-21 13:48:58] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 13:48:58] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-21 13:48:58] Generando respuesta - {"question":"corte de fibra","context_fragments":2}
+[2025-10-21 13:48:58] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":911,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 13:48:59] 🟢 Respuesta exitosa - {"response_length":326,"model":"llama3.2:3b"}
+[2025-10-21 13:48:59] Conversación - {"user_id":188,"question":"corte de fibra","response":"El procedimiento para un corte de fibra \u00f3ptica es el siguiente:\n\n1. Verificaci\u00f3n de se\u00f1al en el O","sources":2}

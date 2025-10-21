@@ -1,6 +1,6 @@
 TIPOS DE INCIDENCIAS, TIEMPO RESOLUCIÓN, RESPONSABLE
-Corte fibra óptica, 4 horas, Equipo Técnico Field
-Caída servidores, 2 horas, Equipo Redes
+Corte fibra óptica, 10 horas, Equipo Técnico Field
+Caída servidores, 3 horas, Equipo Redes
 Configuración router, 1 hora, Soporte Técnico
 Cambio plan cliente, 24 horas, Equipo Comercial
 Consulta facturación, 2 horas, Atención al Cliente
