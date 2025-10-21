@@ -128,7 +128,96 @@ function handleFileUpload($file) {
                         <h4 class="mb-0"><i class="fas fa-robot me-2"></i>Middy - Asistente Virtual</h4>
                         <small>Consulta información sobre gestiones de Entel</small>
                     </div>
-                    
+                    <?php 
+$admin_roles = ['supervisor', 'developer', 'backup', 'agente_qa', 'superuser'];
+if (in_array($usuario_actual['role'], $admin_roles)): 
+?>
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Panel de Administración</h5>
+                <small>Gestión de documentos y logs del sistema</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-edit me-2"></i>Editor de Documentos</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadFileForEdit('informe.txt')">
+                                <i class="fas fa-file-alt me-1"></i> Editar informe.txt
+                            </button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadFileForEdit('datos.txt')">
+                                <i class="fas fa-file-code me-1"></i> Editar datos.txt
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-history me-2"></i>Registros del Sistema</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-info btn-sm" onclick="showDocumentLogs()">
+                                <i class="fas fa-list-alt me-1"></i> Ver Logs de Modificaciones
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="showSystemStats()">
+                                <i class="fas fa-chart-bar me-1"></i> Estadísticas del Sistema
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar archivos -->
+<div class="modal fade" id="editFileModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editFileModalTitle">Editar Archivo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Contenido del archivo:</label>
+                    <textarea class="form-control" id="fileContentEditor" rows="15" style="font-family: monospace;"></textarea>
+                </div>
+                <div class="alert alert-info">
+                    <small><i class="fas fa-info-circle me-1"></i> Los cambios se guardarán inmediatamente al presionar "Guardar".</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveFileContent()">
+                    <i class="fas fa-save me-1"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mostrar logs -->
+<div class="modal fade" id="logsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Logs de Modificaciones</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="logsContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Cargando logs...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
                     <div class="card-body">
                         <!-- Mensajes de éxito/error -->
                         <?php if (isset($mensaje_exito)): ?>
@@ -169,43 +258,6 @@ function handleFileUpload($file) {
                                 <small class="text-muted">Ejemplo: "¿Cuáles son los procedimientos para gestionar incidencias de fibra óptica?"</small>
                             </div>
                             
-                            <!-- Panel de información -->
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información</h6>
-                                    </div>
-                                    <div class="card-body">
-                                        <h6>Documentos disponibles:</h6>
-                                        <div class="document-list">
-                                            <?php
-                                            $docs = glob(MIDDY_DATA_PATH . '/*.{txt,xlsx}', GLOB_BRACE);
-                                            if (empty($docs)) {
-                                                echo '<p class="text-muted">No hay documentos cargados.</p>';
-                                            } else {
-                                                foreach ($docs as $doc) {
-                                                    echo '<div class="small text-truncate"><i class="fas fa-file me-1"></i>' . basename($doc) . '</div>';
-                                                }
-                                            }
-                                            ?>
-                                        </div>
-                                        
-                                        <?php if (in_array($usuario_actual['role'], ['supervisor', 'developer', 'superuser'])): ?>
-                                        <hr>
-                                        <h6>Subir documento:</h6>
-                                        <form method="post" enctype="multipart/form-data">
-                                            <div class="mb-2">
-                                                <input type="file" class="form-control form-control-sm" name="documento" 
-                                                       accept=".txt,.xlsx" required>
-                                            </div>
-                                            <button type="submit" class="btn btn-sm btn-success w-100">
-                                                <i class="fas fa-upload me-1"></i> Subir
-                                            </button>
-                                        </form>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -325,6 +377,185 @@ function handleFileUpload($file) {
 
         console.log("🚀 Middy listo para usar");
     });
+    let currentEditingFile = '';
+
+// Funciones de administración
+function loadFileForEdit(filename) {
+    currentEditingFile = filename;
+    
+    // Mostrar loading
+    document.getElementById('fileContentEditor').value = 'Cargando...';
+    
+    const modal = new bootstrap.Modal(document.getElementById('editFileModal'));
+    document.getElementById('editFileModalTitle').textContent = `Editando: ${filename}`;
+    
+    // Cargar contenido del archivo
+    fetch(`<?php echo BASE_URL; ?>microservices/middy/api/admin_get_file.php?file=${filename}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('fileContentEditor').value = data.content;
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar el archivo');
+        });
+    
+    modal.show();
+}
+
+function saveFileContent() {
+    const content = document.getElementById('fileContentEditor').value;
+    
+    if (!currentEditingFile) {
+        alert('No hay archivo seleccionado');
+        return;
+    }
+    
+    fetch(`<?php echo BASE_URL; ?>microservices/middy/api/admin_save_file.php`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            filename: currentEditingFile,
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Archivo guardado correctamente');
+            bootstrap.Modal.getInstance(document.getElementById('editFileModal')).hide();
+            
+            // Actualizar la interfaz si es necesario
+            addMessage(`📝 Se actualizó el archivo ${currentEditingFile}`, false);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al guardar el archivo');
+    });
+}
+
+function showDocumentLogs() {
+    const modal = new bootstrap.Modal(document.getElementById('logsModal'));
+    
+    fetch(`<?php echo BASE_URL; ?>microservices/middy/api/admin_get_logs.php`)
+        .then(response => response.json())
+        .then(data => {
+            const logsContent = document.getElementById('logsContent');
+            
+            if (data.success) {
+                let html = `
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>Estadísticas de Archivos</h6>
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Archivo</th>
+                                                <th>Tamaño</th>
+                                                <th>Líneas</th>
+                                                <th>Última modificación</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                `;
+                
+                for (const [filename, stats] of Object.entries(data.stats)) {
+                    html += `
+                        <tr>
+                            <td>${filename}</td>
+                            <td>${(stats.size / 1024).toFixed(2)} KB</td>
+                            <td>${stats.lines} líneas</td>
+                            <td>${stats.last_modified || 'N/A'}</td>
+                        </tr>
+                    `;
+                }
+                
+                html += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6>Resumen de Actividad</h6>
+                                    <p>Total de registros: ${data.logs.length}</p>
+                                    <p>Última modificación: ${data.logs[0] ? data.logs[0].created_at : 'N/A'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h6>Historial de Modificaciones</h6>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Usuario</th>
+                                    <th>Rol</th>
+                                    <th>Archivo</th>
+                                    <th>Acción</th>
+                                    <th>Detalles</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.logs.forEach(log => {
+                    html += `
+                        <tr>
+                            <td>${new Date(log.created_at).toLocaleString()}</td>
+                            <td>${log.first_name || 'Usuario'} ${log.last_name || ''}</td>
+                            <td><span class="badge bg-secondary">${log.user_role}</span></td>
+                            <td>${log.document_name}</td>
+                            <td><span class="badge bg-info">${log.action}</span></td>
+                            <td>${log.changes || '-'}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                logsContent.innerHTML = html;
+            } else {
+                logsContent.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('logsContent').innerHTML = '<div class="alert alert-danger">Error al cargar los logs</div>';
+        });
+    
+    modal.show();
+}
+
+function showSystemStats() {
+    // Puedes expandir esta función para mostrar más estadísticas
+    showDocumentLogs();
+}
+
+// Verificar permisos de administración al cargar la página
+console.log("🔐 Permisos de administración:", {
+    userRole: '<?php echo $usuario_actual["role"] ?? ""; ?>',
+    isAdmin: <?php echo in_array($usuario_actual["role"] ?? "", ['supervisor', 'developer', 'backup', 'agente_qa', 'superuser']) ? 'true' : 'false'; ?>
+});
 </script>
 </body>
 </html>

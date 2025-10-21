@@ -10,6 +10,11 @@ $routes = [
     'middy_api' => '../microservices/middy/api/chat.php',
     'chat_simple' => '../microservices/middy/api/chat_simple.php',
 
+        // APIs de administración de Middy
+    'middy_admin_get_file' => '../microservices/middy/api/admin_get_file.php',
+    'middy_admin_save_file' => '../microservices/middy/api/admin_save_file.php',
+    'middy_admin_get_logs' => '../microservices/middy/api/admin_get_logs.php',
+
 ];
 // Función para cargar la vista
 function cargarVista($vista) {

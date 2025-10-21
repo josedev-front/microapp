@@ -310,3 +310,21 @@
 [2025-10-21 06:11:29] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":870,"url":"http:\/\/localhost:11434\/api\/generate"}
 [2025-10-21 06:11:30] 🟢 Respuesta exitosa - {"response_length":587,"model":"llama3.2:3b"}
 [2025-10-21 06:11:30] Conversación - {"user_id":1,"question":"Cambio plan cliente,","response":"El procedimiento para un cambio de plan cliente es el siguiente:\n\n1. Realizar la solicitud de cambio","sources":2}
+[2025-10-21 06:26:00] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:26:00] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:26:00] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:26:00] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:26:00] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:26:00] Generando respuesta - {"question":"Cambio plan cliente,","context_fragments":2}
+[2025-10-21 06:26:00] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":870,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:26:02] 🟢 Respuesta exitosa - {"response_length":80,"model":"llama3.2:3b"}
+[2025-10-21 06:26:02] Conversación - {"user_id":1,"question":"Cambio plan cliente,","response":"El tiempo de resoluci\u00f3n para el incidente \"Cambio plan cliente\" es de 24 horas.","sources":2}
+[2025-10-21 06:43:12] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-21 06:43:12] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-21 06:43:12] Archivo leído exitosamente - {"file":"datos.txt","size":443}
+[2025-10-21 06:43:12] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-21 06:43:12] Archivo leído exitosamente - {"file":"informe.txt","size":900}
+[2025-10-21 06:43:12] Generando respuesta - {"question":"Cambio plan cliente","context_fragments":2}
+[2025-10-21 06:43:12] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":913,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-21 06:43:14] 🟢 Respuesta exitosa - {"response_length":414,"model":"llama3.2:3b"}
+[2025-10-21 06:43:14] Conversación - {"user_id":1,"question":"Cambio plan cliente","response":"El cambio de plan cliente es una incidencia que requiere un tiempo de resoluci\u00f3n de 24 horas, lo cu","sources":2}

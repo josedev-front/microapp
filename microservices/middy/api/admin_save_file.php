@@ -1,0 +1,56 @@
+<?php
+// microservices/middy/api/admin_save_file.php
+
+header('Content-Type: application/json; charset=utf-8');
+
+try {
+    // Cargar archivos del core
+    $base_path = 'C:/xampp/htdocs/dashboard/vsm/microapp';
+    $core_path = $base_path . '/app_core';
+    require_once $core_path . '/config/helpers.php';
+    require_once $core_path . '/php/main.php';
+
+    // Verificar sesión
+    if (!validarSesion()) {
+        throw new Exception('No autorizado');
+    }
+
+    $usuario = obtenerUsuarioActual();
+    if (!$usuario) {
+        throw new Exception('Usuario no encontrado');
+    }
+
+    // Cargar Middy
+    require_once __DIR__ . '/../init.php';
+    
+    $adminController = new Middy\Controllers\AdminController();
+
+    // Verificar permisos
+    if (!$adminController->checkAdminPermissions($usuario['role'])) {
+        throw new Exception('No tienes permisos de administración');
+    }
+
+    // Obtener datos POST
+    $input = json_decode(file_get_contents('php://input'), true);
+    $filename = $input['filename'] ?? '';
+    $content = $input['content'] ?? '';
+
+    if (empty($filename) || empty($content)) {
+        throw new Exception('Datos incompletos');
+    }
+
+    // Guardar archivo
+    $adminController->saveFileContent($filename, $content, $usuario['id'], $usuario['role']);
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Archivo guardado correctamente'
+    ]);
+
+} catch (Exception $e) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
+}
