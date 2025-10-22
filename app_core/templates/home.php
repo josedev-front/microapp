@@ -124,6 +124,19 @@ $comunicados_globales = $comunicadoController->obtenerComunicadosGlobalesParaCar
             </a>    
         </div>
         
+        <!-- NUEVA TARJETA PARA TATA TRIVIA -->
+        <div class="col-12 col-md-6 col-lg-5">
+    <a href="/microservices/tata-trivia/" class="text-decoration-none" target="_blank">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-trophy"></i> Tata Trivia</h5>
+                <p class="card-text">Crea y participa en trivias interactivas. ¡Diversión asegurada!</p>
+                <small class="text-muted">Crea equipos o compite individualmente</small>
+            </div>
+        </div>
+    </a>
+</div>
+        
         <div class="col-12 col-md-6 col-lg-5">
             <a href="./?vista=equiposuser" class="text-decoration-none">
                 <div class="card shadow-sm h-100">
