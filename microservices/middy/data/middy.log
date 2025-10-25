@@ -409,3 +409,48 @@
 [2025-10-21 13:48:58] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":911,"url":"http:\/\/localhost:11434\/api\/generate"}
 [2025-10-21 13:48:59] 🟢 Respuesta exitosa - {"response_length":326,"model":"llama3.2:3b"}
 [2025-10-21 13:48:59] Conversación - {"user_id":188,"question":"corte de fibra","response":"El procedimiento para un corte de fibra \u00f3ptica es el siguiente:\n\n1. Verificaci\u00f3n de se\u00f1al en el O","sources":2}
+[2025-10-24 02:18:48] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-24 02:18:48] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-24 02:18:48] Archivo leído exitosamente - {"file":"datos.txt","size":471}
+[2025-10-24 02:18:48] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-24 02:18:48] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-24 02:18:48] Generando respuesta - {"question":"a quienes les gusta la ia","context_fragments":1}
+[2025-10-24 02:18:48] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":302,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-24 02:18:55] 🟢 Respuesta exitosa - {"response_length":21,"model":"llama3.2:3b"}
+[2025-10-24 02:18:55] Conversación - {"user_id":84,"question":"a quienes les gusta la ia","response":"A todos los clientes.","sources":1}
+[2025-10-24 02:19:28] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-24 02:19:28] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-24 02:19:28] Archivo leído exitosamente - {"file":"datos.txt","size":471}
+[2025-10-24 02:19:28] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-24 02:19:28] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-24 02:19:28] Generando respuesta - {"question":"y a quienes no les gusta la ia","context_fragments":1}
+[2025-10-24 02:19:28] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":307,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-24 02:19:29] 🟢 Respuesta exitosa - {"response_length":321,"model":"llama3.2:3b"}
+[2025-10-24 02:19:29] Conversación - {"user_id":84,"question":"y a quienes no les gusta la ia","response":"No hay informaci\u00f3n en el documento datos.txt que indique a qui\u00e9n no le gusta la IA. El documento s","sources":1}
+[2025-10-24 02:20:01] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-24 02:20:01] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-24 02:20:01] Archivo leído exitosamente - {"file":"datos.txt","size":471}
+[2025-10-24 02:20:01] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-24 02:20:01] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-24 02:20:01] Generando respuesta - {"question":"cual cual es la capital de paris","context_fragments":0}
+[2025-10-24 02:20:01] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":128,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-24 02:20:02] 🟢 Respuesta exitosa - {"response_length":142,"model":"llama3.2:3b"}
+[2025-10-24 02:20:02] Conversación - {"user_id":84,"question":"cual cual es la capital de paris","response":"Lo siento, pero no tengo informaci\u00f3n sobre la capital de Par\u00eds. \u00bfPodr\u00edas proporcionar m\u00e1s conte","sources":0}
+[2025-10-24 04:11:02] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-24 04:11:02] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-24 04:11:02] Archivo leído exitosamente - {"file":"datos.txt","size":471}
+[2025-10-24 04:11:02] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-24 04:11:02] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-24 04:11:02] Generando respuesta - {"question":"caida de fibra optica","context_fragments":2}
+[2025-10-24 04:11:02] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":918,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-24 04:11:04] 🟢 Respuesta exitosa - {"response_length":96,"model":"llama3.2:3b"}
+[2025-10-24 04:11:04] Conversación - {"user_id":84,"question":"caida de fibra optica","response":"Una pregunta sobre el contenido del documento datos.txt.\n\nLa respuesta es: Equipo T\u00e9cnico Field","sources":2}
+[2025-10-24 04:11:21] 🟢 Health check - {"status":"healthy","models_count":4}
+[2025-10-24 04:11:21] Leyendo archivo TXT - {"file":"datos.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/datos.txt"}
+[2025-10-24 04:11:21] Archivo leído exitosamente - {"file":"datos.txt","size":471}
+[2025-10-24 04:11:21] Leyendo archivo TXT - {"file":"informe.txt","path":"C:\\xampp\\htdocs\\dashboard\\vsm\\microapp\\microservices\\middy\\controllers\/..\/data\/docs\/informe.txt"}
+[2025-10-24 04:11:21] Archivo leído exitosamente - {"file":"informe.txt","size":930}
+[2025-10-24 04:11:21] Generando respuesta - {"question":"que es una prueba de developer","context_fragments":1}
+[2025-10-24 04:11:21] 🔵 Enviando prompt a Ollama - {"model":"llama3.2:3b","prompt_length":342,"url":"http:\/\/localhost:11434\/api\/generate"}
+[2025-10-24 04:11:24] 🟢 Respuesta exitosa - {"response_length":1015,"model":"llama3.2:3b"}
+[2025-10-24 04:11:24] Conversación - {"user_id":84,"question":"que es una prueba de developer","response":"Una prueba de desarrollo (tambi\u00e9n conocida como prueba de unit) es un tipo de prueba automatizada q","sources":1}

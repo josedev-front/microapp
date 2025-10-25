@@ -1,214 +1,197 @@
 <?php
-// microservices/trivia-play/views/player/join.php
+$user = $user ?? getTriviaMicroappsUser();
+$join_code = $_GET['code'] ?? '';
 
-$base_path = dirname(__DIR__, 3);
-require_once $base_path . '/app_core/config/helpers.php';
-require_once $base_path . '/app_core/php/main.php';
-
-$usuario_actual = null;
-if (validarSesion()) {
-    $usuario_actual = obtenerUsuarioActual();
-}
-
-require_once __DIR__ . '/../../init.php';
-
-// Avatares predefinidos
-$avatars = [
-    'avatar1', 'avatar2', 'avatar3', 'avatar4', 'avatar5',
-    'avatar6', 'avatar7', 'avatar8', 'avatar9', 'avatar10',
-    'avatar11', 'avatar12', 'avatar13', 'avatar14', 'avatar15',
-    'avatar16', 'avatar17', 'avatar18', 'avatar19', 'avatar20'
-];
-
-// Procesar unión a trivia
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    try {
-        $triviaController = new TriviaPlay\Controllers\TriviaController();
-        
-        $playerData = [
-            'user_id' => $usuario_actual['id'] ?? null,
-            'player_name' => $_POST['player_name'],
-            'team_name' => $_POST['team_name'] ?? null,
-            'avatar' => $_POST['avatar']
-        ];
-        
-        $result = $triviaController->joinTrivia($_POST['join_code'], $playerData);
-        
-        // Redirigir al lobby de espera del jugador
-        header('Location: ' . BASE_URL . '?vista=trivia_waiting&player_id=' . $result['player_id']);
-        exit;
-        
-    } catch (Exception $e) {
-        $error_message = $e->getMessage();
-    }
+// Si ya viene con código en la URL, redirigir directamente al formulario
+if (!empty($join_code)) {
+    echo "<script>document.addEventListener('DOMContentLoaded', function() { document.getElementById('joinCode').value = '" . htmlspecialchars($join_code) . "'; validateCode(); });</script>";
 }
 ?>
-
 <!DOCTYPE html>
-<html lang="es" data-bs-theme="dark">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unirse a Trivia - Tata Trivia</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .join-hero {
-            background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%);
+        .join-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .join-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 500px;
+            width: 100%;
+        }
+        .join-header {
+            background: #343a40;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .join-body {
+            padding: 2rem;
         }
         .avatar-option {
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            object-fit: cover;
             cursor: pointer;
             border: 3px solid transparent;
             transition: all 0.3s ease;
+            object-fit: cover;
         }
-        .avatar-option.selected {
-            border-color: #4ECDC4;
+        .avatar-option:hover {
             transform: scale(1.1);
         }
-        .join-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        .avatar-option.selected {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.3);
         }
-        .scan-section {
-            background: rgba(0,0,0,0.05);
-            border-radius: 15px;
-            padding: 2rem;
-            text-align: center;
+        .step {
+            display: none;
+        }
+        .step.active {
+            display: block;
+        }
+        .btn-join {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+        }
+        .game-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="join-hero">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="join-card p-5">
-                        <div class="row">
-                            <!-- Formulario de unión -->
-                            <div class="col-md-7">
-                                <div class="mb-4 text-center">
-                                    <i class="fas fa-gamepad fa-3x text-success mb-3"></i>
-                                    <h1 class="h2 fw-bold text-dark">Unirse a Trivia</h1>
-                                    <p class="text-muted">Ingresa el código o escanea el QR para unirte</p>
+    <div class="join-container">
+        <div class="join-card">
+            <div class="join-header">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-gamepad me-2"></i>
+                    Unirse a Trivia
+                </h1>
+                <p class="mb-0 mt-2">¡Ingresa el código y prepárate para jugar!</p>
+            </div>
+            
+            <div class="join-body">
+                <!-- Paso 1: Ingresar código -->
+                <div class="step active" id="step1">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-key fa-3x text-primary mb-3"></i>
+                        <h4>Ingresa el Código</h4>
+                        <p class="text-muted">El anfitrión te debe haber compartido un código de 6 letras</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="joinCode" class="form-label">Código de la Trivia</label>
+                        <input type="text" class="form-control form-control-lg text-uppercase text-center" 
+                               id="joinCode" placeholder="EJ: ABC123" maxlength="6"
+                               style="font-size: 1.5rem; font-weight: bold; letter-spacing: 2px;"
+                               oninput="this.value = this.value.toUpperCase(); validateCode()">
+                        <div class="form-text">Ingresa el código en mayúsculas</div>
+                    </div>
+                    
+                    <div id="gameInfo" class="game-info" style="display: none;">
+                        <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>Información de la Trivia</h6>
+                        <div id="gameDetails"></div>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-join w-100" id="btnNext1" onclick="showStep(2)" disabled>
+                        Continuar <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                    
+                    <div class="text-center mt-3">
+                        <a href="/microservices/tata-trivia/" class="text-muted">
+                            <i class="fas fa-arrow-left me-1"></i>Volver al inicio
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Paso 2: Información del jugador -->
+                <div class="step" id="step2">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-user fa-3x text-primary mb-3"></i>
+                        <h4>Tu Información</h4>
+                        <p class="text-muted">Completa tus datos para unirte al juego</p>
+                    </div>
+                    
+                    <form id="playerForm">
+                        <div class="mb-3">
+                            <label for="playerName" class="form-label">Tu Nombre *</label>
+                            <input type="text" class="form-control" id="playerName" 
+                                   placeholder="Ej: Juan Pérez" required
+                                   value="<?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>">
+                        </div>
+                        
+                        <div class="mb-3" id="teamField" style="display: none;">
+                            <label for="teamName" class="form-label">Nombre del Equipo</label>
+                            <input type="text" class="form-control" id="teamName" 
+                                   placeholder="Ej: Los Ganadores">
+                            <div class="form-text">Opcional - Solo para modo por equipos</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Selecciona tu Avatar</label>
+                            <div class="row text-center">
+                                <?php
+                                $avatars = ['default1', 'default2', 'default3', 'default4', 'default5', 'default6'];
+                                for ($i = 1; $i <= 20; $i++):
+                                    $avatarName = 'default' . (($i - 1) % 6 + 1);
+                                ?>
+                                <div class="col-3 col-sm-2 mb-2">
+                                    <img src="/public/assets/img/default/<?php echo $avatarName; ?>.png" 
+                                         class="avatar-option" 
+                                         data-avatar="<?php echo $avatarName; ?>"
+                                         onclick="selectAvatar(this)"
+                                         alt="Avatar <?php echo $i; ?>">
                                 </div>
-
-                                <?php if (isset($error_message)): ?>
-                                    <div class="alert alert-danger">
-                                        <i class="fas fa-exclamation-triangle me-2"></i><?php echo $error_message; ?>
-                                    </div>
-                                <?php endif; ?>
-
-                                <form method="POST" id="joinForm">
-                                    <!-- Código de unión -->
-                                    <div class="mb-4">
-                                        <label for="join_code" class="form-label fw-bold">Código de la Trivia</label>
-                                        <input type="text" class="form-control form-control-lg text-uppercase text-center" 
-                                               id="join_code" name="join_code" 
-                                               placeholder="EJ: ABC123" maxlength="6" required
-                                               style="font-size: 1.5rem; letter-spacing: 3px;">
-                                        <div class="form-text">Ingresa el código de 6 letras proporcionado por el anfitrión</div>
-                                    </div>
-
-                                    <!-- Información del jugador -->
-                                    <div class="mb-4">
-                                        <label for="player_name" class="form-label fw-bold">Tu Nombre</label>
-                                        <input type="text" class="form-control" 
-                                               id="player_name" name="player_name" 
-                                               placeholder="Ej: Juan Pérez" 
-                                               value="<?php echo $usuario_actual['first_name'] . ' ' . $usuario_actual['last_name'] ?? ''; ?>"
-                                               maxlength="50" required>
-                                    </div>
-
-                                    <!-- Selección de avatar -->
-                                    <div class="mb-4">
-                                        <label class="form-label fw-bold">Selecciona tu Avatar</label>
-                                        <div class="d-flex flex-wrap gap-2" id="avatarSelection">
-                                            <?php foreach ($avatars as $avatar): ?>
-                                            <img src="<?php echo BASE_URL; ?>microservices/trivia-play/assets/images/avatars/<?php echo $avatar; ?>.png" 
-                                                 class="avatar-option" 
-                                                 data-avatar="<?php echo $avatar; ?>"
-                                                 alt="Avatar <?php echo $avatar; ?>">
-                                            <?php endforeach; ?>
-                                            <div class="avatar-option custom-avatar-upload" 
-                                                 style="background: #f8f9fa; display: flex; align-items: center; justify-content: center; border: 2px dashed #dee2e6;">
-                                                <i class="fas fa-camera text-muted"></i>
-                                                <input type="file" id="customAvatarFile" accept="image/*" class="d-none">
-                                            </div>
-                                        </div>
-                                        <input type="hidden" name="avatar" id="selectedAvatar" required>
-                                    </div>
-
-                                    <!-- Nombre de equipo (solo para modalidad equipos) -->
-                                    <div class="mb-4" id="teamNameSection" style="display: none;">
-                                        <label for="team_name" class="form-label fw-bold">Nombre del Equipo</label>
-                                        <input type="text" class="form-control" 
-                                               id="team_name" name="team_name" 
-                                               placeholder="Ej: Los Campeones" maxlength="30">
-                                        <div class="form-text">Opcional - el anfitrión puede asignarte un equipo</div>
-                                    </div>
-
-                                    <!-- Botón de unirse -->
-                                    <div class="d-grid">
-                                        <button type="submit" class="btn btn-success btn-lg">
-                                            <i class="fas fa-sign-in-alt me-2"></i>Unirse a la Trivia
-                                        </button>
-                                    </div>
-                                </form>
-
-                                <!-- Volver al inicio -->
-                                <div class="text-center mt-3">
-                                    <a href="<?php echo BASE_URL; ?>?vista=trivia" class="text-decoration-none">
-                                        <i class="fas fa-arrow-left me-2"></i>Volver al inicio
-                                    </a>
-                                </div>
+                                <?php endfor; ?>
                             </div>
+                            <input type="hidden" id="selectedAvatar" name="selectedAvatar" value="default1">
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary flex-fill" onclick="showStep(1)">
+                                <i class="fas fa-arrow-left me-1"></i>Atrás
+                            </button>
+                            <button type="submit" class="btn btn-success flex-fill" id="btnJoin">
+                                <i class="fas fa-play me-1"></i>Unirse al Juego
+                            </button>
+                        </div>
+                    </form>
+                </div>
 
-                            <!-- Sección de escaneo -->
-                            <div class="col-md-5">
-                                <div class="scan-section h-100">
-                                    <i class="fas fa-qrcode fa-5x text-muted mb-3"></i>
-                                    <h5 class="text-dark mb-3">Escanea el Código QR</h5>
-                                    <p class="text-muted small mb-4">
-                                        Si el anfitrión te proporcionó un código QR, escanéalo con tu cámara para unirte automáticamente.
-                                    </p>
-                                    
-                                    <!-- Lector QR simulado -->
-                                    <div class="border rounded p-4 bg-white mb-3">
-                                        <div class="text-center">
-                                            <i class="fas fa-camera fa-2x text-primary mb-2"></i>
-                                            <p class="small text-muted mb-2">Apunta la cámara al código QR</p>
-                                            <button class="btn btn-outline-primary btn-sm" id="simulateQrScan">
-                                                Simular Escaneo QR
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- Información adicional -->
-                                    <div class="mt-4">
-                                        <h6 class="text-dark mb-3">¿Primera vez jugando?</h6>
-                                        <div class="d-flex align-items-start mb-2">
-                                            <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                                            <small class="text-muted">No necesitas cuenta para jugar</small>
-                                        </div>
-                                        <div class="d-flex align-items-start mb-2">
-                                            <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                                            <small class="text-muted">Respuestas en tiempo real</small>
-                                        </div>
-                                        <div class="d-flex align-items-start">
-                                            <i class="fas fa-check-circle text-success me-2 mt-1"></i>
-                                            <small class="text-muted">Compatible con móviles</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Paso 3: Esperando -->
+                <div class="step" id="step3">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <h4 class="text-success">¡Unido Exitosamente!</h4>
+                        <p class="text-muted">Esperando a que el anfitrión inicie el juego...</p>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong id="waitingMessage">Conectado a la trivia</strong>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button class="btn btn-outline-danger" onclick="leaveGame()">
+                                <i class="fas fa-sign-out-alt me-1"></i>Salir de la Partida
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -216,103 +199,193 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const joinForm = document.getElementById('joinForm');
-            const avatarSelection = document.getElementById('avatarSelection');
-            const selectedAvatarInput = document.getElementById('selectedAvatar');
-            const teamNameSection = document.getElementById('teamNameSection');
-            const joinCodeInput = document.getElementById('join_code');
-            const simulateQrScan = document.getElementById('simulateQrScan');
+        let currentStep = 1;
+        let gameInfo = null;
+        let playerData = null;
+        let checkInterval = null;
 
-            // Auto-seleccionar primer avatar
-            const firstAvatar = avatarSelection.querySelector('.avatar-option:not(.custom-avatar-upload)');
-            if (firstAvatar) {
-                firstAvatar.click();
+        // Navegación entre pasos
+        function showStep(step) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+            currentStep = step;
+        }
+
+        // Validar código en tiempo real
+        async function validateCode() {
+            const code = document.getElementById('joinCode').value.trim().toUpperCase();
+            const btnNext = document.getElementById('btnNext1');
+            const gameInfoDiv = document.getElementById('gameInfo');
+            const gameDetailsDiv = document.getElementById('gameDetails');
+            
+            if (code.length === 6) {
+                try {
+                    const response = await fetch('/microservices/tata-trivia/api/validate_code.php?code=' + code);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        gameInfo = result.data;
+                        btnNext.disabled = false;
+                        gameInfoDiv.style.display = 'block';
+                        
+                        // Mostrar información del juego
+                        gameDetailsDiv.innerHTML = `
+                            <div class="row small">
+                                <div class="col-6">
+                                    <strong>Título:</strong><br>
+                                    ${gameInfo.title}
+                                </div>
+                                <div class="col-6">
+                                    <strong>Modalidad:</strong><br>
+                                    ${gameInfo.game_mode === 'individual' ? 'Individual' : 'Por Equipos'}
+                                </div>
+                            </div>
+                            <div class="row small mt-2">
+                                <div class="col-6">
+                                    <strong>Anfitrión:</strong><br>
+                                    ${gameInfo.host_name || 'Anfitrión'}
+                                </div>
+                                <div class="col-6">
+                                    <strong>Estado:</strong><br>
+                                    <span class="badge bg-success">Disponible</span>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Mostrar campo de equipo si es modo equipos
+                        if (gameInfo.game_mode === 'teams') {
+                            document.getElementById('teamField').style.display = 'block';
+                        }
+                    } else {
+                        btnNext.disabled = true;
+                        gameInfoDiv.style.display = 'block';
+                        gameDetailsDiv.innerHTML = `
+                            <div class="text-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                ${result.error || 'Código inválido o partida no disponible'}
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    btnNext.disabled = true;
+                    gameInfoDiv.style.display = 'block';
+                    gameDetailsDiv.innerHTML = `
+                        <div class="text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error al validar el código
+                        </div>
+                    `;
+                }
+            } else {
+                btnNext.disabled = true;
+                gameInfoDiv.style.display = 'none';
+            }
+        }
+
+        // Seleccionar avatar
+        function selectAvatar(element) {
+            document.querySelectorAll('.avatar-option').forEach(avatar => {
+                avatar.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            document.getElementById('selectedAvatar').value = element.dataset.avatar;
+        }
+
+        // Enviar formulario de unión
+        document.getElementById('playerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const joinCode = document.getElementById('joinCode').value.trim().toUpperCase();
+            const playerName = document.getElementById('playerName').value.trim();
+            const teamName = document.getElementById('teamName').value.trim();
+            const avatar = document.getElementById('selectedAvatar').value;
+            
+            if (!playerName) {
+                alert('Por favor ingresa tu nombre');
+                return;
             }
 
-            // Selección de avatar
-            avatarSelection.querySelectorAll('.avatar-option').forEach(avatar => {
-                avatar.addEventListener('click', function() {
-                    avatarSelection.querySelectorAll('.avatar-option').forEach(a => a.classList.remove('selected'));
-                    this.classList.add('selected');
-                    
-                    if (this.classList.contains('custom-avatar-upload')) {
-                        document.getElementById('customAvatarFile').click();
-                    } else {
-                        selectedAvatarInput.value = this.dataset.avatar;
-                    }
+            const btnJoin = document.getElementById('btnJoin');
+            btnJoin.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Uniendo...';
+            btnJoin.disabled = true;
+
+            try {
+                const response = await fetch('/microservices/tata-trivia/api/join_game.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        join_code: joinCode,
+                        player_name: playerName,
+                        team_name: teamName || null,
+                        avatar: avatar,
+                        user_id: <?php echo $user['id'] ?? 'null'; ?>
+                    })
                 });
-            });
 
-            // Subir avatar personalizado
-            document.getElementById('customAvatarFile').addEventListener('change', function(e) {
-                if (this.files && this.files[0]) {
-                    const file = this.files[0];
-                    if (!file.type.startsWith('image/')) {
-                        alert('Por favor selecciona una imagen válida');
-                        return;
-                    }
+                const result = await response.json();
+
+                if (result.success) {
+                    playerData = result.data;
+                    showStep(3);
+                    startWaitingForGame();
+                } else {
+                    alert('Error: ' + result.error);
+                    btnJoin.innerHTML = '<i class="fas fa-play me-1"></i>Unirse al Juego';
+                    btnJoin.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al unirse al juego. Por favor intenta nuevamente.');
+                btnJoin.innerHTML = '<i class="fas fa-play me-1"></i>Unirse al Juego';
+                btnJoin.disabled = false;
+            }
+        });
+
+        // Esperar a que comience el juego
+        function startWaitingForGame() {
+            let dots = 0;
+            const messageElement = document.getElementById('waitingMessage');
+            
+            // Actualizar mensaje con puntos animados
+            const dotsInterval = setInterval(() => {
+                dots = (dots + 1) % 4;
+                messageElement.textContent = 'Esperando que el anfitrión inicie el juego' + '.'.repeat(dots);
+            }, 500);
+
+            // Verificar estado del juego cada 3 segundos
+            checkInterval = setInterval(async () => {
+                try {
+                    const response = await fetch('/microservices/tata-trivia/api/game_status.php?trivia_id=' + playerData.trivia_id);
+                    const result = await response.json();
                     
-                    if (file.size > 2 * 1024 * 1024) {
-                        alert('La imagen no debe superar los 2MB');
-                        return;
+                    if (result.success && result.data.status === 'active') {
+                        clearInterval(checkInterval);
+                        clearInterval(dotsInterval);
+                        window.location.href = '/microservices/tata-trivia/player/game?player_id=' + playerData.player_id;
                     }
-                    
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const customAvatar = document.querySelector('.custom-avatar-upload');
-                        customAvatar.style.backgroundImage = `url(${e.target.result})`;
-                        customAvatar.innerHTML = '';
-                        selectedAvatarInput.value = 'custom_' + Date.now();
-                    };
-                    reader.readAsDataURL(file);
+                } catch (error) {
+                    console.error('Error checking game status:', error);
                 }
-            });
+            }, 3000);
+        }
 
-            // Validar código (solo letras y números)
-            joinCodeInput.addEventListener('input', function() {
-                this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-            });
+        function leaveGame() {
+            if (checkInterval) {
+                clearInterval(checkInterval);
+            }
+            window.location.href = '/microservices/tata-trivia/';
+        }
 
-            // Simular escaneo QR
-            simulateQrScan.addEventListener('click', function() {
-                const sampleCodes = ['TR1V14', 'G4M3FUN', 'QU1Z123', 'PLAYNOW'];
-                const randomCode = sampleCodes[Math.floor(Math.random() * sampleCodes.length)];
-                joinCodeInput.value = randomCode;
-                
-                // Mostrar mensaje
-                const originalText = simulateQrScan.innerHTML;
-                simulateQrScan.innerHTML = '<i class="fas fa-check me-2"></i>Escaneado!';
-                simulateQrScan.classList.remove('btn-outline-primary');
-                simulateQrScan.classList.add('btn-success');
-                
-                setTimeout(function() {
-                    simulateQrScan.innerHTML = originalText;
-                    simulateQrScan.classList.remove('btn-success');
-                    simulateQrScan.classList.add('btn-outline-primary');
-                }, 2000);
-            });
-
-            // Validar formulario
-            joinForm.addEventListener('submit', function(e) {
-                if (!selectedAvatarInput.value) {
-                    e.preventDefault();
-                    alert('Por favor selecciona un avatar');
-                    return;
-                }
-                
-                if (joinCodeInput.value.length !== 6) {
-                    e.preventDefault();
-                    alert('El código debe tener exactamente 6 caracteres');
-                    return;
-                }
-            });
-
-            // Detectar si es móvil para mejor UX
-            if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-                document.querySelector('.custom-avatar-upload').innerHTML = '<i class="fas fa-camera text-muted"></i>';
+        // Inicializar avatar por defecto
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstAvatar = document.querySelector('.avatar-option');
+            if (firstAvatar) {
+                firstAvatar.click();
             }
         });
     </script>

@@ -7,13 +7,23 @@ class PlayerController {
     }
     
     public function join() {
-        $user = getTriviaMicroappsUser(); // Usar función actualizada
+        $user = getTriviaMicroappsUser();
         loadTriviaView('player/join', ['user' => $user]);
     }
     
     public function gamePlayer() {
         $user = getTriviaMicroappsUser();
-        loadTriviaView('player/game_player', ['user' => $user]);
+        $player_id = $_GET['player_id'] ?? null;
+        
+        if (!$player_id) {
+            header('Location: /microservices/tata-trivia/player/join');
+            exit;
+        }
+        
+        loadTriviaView('player/game_player', [
+            'user' => $user,
+            'player_id' => $player_id
+        ]);
     }
 }
 ?>

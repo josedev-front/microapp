@@ -16,11 +16,11 @@ $routes = [
     'middy_admin_get_logs' => '../microservices/middy/api/admin_get_logs.php',
       
         // En app_core/routes.php agregar:
-'trivia' => $base_path . '/microservices/trivia-play/views/welcome.php',
-'trivia_host' => $base_path . '/microservices/trivia-play/views/host/setup.php',
-'trivia_join' => $base_path . '/microservices/trivia-play/views/player/join.php',
-'trivia_player_history' => $base_path . '/microservices/trivia-play/views/history/player_history.php',
-'trivia_host_history' => $base_path . '/microservices/trivia-play/views/history/host_history.php',
+        'trivia' => $base_path . '/microservices/trivia-play/views/welcome.php',
+        'trivia_host' => $base_path . '/microservices/trivia-play/views/host/setup.php',
+        'trivia_join' => $base_path . '/microservices/trivia-play/views/player/join.php',
+        'trivia_player_history' => $base_path . '/microservices/trivia-play/views/history/player_history.php',
+        'trivia_host_history' => $base_path . '/microservices/trivia-play/views/history/host_history.php',
 
 
     

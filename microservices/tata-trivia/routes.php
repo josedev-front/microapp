@@ -1,5 +1,10 @@
 <?php
 // Rutas específicas para Tata Trivia
+// Debugging
+error_log("=== TATA TRIVIA ACCESSED ===");
+error_log("Full URL: http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
+error_log("REQUEST_URI: " . $_SERVER['REQUEST_URI']);
+
 
 // Evitar session_start() duplicado
 if (session_status() === PHP_SESSION_NONE) {

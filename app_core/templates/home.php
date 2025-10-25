@@ -125,8 +125,9 @@ $comunicados_globales = $comunicadoController->obtenerComunicadosGlobalesParaCar
         </div>
         
         <!-- NUEVA TARJETA PARA TATA TRIVIA -->
-        <div class="col-12 col-md-6 col-lg-5">
-    <a href="/microservices/tata-trivia/" class="text-decoration-none" target="_blank">
+        <!-- En home.php, cambia esta tarjeta -->
+<div class="col-12 col-md-6 col-lg-5">
+    <a href="/microservices/tata-trivia/" class="text-decoration-none">
         <div class="card shadow-sm h-100">
             <div class="card-body text-center">
                 <h5 class="card-title"><i class="fas fa-trophy"></i> Tata Trivia</h5>

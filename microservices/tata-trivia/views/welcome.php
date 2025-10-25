@@ -87,7 +87,7 @@ require_once __DIR__ . '/../init.php';
                                         <i class="fas fa-crown fa-3x text-warning mb-3"></i>
                                         <h3 class="card-title">Ser Anfitrión</h3>
                                         <p class="card-text flex-grow-1">Crea tu propia trivia personalizada con preguntas, temas y modos de juego.</p>
-                                        <a href="<?php echo BASE_URL; ?>?vista=trivia_host" class="btn btn-host btn-lg text-white mt-auto">
+                                        <a href="/microservices/tata-trivia/host/setup" class="btn btn-option btn-host">
                                             <i class="fas fa-plus me-2"></i>Crear Trivia
                                         </a>
                                     </div>
@@ -101,7 +101,7 @@ require_once __DIR__ . '/../init.php';
                                         <i class="fas fa-gamepad fa-3x text-success mb-3"></i>
                                         <h3 class="card-title">Unirse al Juego</h3>
                                         <p class="card-text flex-grow-1">Participa en trivias existentes usando código o escaneando QR.</p>
-                                        <a href="<?php echo BASE_URL; ?>?vista=trivia_join" class="btn btn-join btn-lg text-white mt-auto">
+                                        <a href="/microservices/tata-trivia/player/join" class="btn btn-option btn-join">
                                             <i class="fas fa-play me-2"></i>Jugar Ahora
                                         </a>
                                     </div>

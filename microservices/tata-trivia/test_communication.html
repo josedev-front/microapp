@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Comunicación</title>
+</head>
+<body>
+    <h1>Test de Comunicación Host-Jugador</h1>
+    
+    <div>
+        <button onclick="sendTestMessage()">Enviar Mensaje de Prueba</button>
+        <button onclick="clearMessages()">Limpiar Mensajes</button>
+        <button onclick="checkMessages()">Verificar Mensajes</button>
+    </div>
+    
+    <div id="status" style="margin-top: 20px; padding: 10px; background: #f0f0f0;"></div>
+
+    <script>
+        const TRIVIA_ID = 'test_trivia';
+        
+        function sendTestMessage() {
+            const testMessage = {
+                type: 'question_started',
+                data: {
+                    question: {
+                        question_text: "¿Esto es una prueba?",
+                        options: [
+                            { text: "Sí", is_correct: true },
+                            { text: "No", is_correct: false }
+                        ],
+                        time_limit: 30
+                    },
+                    questionIndex: 0,
+                    timeLimit: 30
+                },
+                timestamp: Date.now(),
+                from: 'host'
+            };
+            
+            localStorage.setItem(`trivia_${TRIVIA_ID}_to_players`, JSON.stringify(testMessage));
+            updateStatus('Mensaje enviado: question_started');
+        }
+        
+        function clearMessages() {
+            localStorage.removeItem(`trivia_${TRIVIA_ID}_to_players`);
+            localStorage.removeItem(`trivia_${TRIVIA_ID}_to_host`);
+            updateStatus('Mensajes limpiados');
+        }
+        
+        function checkMessages() {
+            const toPlayers = localStorage.getItem(`trivia_${TRIVIA_ID}_to_players`);
+            const toHost = localStorage.getItem(`trivia_${TRIVIA_ID}_to_host`);
+            
+            let status = 'Mensajes actuales:<br>';
+            status += `→ Jugadores: ${toPlayers ? 'SÍ' : 'NO'}<br>`;
+            status += `→ Host: ${toHost ? 'SÍ' : 'NO'}<br>`;
+            
+            if (toPlayers) {
+                status += `Contenido: ${toPlayers}`;
+            }
+            
+            updateStatus(status);
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('status').innerHTML = message;
+        }
+        
+        // Verificar mensajes automáticamente cada 2 segundos
+        setInterval(checkMessages, 2000);
+        
+        // Verificar inicialmente
+        checkMessages();
+    </script>
+</body>
+</html>

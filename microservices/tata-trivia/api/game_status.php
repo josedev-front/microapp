@@ -12,21 +12,26 @@ if (empty($trivia_id)) {
 
 try {
     $triviaController = new TriviaController();
-    $players = $triviaController->getLobbyPlayers($trivia_id);
+    $trivia = $triviaController->getTriviaById($trivia_id);
+    
+    if (!$trivia) {
+        echo json_encode(['success' => false, 'error' => 'Trivia no encontrada']);
+        exit;
+    }
     
     echo json_encode([
         'success' => true,
         'data' => [
-            'players' => $players,
-            'count' => count($players)
+            'status' => $trivia['status'],
+            'title' => $trivia['title']
         ]
     ]);
     
 } catch (Exception $e) {
-    error_log('Error getting lobby players: ' . $e->getMessage());
+    error_log('Error getting game status: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'error' => 'Error al obtener jugadores'
+        'error' => 'Error al obtener estado del juego'
     ]);
 }
 ?>

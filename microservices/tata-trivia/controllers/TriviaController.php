@@ -64,45 +64,44 @@ class TriviaController {
 
     // Agregar pregunta a trivia
     public function addQuestion($triviaId, $questionData) {
-        $stmt = $this->db->prepare("
-            INSERT INTO questions (trivia_id, question_text, question_type, background_image, time_limit, order_index) 
-            VALUES (?, ?, ?, ?, ?, ?)
-        ");
-        
-        $stmt->execute([
-            $triviaId,
-            $questionData['question_text'],
-            $questionData['question_type'],
-            $questionData['background_image'] ?? '',
-            $questionData['time_limit'] ?? 30,
-            $questionData['order_index'] ?? 0
-        ]);
-        
-        $questionId = $this->db->lastInsertId();
-        
-        // Agregar opciones para la pregunta
-        if (isset($questionData['options']) && is_array($questionData['options'])) {
-            foreach ($questionData['options'] as $option) {
-                $this->addQuestionOption($questionId, $option);
-            }
+    $stmt = $this->db->prepare("
+        INSERT INTO questions (trivia_id, question_text, question_type, background_image, time_limit, order_index) 
+        VALUES (?, ?, ?, ?, ?, ?)
+    ");
+    
+    $stmt->execute([
+        $triviaId,
+        $questionData['question_text'],
+        $questionData['question_type'],
+        $questionData['background_image'] ?? '',
+        $questionData['time_limit'] ?? 30,
+        $questionData['order_index'] ?? 0
+    ]);
+    
+    $questionId = $this->db->lastInsertId();
+    
+    // Agregar opciones para la pregunta
+    if (isset($questionData['options']) && is_array($questionData['options'])) {
+        foreach ($questionData['options'] as $option) {
+            $this->addQuestionOption($questionId, $option);
         }
-        
-        return $questionId;
     }
+    
+    return $questionId;
+}
 
-    // Agregar opción a pregunta
-    private function addQuestionOption($questionId, $optionData) {
-        $stmt = $this->db->prepare("
-            INSERT INTO question_options (question_id, option_text, is_correct) 
-            VALUES (?, ?, ?)
-        ");
-        
-        $stmt->execute([
-            $questionId,
-            $optionData['text'],
-            $optionData['is_correct'] ? 1 : 0
-        ]);
-    }
+private function addQuestionOption($questionId, $optionData) {
+    $stmt = $this->db->prepare("
+        INSERT INTO question_options (question_id, option_text, is_correct) 
+        VALUES (?, ?, ?)
+    ");
+    
+    $stmt->execute([
+        $questionId,
+        $optionData['text'],
+        $optionData['is_correct'] ? 1 : 0
+    ]);
+}
 
     // Unirse a trivia
     public function joinTrivia($joinCode, $playerData) {

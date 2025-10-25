@@ -1,408 +1,617 @@
 <?php
-// microservices/trivia-play/views/player/game_player.php
+$user = $user ?? getTriviaMicroappsUser();
+$player_id = $_GET['player_id'] ?? null;
+$trivia_id = $_GET['trivia_id'] ?? null;
 
-$base_path = dirname(__DIR__, 3);
-require_once $base_path . '/app_core/config/helpers.php';
-require_once $base_path . '/app_core/php/main.php';
-
-if (!isset($_GET['player_id']) || empty($_GET['player_id'])) {
-    header('Location: ' . BASE_URL . '?vista=trivia_join');
+if (!$player_id) {
+    header('Location: /microservices/tata-trivia/player/join');
     exit;
 }
 
-$player_id = intval($_GET['player_id']);
-
-require_once __DIR__ . '/../../init.php';
-
+// Obtener información del jugador y trivia
 try {
-    $playerController = new TriviaPlay\Controllers\PlayerController();
-    $gameData = $playerController->getPlayerGameData($player_id);
+    $triviaController = new TriviaController();
     
-    if (!$gameData) {
-        throw new Exception('Jugador no encontrado');
-    }
-    
-    $current_question = $playerController->getCurrentQuestion($gameData['trivia_id']);
+    // Aquí necesitaríamos una función para obtener info del jugador
+    // Por ahora usamos datos básicos
+    $player_info = [
+        'id' => $player_id,
+        'name' => $user['first_name'] ?? 'Jugador',
+        'avatar' => $user['avatar'] ?? 'default1'
+    ];
     
 } catch (Exception $e) {
-    header('Location: ' . BASE_URL . '?vista=trivia_join');
+    // En caso de error, redirigir al join
+    header('Location: /microservices/tata-trivia/player/join');
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jugando - Tata Trivia</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .player-game-container {
+        .game-container {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: white;
         }
         .question-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
+            background: rgba(255,255,255,0.95);
             color: #333;
-            margin-bottom: 1rem;
-        }
-        .option-btn {
-            border: 3px solid #dee2e6;
             border-radius: 15px;
-            padding: 1rem;
-            margin-bottom: 0.5rem;
-            text-align: left;
-            transition: all 0.3s ease;
-            background: white;
-            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        .option-btn:hover {
-            border-color: #667eea;
+        .option-button {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+        .option-button:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
             transform: translateY(-2px);
         }
-        .option-btn.selected {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
+        .option-button.selected {
+            border-color: #007bff;
+            background: #007bff;
+            color: white;
         }
-        .option-btn.correct {
+        .option-button.correct {
             border-color: #28a745;
-            background: rgba(40, 167, 69, 0.1);
+            background: #28a745;
+            color: white;
         }
-        .option-btn.incorrect {
+        .option-button.incorrect {
             border-color: #dc3545;
-            background: rgba(220, 53, 69, 0.1);
+            background: #dc3545;
+            color: white;
         }
         .timer-container {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0,0,0,0.8);
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.5rem;
             font-weight: bold;
-            font-size: 1.2rem;
-            z-index: 1000;
         }
         .player-info {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 15px;
-            padding: 0.5rem 1rem;
-            color: #333;
-            font-weight: 500;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
         }
-        .pulse-warning {
-            animation: pulse-warning 1s infinite;
+        .pulse {
+            animation: pulse 2s infinite;
         }
-        @keyframes pulse-warning {
-            0% { background: rgba(255, 193, 7, 0.8); }
-            50% { background: rgba(255, 193, 7, 1); }
-            100% { background: rgba(255, 193, 7, 0.8); }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
-        .pulse-danger {
-            animation: pulse-danger 1s infinite;
+        .blink {
+            animation: blink 1s infinite;
         }
-        @keyframes pulse-danger {
-            0% { background: rgba(220, 53, 69, 0.8); }
-            50% { background: rgba(220, 53, 69, 1); }
-            100% { background: rgba(220, 53, 69, 0.8); }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
         }
     </style>
 </head>
-<body class="player-game-container">
-    <!-- Timer flotante -->
-    <div class="timer-container" id="timer">
-        <?php echo $current_question['time_limit'] ?? 30; ?>
-    </div>
-
-    <div class="container py-4">
-        <!-- Información del jugador -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="player-info">
-                <img src="<?php echo $gameData['avatar']; ?>" 
-                     alt="Avatar" style="width: 30px; height: 30px; border-radius: 50%;" class="me-2">
-                <?php echo htmlspecialchars($gameData['player_name']); ?>
-                <span class="badge bg-primary ms-2"><?php echo $gameData['score']; ?> pts</span>
-            </div>
-            <div class="player-info">
-                Pregunta <span id="currentQuestion">1</span>/<span id="totalQuestions"><?php echo $gameData['total_questions']; ?></span>
-            </div>
-        </div>
-
-        <?php if ($current_question): ?>
-        <!-- Tarjeta de pregunta -->
-        <div class="question-card p-4">
-            <!-- Encabezado de pregunta -->
-            <div class="text-center mb-4">
-                <small class="text-muted">PREGUNTA ACTUAL</small>
-                <h3 class="fw-bold mt-1"><?php echo htmlspecialchars($current_question['question_text']); ?></h3>
-            </div>
-
-            <!-- Opciones de respuesta -->
-            <div id="optionsContainer">
-                <?php foreach ($current_question['options'] as $index => $option): ?>
-                <button class="option-btn w-100" 
-                        data-option-id="<?php echo $option['id']; ?>"
-                        data-option-index="<?php echo $index; ?>">
-                    <div class="d-flex align-items-center">
-                        <span class="badge bg-secondary me-3" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
-                            <?php echo chr(65 + $index); ?>
-                        </span>
-                        <span><?php echo htmlspecialchars($option['text']); ?></span>
+<body class="game-container">
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1 class="mb-0">
+                            <i class="fas fa-gamepad me-2"></i>
+                            Tata Trivia
+                        </h1>
+                        <p class="mb-0">¡Preparado para jugar!</p>
                     </div>
-                </button>
-                <?php endforeach; ?>
-            </div>
-
-            <!-- Botón de enviar -->
-            <div class="text-center mt-4">
-                <button class="btn btn-primary btn-lg w-100" id="submitAnswer" disabled>
-                    <i class="fas fa-paper-plane me-2"></i>Enviar Respuesta
-                </button>
-            </div>
-        </div>
-
-        <!-- Feedback de respuesta -->
-        <div class="alert alert-info d-none" id="feedbackAlert">
-            <div class="text-center">
-                <i class="fas fa-sync fa-spin me-2"></i>
-                <span id="feedbackText">Esperando resultados...</span>
+                    <div class="player-info">
+                        <div class="d-flex align-items-center">
+                            <img src="/public/assets/img/default/<?php echo $player_info['avatar']; ?>.png" 
+                                 class="rounded-circle me-2" width="40" height="40">
+                            <div>
+                                <div class="fw-bold"><?php echo htmlspecialchars($player_info['name']); ?></div>
+                                <small>Puntos: <span id="playerScore">0</span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Mini leaderboard -->
-        <div class="question-card p-3 mt-3">
-            <h6 class="text-center mb-3">
-                <i class="fas fa-trophy me-2 text-warning"></i>Tabla de Posiciones
-            </h6>
-            <div id="miniLeaderboard">
-                <!-- Se actualizará dinámicamente -->
-            </div>
-        </div>
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <!-- Pantalla de Espera -->
+                <div id="waitingScreen" class="text-center">
+                    <div class="card question-card">
+                        <div class="card-body py-5">
+                            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <h3 class="text-primary">Esperando siguiente pregunta</h3>
+                            <p class="text-muted">El anfitrión prepara la siguiente ronda...</p>
+                            <div class="mt-4">
+                                <div class="badge bg-warning text-dark fs-6">
+                                    <i class="fas fa-crown me-1"></i>
+                                    Modo Jugador
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        <?php else: ?>
-        <!-- Esperando siguiente pregunta -->
-        <div class="question-card p-5 text-center">
-            <i class="fas fa-clock fa-3x text-warning mb-3"></i>
-            <h4 class="fw-bold">Esperando siguiente pregunta</h4>
-            <p class="text-muted">El anfitrión está preparando la siguiente ronda</p>
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
+                <!-- Pantalla de Pregunta -->
+                <div id="questionScreen" style="display: none;">
+                    <div class="card question-card">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0" id="questionNumber">Pregunta 1</h4>
+                            <div class="timer-container text-warning" id="timerDisplay">
+                                30
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h2 id="questionText" class="text-center mb-4"></h2>
+                            
+                            <div id="optionsContainer" class="mb-4">
+                                <!-- Las opciones se generan dinámicamente -->
+                            </div>
+                            
+                            <div class="text-center">
+                                <button id="submitButton" class="btn btn-success btn-lg" onclick="submitAnswer()" disabled>
+                                    <i class="fas fa-paper-plane me-2"></i>Enviar Respuesta
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pantalla de Resultados -->
+                <div id="resultsScreen" style="display: none;">
+                    <div class="card question-card">
+                        <div class="card-body py-5 text-center">
+                            <div id="resultIcon" class="mb-3">
+                                <i class="fas fa-check-circle fa-4x text-success"></i>
+                            </div>
+                            <h3 id="resultTitle" class="text-success">¡Correcto!</h3>
+                            <p id="resultMessage" class="text-muted">+10 puntos</p>
+                            <div class="mt-4">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-trophy me-2"></i>
+                                    Esperando a los demás jugadores...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pantalla de Leaderboard -->
+                <div id="leaderboardScreen" style="display: none;">
+                    <div class="card question-card">
+                        <div class="card-header bg-warning text-dark">
+                            <h4 class="mb-0">
+                                <i class="fas fa-trophy me-2"></i>
+                                Clasificación
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="leaderboardList">
+                                <!-- Leaderboard se genera dinámicamente -->
+                            </div>
+                            <div class="text-center mt-4">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Siguiente pregunta en <span id="nextQuestionCountdown">5</span> segundos
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pantalla de Juego Terminado -->
+                <div id="gameOverScreen" style="display: none;">
+                    <div class="card question-card">
+                        <div class="card-body py-5 text-center">
+                            <i class="fas fa-flag-checkered fa-4x text-primary mb-3"></i>
+                            <h3 class="text-primary">¡Juego Terminado!</h3>
+                            <p class="text-muted">Gracias por participar</p>
+                            <div class="mt-4">
+                                <a href="/microservices/tata-trivia/" class="btn btn-primary">
+                                    <i class="fas fa-home me-2"></i>Volver al Inicio
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <?php endif; ?>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const timerElement = document.getElementById('timer');
-            const optionsContainer = document.getElementById('optionsContainer');
-            const submitButton = document.getElementById('submitAnswer');
-            const feedbackAlert = document.getElementById('feedbackAlert');
-            const feedbackText = document.getElementById('feedbackText');
-            const miniLeaderboard = document.getElementById('miniLeaderboard');
+        // Variables globales
+        const playerId = '<?php echo $player_id; ?>';
+        const triviaId = '<?php echo $trivia_id; ?>' || getTriviaIdFromURL();
+        let currentQuestion = null;
+        let selectedOption = null;
+        let timer = null;
+        let timeLeft = 0;
+        let playerScore = 0;
+        let gameActive = false;
+
+        // Elementos DOM
+        const waitingScreen = document.getElementById('waitingScreen');
+        const questionScreen = document.getElementById('questionScreen');
+        const resultsScreen = document.getElementById('resultsScreen');
+        const leaderboardScreen = document.getElementById('leaderboardScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const questionText = document.getElementById('questionText');
+        const questionNumber = document.getElementById('questionNumber');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const submitButton = document.getElementById('submitButton');
+        const playerScoreElement = document.getElementById('playerScore');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultMessage = document.getElementById('resultMessage');
+        const leaderboardList = document.getElementById('leaderboardList');
+        const nextQuestionCountdown = document.getElementById('nextQuestionCountdown');
+
+        // Obtener trivia ID de la URL
+        function getTriviaIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('trivia_id') || 'default';
+        }
+
+        // Sistema de comunicación real
+        class PlayerClient {
+            constructor(playerId, triviaId) {
+                this.playerId = playerId;
+                this.triviaId = triviaId;
+                this.setupCommunication();
+            }
             
-            let timeLeft = <?php echo $current_question['time_limit'] ?? 30; ?>;
-            let selectedOption = null;
-            let answerSubmitted = false;
-            let timerInterval;
-            let playerId = <?php echo $player_id; ?>;
-            let questionId = <?php echo $current_question['id'] ?? 0; ?>;
-
-            // Iniciar timer
-            startTimer();
-
-            // Actualizar leaderboard cada 3 segundos
-            setInterval(updateMiniLeaderboard, 3000);
-
-            // Selección de opciones
-            optionsContainer.addEventListener('click', function(e) {
-                if (answerSubmitted) return;
+            setupCommunication() {
+                console.log('🎮 Jugador conectado. Trivia ID:', this.triviaId);
                 
-                const optionBtn = e.target.closest('.option-btn');
-                if (optionBtn) {
-                    // Deseleccionar anterior
-                    optionsContainer.querySelectorAll('.option-btn').forEach(btn => {
-                        btn.classList.remove('selected');
-                    });
-                    
-                    // Seleccionar nueva opción
-                    optionBtn.classList.add('selected');
-                    selectedOption = optionBtn.dataset.optionId;
-                    submitButton.disabled = false;
-                }
-            });
-
-            // Enviar respuesta
-            submitButton.addEventListener('click', function() {
-                if (!selectedOption || answerSubmitted) return;
-                
-                submitAnswer();
-            });
-
-            function startTimer() {
-                timerInterval = setInterval(function() {
-                    timeLeft--;
-                    timerElement.textContent = timeLeft;
-                    
-                    // Cambiar color del timer
-                    if (timeLeft <= 10) {
-                        timerElement.classList.remove('pulse-warning');
-                        timerElement.classList.add('pulse-danger');
-                    } else if (timeLeft <= 20) {
-                        timerElement.classList.add('pulse-warning');
+                // Escuchar mensajes del host
+                window.addEventListener('storage', (e) => {
+                    if (e.key === `trivia_${this.triviaId}_to_players` && e.newValue) {
+                        try {
+                            const message = JSON.parse(e.newValue);
+                            console.log('📨 Mensaje recibido del host:', message.type);
+                            this.handleMessage(message);
+                        } catch (error) {
+                            console.error('❌ Error parsing message:', error);
+                        }
                     }
-                    
-                    if (timeLeft <= 0) {
-                        clearInterval(timerInterval);
-                        timerElement.textContent = '0';
-                        if (!answerSubmitted) {
-                            autoSubmit();
+                });
+                
+                // También verificar periódicamente por si se pierden mensajes
+                this.setupPolling();
+            }
+            
+            setupPolling() {
+                // Verificar mensajes cada segundo
+                setInterval(() => {
+                    const message = localStorage.getItem(`trivia_${this.triviaId}_to_players`);
+                    if (message) {
+                        try {
+                            const parsed = JSON.parse(message);
+                            this.handleMessage(parsed);
+                        } catch (error) {
+                            console.error('Error in polling:', error);
                         }
                     }
                 }, 1000);
             }
-
-            function submitAnswer() {
-                answerSubmitted = true;
+            
+            handleMessage(message) {
+                console.log('🔄 Procesando mensaje:', message.type);
+                
+                switch (message.type) {
+                    case 'question_started':
+                        this.startQuestion(message.data);
+                        break;
+                    case 'question_ended':
+                        this.endQuestion();
+                        break;
+                    case 'show_results':
+                        this.showResults(message.data);
+                        break;
+                    case 'show_leaderboard':
+                        this.showLeaderboard(message.data);
+                        break;
+                    case 'game_ended':
+                        this.endGame();
+                        break;
+                }
+            }
+            
+            startQuestion(questionData) {
+                currentQuestion = questionData.question;
+                gameActive = true;
+                selectedOption = null;
+                
+                console.log('❓ Nueva pregunta:', currentQuestion.question_text);
+                
+                // Mostrar pantalla de pregunta
+                waitingScreen.style.display = 'none';
+                questionScreen.style.display = 'block';
+                resultsScreen.style.display = 'none';
+                leaderboardScreen.style.display = 'none';
+                gameOverScreen.style.display = 'none';
+                
+                // Actualizar pregunta
+                questionText.textContent = currentQuestion.question_text;
+                questionNumber.textContent = `Pregunta ${questionData.questionIndex + 1}`;
+                
+                // Generar opciones
+                this.displayOptions();
+                
+                // Iniciar temporizador
+                this.startTimer(questionData.timeLimit);
+                
+                // Habilitar/deshabilitar botón
                 submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Enviar Respuesta';
+                submitButton.className = 'btn btn-success btn-lg';
+            }
+            
+            displayOptions() {
+                optionsContainer.innerHTML = '';
+                const options = currentQuestion.options;
+                const letters = ['A', 'B', 'C', 'D'];
                 
-                // Mostrar feedback
-                feedbackAlert.classList.remove('d-none');
-                feedbackText.innerHTML = '<i class="fas fa-sync fa-spin me-2"></i>Enviando respuesta...';
-                
-                // Enviar respuesta al servidor
-                fetch('<?php echo BASE_URL; ?>microservices/trivia-play/api/submit_answer.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        player_id: playerId,
-                        question_id: questionId,
-                        option_id: selectedOption,
-                        response_time: <?php echo $current_question['time_limit'] ?? 30; ?> - timeLeft
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showResult(data.correct, data.correct_option_id);
-                    } else {
-                        feedbackText.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error al enviar respuesta';
-                        feedbackAlert.classList.remove('alert-info');
-                        feedbackAlert.classList.add('alert-danger');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    feedbackText.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Error de conexión';
-                    feedbackAlert.classList.remove('alert-info');
-                    feedbackAlert.classList.add('alert-danger');
-                });
-            }
-
-            function showResult(isCorrect, correctOptionId) {
-                // Marcar opciones correctas/incorrectas
-                optionsContainer.querySelectorAll('.option-btn').forEach(btn => {
-                    const optionId = btn.dataset.optionId;
-                    
-                    if (optionId == correctOptionId) {
-                        btn.classList.add('correct');
-                    } else if (optionId == selectedOption && !isCorrect) {
-                        btn.classList.add('incorrect');
-                    }
-                    
-                    btn.classList.remove('selected');
-                });
-
-                // Mostrar feedback
-                if (isCorrect) {
-                    feedbackText.innerHTML = '<i class="fas fa-check-circle me-2 text-success"></i>¡Correcto! +10 puntos';
-                    feedbackAlert.classList.remove('alert-info');
-                    feedbackAlert.classList.add('alert-success');
-                } else {
-                    feedbackText.innerHTML = '<i class="fas fa-times-circle me-2 text-danger"></i>Incorrecto';
-                    feedbackAlert.classList.remove('alert-info');
-                    feedbackAlert.classList.add('alert-danger');
-                }
-
-                // Preparar para siguiente pregunta
-                setTimeout(() => {
-                    feedbackText.innerHTML = '<i class="fas fa-clock me-2"></i>Esperando siguiente pregunta...';
-                    feedbackAlert.classList.remove('alert-success', 'alert-danger');
-                    feedbackAlert.classList.add('alert-info');
-                }, 3000);
-            }
-
-            function autoSubmit() {
-                if (!answerSubmitted && selectedOption) {
-                    submitAnswer();
-                } else if (!answerSubmitted) {
-                    // Enviar respuesta vacía por tiempo
-                    feedbackAlert.classList.remove('d-none');
-                    feedbackText.innerHTML = '<i class="fas fa-clock me-2 text-warning"></i>Tiempo agotado';
-                    feedbackAlert.classList.remove('alert-info');
-                    feedbackAlert.classList.add('alert-warning');
-                }
-            }
-
-            function updateMiniLeaderboard() {
-                fetch(`<?php echo BASE_URL; ?>microservices/trivia-play/api/mini_leaderboard.php?trivia_id=<?php echo $gameData['trivia_id']; ?>`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            renderMiniLeaderboard(data.leaderboard);
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-            }
-
-            function renderMiniLeaderboard(leaderboard) {
-                let html = '';
-                leaderboard.slice(0, 5).forEach((player, index) => {
-                    const isCurrentPlayer = player.id == playerId;
-                    html += `
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 ${isCurrentPlayer ? 'bg-light rounded' : ''}">
+                options.forEach((option, index) => {
+                    const optionHTML = `
+                        <div class="option-button" onclick="selectOption(${index})" id="option-${index}">
                             <div class="d-flex align-items-center">
-                                <span class="badge ${getRankClass(index)} me-2">${index + 1}</span>
-                                <small>${escapeHtml(player.player_name)}</small>
+                                <span class="badge bg-secondary me-3">${letters[index]}</span>
+                                <span>${option.text}</span>
                             </div>
-                            <span class="badge bg-dark">${player.score}</span>
                         </div>
                     `;
+                    optionsContainer.innerHTML += optionHTML;
                 });
-                
-                miniLeaderboard.innerHTML = html;
             }
-
-            function getRankClass(rank) {
-                switch(rank) {
-                    case 0: return 'bg-warning';
-                    case 1: return 'bg-secondary';
-                    case 2: return 'bg-danger';
-                    default: return 'bg-primary';
+            
+            startTimer(seconds) {
+                timeLeft = seconds;
+                timerDisplay.textContent = timeLeft;
+                timerDisplay.className = 'timer-container text-warning';
+                
+                clearInterval(timer);
+                timer = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+                    
+                    // Cambiar color según el tiempo
+                    if (timeLeft <= 10) {
+                        timerDisplay.className = 'timer-container text-danger blink';
+                    } else if (timeLeft <= 20) {
+                        timerDisplay.className = 'timer-container text-warning';
+                    }
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(timer);
+                        this.autoSubmit();
+                    }
+                }, 1000);
+            }
+            
+            endQuestion() {
+                gameActive = false;
+                clearInterval(timer);
+                submitButton.disabled = true;
+                console.log('⏹️ Tiempo agotado para la pregunta');
+            }
+            
+            showResults(resultsData) {
+                questionScreen.style.display = 'none';
+                resultsScreen.style.display = 'block';
+                
+                console.log('📊 Mostrando resultados');
+                
+                // Mostrar si la respuesta fue correcta
+                if (selectedOption !== null) {
+                    const wasCorrect = currentQuestion.options[selectedOption].is_correct;
+                    
+                    if (wasCorrect) {
+                        resultIcon.innerHTML = '<i class="fas fa-check-circle fa-4x text-success"></i>';
+                        resultTitle.textContent = '¡Correcto!';
+                        resultTitle.className = 'text-success';
+                        resultMessage.textContent = '+10 puntos';
+                        
+                        // Actualizar puntaje
+                        playerScore += 10;
+                        playerScoreElement.textContent = playerScore;
+                    } else {
+                        resultIcon.innerHTML = '<i class="fas fa-times-circle fa-4x text-danger"></i>';
+                        resultTitle.textContent = 'Incorrecto';
+                        resultTitle.className = 'text-danger';
+                        resultMessage.textContent = 'Mejor suerte en la siguiente';
+                    }
+                    
+                    // Resaltar opciones correctas/incorrectas
+                    this.highlightAnswers();
+                } else {
+                    // Si no respondió
+                    resultIcon.innerHTML = '<i class="fas fa-clock fa-4x text-warning"></i>';
+                    resultTitle.textContent = 'Tiempo agotado';
+                    resultTitle.className = 'text-warning';
+                    resultMessage.textContent = 'No respondiste a tiempo';
+                    this.highlightAnswers();
                 }
             }
-
-            function escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
+            
+            highlightAnswers() {
+                currentQuestion.options.forEach((option, index) => {
+                    const optionElement = document.getElementById(`option-${index}`);
+                    if (option.is_correct) {
+                        optionElement.className = 'option-button correct';
+                    } else if (index === selectedOption) {
+                        optionElement.className = 'option-button incorrect';
+                    }
+                });
             }
+            
+            showLeaderboard(leaderboardData) {
+                resultsScreen.style.display = 'none';
+                leaderboardScreen.style.display = 'block';
+                
+                console.log('🏆 Mostrando leaderboard');
+                
+                // Generar leaderboard
+                leaderboardList.innerHTML = '';
+                leaderboardData.players.forEach((player, index) => {
+                    const positionClass = index === 0 ? 'bg-warning text-dark' : 
+                                       index === 1 ? 'bg-secondary text-white' : 
+                                       index === 2 ? 'bg-danger text-white' : 'bg-light';
+                    
+                    const isCurrentPlayer = player.id === this.playerId;
+                    const highlightClass = isCurrentPlayer ? 'border border-3 border-primary' : '';
+                    
+                    const playerHTML = `
+                        <div class="d-flex align-items-center p-3 mb-2 rounded ${positionClass} ${highlightClass}">
+                            <div class="fw-bold me-3" style="width: 30px;">#${index + 1}</div>
+                            <div class="flex-grow-1">${player.name} ${isCurrentPlayer ? ' (Tú)' : ''}</div>
+                            <div class="fw-bold">${player.score} pts</div>
+                        </div>
+                    `;
+                    leaderboardList.innerHTML += playerHTML;
+                });
+                
+                // Iniciar cuenta regresiva para siguiente pregunta
+                this.startNextQuestionCountdown();
+            }
+            
+            startNextQuestionCountdown() {
+                let countdown = 5;
+                nextQuestionCountdown.textContent = countdown;
+                
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    nextQuestionCountdown.textContent = countdown;
+                    
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        waitingScreen.style.display = 'block';
+                        leaderboardScreen.style.display = 'none';
+                    }
+                }, 1000);
+            }
+            
+            endGame() {
+                clearInterval(timer);
+                gameActive = false;
+                
+                waitingScreen.style.display = 'none';
+                questionScreen.style.display = 'none';
+                resultsScreen.style.display = 'none';
+                leaderboardScreen.style.display = 'none';
+                gameOverScreen.style.display = 'block';
+                
+                console.log('🎯 Juego terminado');
+            }
+            
+            autoSubmit() {
+                if (gameActive && selectedOption === null) {
+                    console.log('⏰ Auto-enviando respuesta aleatoria');
+                    // Enviar respuesta aleatoria si no se seleccionó
+                    selectedOption = Math.floor(Math.random() * currentQuestion.options.length);
+                    this.submitAnswer();
+                }
+            }
+            
+            submitAnswer() {
+                if (selectedOption === null || !gameActive) return;
+                
+                const isCorrect = currentQuestion.options[selectedOption].is_correct;
+                const responseTime = (currentQuestion.time_limit || 30) - timeLeft;
+                
+                const answerData = {
+                    playerId: this.playerId,
+                    playerName: '<?php echo $player_info["name"]; ?>',
+                    questionIndex: 0,
+                    optionIndex: selectedOption,
+                    isCorrect: isCorrect,
+                    responseTime: responseTime,
+                    timestamp: Date.now()
+                };
+                
+                console.log('📤 Enviando respuesta:', answerData);
+                
+                // Enviar respuesta al host
+                localStorage.setItem(`trivia_${this.triviaId}_to_host`, JSON.stringify({
+                    type: 'player_answer',
+                    data: answerData
+                }));
+                
+                // Limpiar después de enviar
+                setTimeout(() => {
+                    localStorage.removeItem(`trivia_${this.triviaId}_to_host`);
+                }, 100);
+                
+                // Deshabilitar más respuestas
+                submitButton.disabled = true;
+                gameActive = false;
+                
+                // Mostrar que se envió
+                submitButton.innerHTML = '<i class="fas fa-check me-2"></i>Respuesta Enviada';
+                submitButton.className = 'btn btn-secondary btn-lg';
+                
+                console.log('✅ Respuesta enviada correctamente');
+            }
+        }
 
-            // Limpiar intervalos al salir
-            window.addEventListener('beforeunload', function() {
-                clearInterval(timerInterval);
-            });
+        // Funciones globales para los botones
+        function selectOption(optionIndex) {
+            if (!gameActive) return;
+            
+            // Deseleccionar anterior
+            if (selectedOption !== null) {
+                document.getElementById(`option-${selectedOption}`).classList.remove('selected');
+            }
+            
+            // Seleccionar nueva opción
+            selectedOption = optionIndex;
+            document.getElementById(`option-${selectedOption}`).classList.add('selected');
+            
+            // Habilitar botón de envío
+            submitButton.disabled = false;
+            
+            console.log('🔘 Opción seleccionada:', optionIndex);
+        }
+        
+        function submitAnswer() {
+            if (playerClient) {
+                playerClient.submitAnswer();
+            }
+        }
+
+        // Inicializar cliente del jugador
+        let playerClient;
+        document.addEventListener('DOMContentLoaded', function() {
+            playerClient = new PlayerClient(playerId, triviaId);
+            
+            console.log('🎮 Jugador inicializado:', playerId, 'en trivia:', triviaId);
         });
     </script>
 </body>
