@@ -19,13 +19,38 @@ try {
         exit;
     }
     
-    echo json_encode([
+    $response = [
         'success' => true,
-        'data' => [
-            'status' => $trivia['status'],
-            'title' => $trivia['title']
-        ]
-    ]);
+        'trivia_status' => $trivia['status'],
+        'title' => $trivia['title'],
+        'current_question_index' => $trivia['current_question_index'] ?? -1
+    ];
+    
+    // ✅ CORREGIDO: Incluir información de la pregunta actual si existe
+    if ($trivia['current_question_index'] >= 0) {
+        $questions = $triviaController->getTriviaQuestions($trivia_id);
+        
+        if (isset($questions[$trivia['current_question_index']])) {
+            $currentQuestion = $questions[$trivia['current_question_index']];
+            
+            // Obtener opciones de la pregunta
+            $options = $triviaController->getQuestionOptions($currentQuestion['id']);
+            
+            // Obtener fondo de la pregunta
+            $backgroundPath = $triviaController->getQuestionBackgroundPath($currentQuestion);
+            
+            $response['current_question'] = [
+                'id' => $currentQuestion['id'],
+                'question_text' => $currentQuestion['question_text'],
+                'question_type' => $currentQuestion['question_type'],
+                'background_image' => $backgroundPath,
+                'time_limit' => $currentQuestion['time_limit'],
+                'options' => $options
+            ];
+        }
+    }
+    
+    echo json_encode($response);
     
 } catch (Exception $e) {
     error_log('Error getting game status: ' . $e->getMessage());

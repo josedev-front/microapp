@@ -1,4 +1,6 @@
 <?php
+// microservices/tata-trivia/views/host/questions.php - VERSIÓN CORREGIDA
+
 $user = $user ?? getTriviaMicroappsUser();
 $trivia_id = $_GET['trivia_id'] ?? null;
 
@@ -6,6 +8,41 @@ if (!$trivia_id) {
     header('Location: /microservices/tata-trivia/host/setup');
     exit;
 }
+
+// Obtener información del tema de la trivia
+try {
+    $triviaController = new TriviaController();
+    $trivia = $triviaController->getTriviaById($trivia_id);
+    $theme = $trivia['theme'] ?? 'default';
+    $background_image = $trivia['background_image'] ?? 'default';
+    
+    // Construir ruta correcta de la imagen de fondo usando el método del controlador
+    $backgroundPath = $triviaController->getTriviaBackgroundPath($trivia_id);
+    
+} catch (Exception $e) {
+    $theme = 'default';
+    $backgroundPath = '/microservices/tata-trivia/assets/images/themes/setup/default.jpg';
+}
+
+// Imágenes de fondo predefinidas para preguntas
+$questionsDir = '/microservices/tata-trivia/assets/images/themes/questions/';
+$defaultBackgrounds = [
+    'brain' => $questionsDir . 'brain.jpg',
+    'books' => $questionsDir . 'books.jpg',
+    'science' => $questionsDir . 'science.png',
+    'history' => $questionsDir . 'history.jpg',
+    'sports' => $questionsDir . 'sports.jpg',
+    'music' => $questionsDir . 'music.png',
+    'movies' => $questionsDir . 'movies.jpg',
+    'geography' => $questionsDir . 'geography.jpg',
+    'art' => $questionsDir . 'art.jpg',
+    'technology' => $questionsDir . 'tech.jpg',
+    'nature' => $questionsDir . 'nature.jpg',
+    'space' => $questionsDir . 'space.jpg',
+    'math' => $questionsDir . 'math.jpg',
+    'language' => $questionsDir . 'language.jpg',
+    'general' => $questionsDir . 'general.jpg'
+];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -16,76 +53,205 @@ if (!$trivia_id) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        .page-container {
+            background-image: url('<?php echo $backgroundPath; ?>');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        /* Fallback si la imagen no carga */
+        .page-container.no-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .content-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
         .question-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
             border-left: 4px solid #007bff;
-            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        .question-display {
+            background-size: cover;
+            background-position: center;
+            border-radius: 10px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 20px;
         }
         .option-item {
             border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 10px;
-            margin-bottom: 5px;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
             cursor: move;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .option-item:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
         }
         .option-item.correct {
             border-color: #28a745;
-            background-color: #f8fff9;
+            background-color: #d4edda;
         }
         .sortable-ghost {
             opacity: 0.4;
         }
-        .time-badge {
-            font-size: 0.8rem;
+        .background-option {
+            width: 80px;
+            height: 60px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            object-fit: cover;
+        }
+        .background-option:hover {
+            transform: scale(1.05);
+            border-color: #007bff;
+        }
+        .background-option.selected {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.3);
         }
         .empty-state {
             padding: 3rem 1rem;
             text-align: center;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .background-preview {
+            height: 100px;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: #6c757d;
+            font-size: 0.8rem;
+        }
+        .custom-upload-small {
+            border: 1px dashed #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            font-size: 0.8rem;
+        }
+        .custom-upload-small:hover {
+            border-color: #007bff;
+            background: #e9ecef;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            color: white;
+            font-size: 1.2rem;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-family: monospace;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid bg-light min-vh-100 py-4">
-        <div class="row justify-content-center">
-            <div class="col-12 col-lg-10">
-                <!-- Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h1 class="h3 mb-0">
-                            <i class="fas fa-question-circle text-primary me-2"></i>
-                            Agregar Preguntas
-                        </h1>
-                        <p class="text-muted mb-0">Trivia ID: <?php echo htmlspecialchars($trivia_id); ?></p>
-                    </div>
-                    <div>
-                        <button class="btn btn-success me-2" onclick="saveQuestions()">
-                            <i class="fas fa-save me-1"></i>Guardar y Continuar
-                        </button>
-                        <a href="/microservices/tata-trivia/host/setup" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-1"></i>Volver
-                        </a>
-                    </div>
-                </div>
+    <div class="page-container <?php echo (!file_exists($_SERVER['DOCUMENT_ROOT'] . $backgroundPath)) ? 'no-bg' : ''; ?>" 
+         id="pageContainer">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    
+                   
 
-                <!-- Questions Container -->
-                <div id="questionsContainer">
-                    <div class="empty-state" id="emptyState">
-                        <i class="fas fa-question-circle fa-3x mb-3"></i>
-                        <h4 class="text-muted">No hay preguntas aún</h4>
-                        <p class="text-muted">Agrega la primera pregunta para comenzar</p>
-                        <button class="btn btn-primary" onclick="addQuestion()">
-                            <i class="fas fa-plus me-1"></i>Agregar Primera Pregunta
+                    <!-- Header -->
+                    <div class="content-card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h1 class="h3 mb-0 text-primary">
+                                        <i class="fas fa-question-circle me-2"></i>
+                                        Agregar Preguntas
+                                    </h1>
+                                    <p class="text-muted mb-0">Trivia ID: <?php echo htmlspecialchars($trivia_id); ?></p>
+                                    <small class="text-muted">Tema: <?php echo ucfirst(str_replace('_', ' ', $theme)); ?></small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-success me-2" onclick="saveQuestions()">
+                                        <i class="fas fa-save me-1"></i>Guardar y Continuar
+                                    </button>
+                                    <a href="/microservices/tata-trivia/host/setup" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>Volver
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Questions Container -->
+                    <div id="questionsContainer">
+                        <div class="empty-state" id="emptyState">
+                            <i class="fas fa-question-circle fa-3x mb-3 text-muted"></i>
+                            <h4 class="text-muted">No hay preguntas aún</h4>
+                            <p class="text-muted">Agrega la primera pregunta para comenzar</p>
+                            <button class="btn btn-primary" onclick="addQuestion()">
+                                <i class="fas fa-plus me-1"></i>Agregar Primera Pregunta
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Add Question Button -->
+                    <div class="text-center mt-4">
+                        <button class="btn btn-outline-primary btn-lg" onclick="addQuestion()">
+                            <i class="fas fa-plus me-1"></i>Agregar Otra Pregunta
                         </button>
                     </div>
-                </div>
-
-                <!-- Add Question Button -->
-                <div class="text-center mt-4">
-                    <button class="btn btn-outline-primary" onclick="addQuestion()">
-                        <i class="fas fa-plus me-1"></i>Agregar Otra Pregunta
-                    </button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="text-center">
+            <div class="spinner-border mb-3" style="width: 3rem; height: 3rem;"></div>
+            <div>Guardando preguntas...</div>
         </div>
     </div>
 
@@ -104,13 +270,21 @@ if (!$trivia_id) {
                 <div class="row">
                     <div class="col-md-8">
                         <div class="mb-3">
-                            <label class="form-label">Enunciado de la pregunta *</label>
+                            <label class="form-label fw-bold">Enunciado de la pregunta *</label>
                             <textarea class="form-control question-text" rows="3" 
                                       placeholder="Escribe aquí la pregunta..." required></textarea>
                         </div>
                         
+                        <!-- Vista previa de la pregunta con fondo -->
                         <div class="mb-3">
-                            <label class="form-label">Tipo de pregunta *</label>
+                            <label class="form-label fw-bold">Vista previa:</label>
+                            <div class="question-display" id="questionPreview_{index}">
+                                La pregunta aparecerá aquí con el fondo seleccionado
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Tipo de pregunta *</label>
                             <select class="form-select question-type" onchange="toggleQuestionOptions(this)">
                                 <option value="true_false">Verdadero o Falso</option>
                                 <option value="quiz">Quiz (4 opciones)</option>
@@ -125,7 +299,7 @@ if (!$trivia_id) {
                     
                     <div class="col-md-4">
                         <div class="mb-3">
-                            <label class="form-label">Tiempo límite (segundos)</label>
+                            <label class="form-label fw-bold">Tiempo límite (segundos)</label>
                             <select class="form-select time-limit">
                                 <option value="10">10 segundos</option>
                                 <option value="15">15 segundos</option>
@@ -137,9 +311,37 @@ if (!$trivia_id) {
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Imagen de fondo (opcional)</label>
-                            <input type="file" class="form-control question-image" accept="image/*">
-                            <small class="text-muted">Puedes agregar una imagen para esta pregunta</small>
+                            <label class="form-label fw-bold">Fondo para esta pregunta</label>
+                            
+                            <!-- Selector de imágenes predefinidas -->
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-2">Fondos predefinidos:</small>
+                                <div class="d-flex flex-wrap mb-2" id="defaultBackgrounds_{index}">
+                                    <!-- Las imágenes se cargarán dinámicamente -->
+                                </div>
+                            </div>
+                            
+                            <!-- Cargar imagen personalizada -->
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-2">O carga tu imagen:</small>
+                                <div class="custom-upload-small" onclick="document.getElementById('custom_bg_{index}').click()">
+                                    <i class="fas fa-upload me-1"></i>
+                                    Seleccionar imagen
+                                </div>
+                                <input type="file" class="custom-background" 
+                                       id="custom_bg_{index}"
+                                       accept="image/*" 
+                                       data-question-index="{index}"
+                                       style="display: none;">
+                            </div>
+                            
+                            <!-- Vista previa del fondo -->
+                            <div class="mt-3">
+                                <small class="text-muted d-block mb-1">Fondo seleccionado:</small>
+                                <div class="background-preview" id="backgroundPreview_{index}">
+                                    Sin fondo seleccionado
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -152,6 +354,9 @@ if (!$trivia_id) {
     <script>
         let questionCount = 0;
         const triviaId = '<?php echo $trivia_id; ?>';
+        
+        // Imágenes de fondo predefinidas
+        const defaultBackgrounds = <?php echo json_encode($defaultBackgrounds); ?>;
 
         function addQuestion() {
             questionCount++;
@@ -174,6 +379,90 @@ if (!$trivia_id) {
             
             // Initialize options for this question
             initializeQuestionOptions(questionCount);
+            
+            // Cargar imágenes predefinidas
+            loadDefaultBackgrounds(questionCount);
+            
+            // Configurar event listeners para la pregunta
+            setupQuestionEvents(questionCount);
+        }
+
+        function setupQuestionEvents(questionIndex) {
+            // Actualizar vista previa cuando cambia el texto
+            const textarea = document.querySelector(`[data-question-index="${questionIndex}"] .question-text`);
+            const preview = document.getElementById(`questionPreview_${questionIndex}`);
+            
+            textarea.addEventListener('input', function() {
+                preview.textContent = this.value || 'La pregunta aparecerá aquí con el fondo seleccionado';
+            });
+            
+            // Configurar upload de imagen personalizada
+            const fileInput = document.getElementById(`custom_bg_${questionIndex}`);
+            fileInput.addEventListener('change', function(e) {
+                handleCustomBackground(this, questionIndex);
+            });
+        }
+
+        function loadDefaultBackgrounds(questionIndex) {
+            const container = document.getElementById(`defaultBackgrounds_${questionIndex}`);
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            Object.entries(defaultBackgrounds).forEach(([key, url]) => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = key;
+                img.className = 'background-option';
+                img.title = key.charAt(0).toUpperCase() + key.slice(1);
+                img.onclick = function() {
+                    selectBackground(this, questionIndex);
+                };
+                container.appendChild(img);
+            });
+        }
+
+        function selectBackground(element, questionIndex) {
+            // Remover selección anterior
+            const container = element.parentElement;
+            container.querySelectorAll('.background-option').forEach(img => {
+                img.classList.remove('selected');
+            });
+            
+            // Seleccionar actual
+            element.classList.add('selected');
+            
+            // Actualizar vista previa del fondo
+            const bgPreview = document.getElementById(`backgroundPreview_${questionIndex}`);
+            bgPreview.innerHTML = '';
+            bgPreview.style.backgroundImage = `url('${element.src}')`;
+            
+            // Actualizar vista previa de la pregunta
+            const questionPreview = document.getElementById(`questionPreview_${questionIndex}`);
+            questionPreview.style.backgroundImage = `url('${element.src}')`;
+        }
+
+        function handleCustomBackground(input, questionIndex) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Actualizar vista previa del fondo
+                    const bgPreview = document.getElementById(`backgroundPreview_${questionIndex}`);
+                    bgPreview.innerHTML = '';
+                    bgPreview.style.backgroundImage = `url('${e.target.result}')`;
+                    
+                    // Actualizar vista previa de la pregunta
+                    const questionPreview = document.getElementById(`questionPreview_${questionIndex}`);
+                    questionPreview.style.backgroundImage = `url('${e.target.result}')`;
+                    
+                    // Limpiar selección de fondos predefinidos
+                    const container = document.getElementById(`defaultBackgrounds_${questionIndex}`);
+                    container.querySelectorAll('.background-option').forEach(img => {
+                        img.classList.remove('selected');
+                    });
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
         }
 
         function initializeQuestionOptions(questionIndex) {
@@ -344,10 +633,8 @@ if (!$trivia_id) {
             }
 
             // Mostrar loading
-            const btn = document.querySelector('.btn-success');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
-            btn.disabled = true;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
 
             try {
                 const response = await fetch('/microservices/tata-trivia/api/save_questions.php', {
@@ -367,16 +654,14 @@ if (!$trivia_id) {
                     window.location.href = '/microservices/tata-trivia/host/lobby?trivia_id=' + triviaId;
                 } else {
                     alert('Error: ' + result.error);
-                    // Restaurar botón
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
                 }
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error al guardar las preguntas. Por favor intenta nuevamente.');
-                // Restaurar botón
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+            } finally {
+                // Ocultar loading
+                document.getElementById('loadingOverlay').style.display = 'none';
+                document.body.style.overflow = 'auto';
             }
         }
 

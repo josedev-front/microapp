@@ -9,7 +9,7 @@ if (empty($trivia_id) || empty($player_id)) {
     exit;
 }
 
-// Obtener información del jugador
+// Obtener información del jugador y trivia PRIMERO
 try {
     $triviaController = new TriviaController();
     $player = $triviaController->getPlayerById($player_id);
@@ -18,10 +18,21 @@ try {
     if (!$player || !$trivia) {
         throw new Exception('Datos no encontrados');
     }
+    
+    // Obtener preguntas para los fondos
+    $questionBackgrounds = [];
+    $questions = $triviaController->getTriviaQuestions($trivia_id);
+    foreach ($questions as $question) {
+        $questionBackgrounds[$question['id']] = $triviaController->getQuestionBackgroundPath($question);
+    }
+    
 } catch (Exception $e) {
     header('Location: /microservices/tata-trivia/player/join');
     exit;
 }
+
+// Obtener el fondo de la trivia para el contenedor principal
+$triviaBackgroundPath = $triviaController->getTriviaBackgroundPath($trivia_id);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -33,9 +44,15 @@ try {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .game-container { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            background-image: url('<?php echo $triviaBackgroundPath; ?>');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             min-height: 100vh; 
             color: white; 
+        }
+        .game-container.no-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         }
         .question-display { 
             background: rgba(255,255,255,0.95); 
@@ -46,6 +63,27 @@ try {
             align-items: center;
             justify-content: center;
             padding: 2rem;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+        }
+        .question-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            z-index: 1;
+        }
+        .question-display h2 {
+            position: relative;
+            z-index: 2;
+            color: white !important;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
         }
         .option-btn { 
             background: rgba(255,255,255,0.9); 
@@ -54,11 +92,13 @@ try {
             cursor: pointer;
             border-radius: 10px;
             margin-bottom: 1rem;
+            color: #333;
         }
         .option-btn:hover { 
             background: rgba(255,255,255,1); 
             border-color: #007bff;
             transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         .option-btn.selected { 
             background: #007bff; 
@@ -90,10 +130,25 @@ try {
             border-radius: 10px;
             padding: 1rem;
             margin-bottom: 1rem;
+            backdrop-filter: blur(10px);
+        }
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
         }
     </style>
 </head>
-<body class="game-container">
+<body class="game-container <?php echo (!file_exists($_SERVER['DOCUMENT_ROOT'] . $triviaBackgroundPath)) ? 'no-bg' : ''; ?>">
     <div class="container py-4">
         <!-- Información del Jugador -->
         <div class="player-info">
@@ -115,21 +170,23 @@ try {
         </div>
 
         <!-- Pantalla de Espera -->
-        <div id="waitingScreen" class="text-center py-5">
-            <div class="spinner-border text-warning mb-4" style="width: 4rem; height: 4rem;" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <h2 class="text-warning">Esperando pregunta...</h2>
-            <p class="lead">El anfitrión prepara la siguiente ronda</p>
-            <div class="mt-4">
-                <div class="badge bg-info fs-6">
-                    <i class="fas fa-users me-1"></i> Conectado
+        <div id="waitingScreen" class="screen active">
+            <div class="text-center py-5">
+                <div class="spinner-border text-warning mb-4" style="width: 4rem; height: 4rem;" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <h2 class="text-warning">Esperando pregunta...</h2>
+                <p class="lead">El anfitrión prepara la siguiente ronda</p>
+                <div class="mt-4">
+                    <div class="badge bg-info fs-6">
+                        <i class="fas fa-users me-1"></i> Conectado
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Pantalla de Pregunta -->
-        <div id="questionScreen" style="display: none;">
+        <div id="questionScreen" class="screen">
             <div class="card bg-dark border-light shadow-lg">
                 <div class="card-header bg-light text-dark d-flex justify-content-between align-items-center">
                     <h4 id="questionHeader" class="mb-0">
@@ -151,7 +208,7 @@ try {
                     </div>
                     
                     <!-- Pregunta -->
-                    <div class="question-display mb-4">
+                    <div class="question-display mb-4" id="questionDisplay">
                         <h2 id="questionText" class="text-center mb-0 fw-bold"></h2>
                     </div>
                     
@@ -164,7 +221,7 @@ try {
         </div>
 
         <!-- Pantalla de Resultados -->
-        <div id="resultsScreen" style="display: none;">
+        <div id="resultsScreen" class="screen">
             <div class="card bg-dark border-light shadow-lg">
                 <div class="card-body text-center py-5">
                     <div id="resultIcon" class="mb-3" style="font-size: 4rem;"></div>
@@ -182,7 +239,7 @@ try {
         </div>
 
         <!-- Pantalla de Juego Terminado -->
-        <div id="gameOverScreen" style="display: none;">
+        <div id="gameOverScreen" class="screen">
             <div class="text-center py-5">
                 <i class="fas fa-flag-checkered fa-5x text-warning mb-4"></i>
                 <h2 class="text-warning">¡Juego Terminado!</h2>
@@ -200,259 +257,427 @@ try {
     </div>
 
     <script>
-        const triviaId = '<?php echo $trivia_id; ?>';
-        const playerId = '<?php echo $player_id; ?>';
-        const playerName = '<?php echo addslashes($player['player_name']); ?>';
-        let currentQuestion = null;
-        let selectedOption = null;
-        let questionStartTime = null;
-        let timerInterval = null;
-        let playerScore = 0;
+    const triviaId = '<?php echo $trivia_id; ?>';
+    const playerId = '<?php echo $player_id; ?>';
+    const playerName = '<?php echo addslashes($player['player_name']); ?>';
+    const questionBackgrounds = <?php echo json_encode($questionBackgrounds); ?>;
+    
+    let currentQuestion = null;
+    let selectedOption = null;
+    let questionStartTime = null;
+    let timerInterval = null;
+    let playerScore = 0;
+    let lastQuestionId = null;
 
-        class PlayerGame {
-            constructor() {
-                this.checkGameState();
-                // Consultar estado cada 2 segundos
-                setInterval(() => this.checkGameState(), 2000);
-                
-                console.log('🎮 Jugador inicializado:', { playerId, playerName, triviaId });
-            }
+    // ✅ FUNCIÓN MEJORADA: Mostrar pantalla activa
+    function setActiveScreen(screenId) {
+        // Ocultar todas las pantallas
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.classList.remove('active');
+        });
+        
+        // Mostrar la pantalla activa
+        const activeScreen = document.getElementById(screenId);
+        if (activeScreen) {
+            activeScreen.classList.add('active');
+        }
+    }
 
-            async checkGameState() {
-                try {
-                    const response = await fetch('/microservices/tata-trivia/api/player_communication.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'get_game_state',
-                            trivia_id: triviaId
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        this.handleGameState(data);
-                    } else {
-                        console.error('Error en game state:', data.error);
-                    }
-                } catch (error) {
-                    console.error('Error checking game state:', error);
-                }
-            }
+    class PlayerGame {
+        constructor() {
+            this.setupCommunication();
+            this.checkGameState();
+            // Consultar estado cada 2 segundos
+            setInterval(() => this.checkGameState(), 2000);
+            
+            console.log('🎮 Jugador inicializado:', { playerId, playerName, triviaId });
+            console.log('🎨 Fondos de preguntas cargados:', questionBackgrounds);
+        }
 
-            handleGameState(state) {
-                console.log('🎮 Estado del juego:', state);
-                
-                if (state.trivia_status === 'finished') {
-                    this.showGameOver();
-                    return;
-                }
-
-                if (state.current_question && !this.isSameQuestion(state.current_question)) {
-                    this.showQuestion(state.current_question);
-                } else if (!state.current_question && document.getElementById('questionScreen').style.display !== 'none') {
-                    this.showWaiting();
-                }
-            }
-
-            isSameQuestion(question) {
-                return currentQuestion && currentQuestion.id === question.id;
-            }
-
-            showWaiting() {
-                document.getElementById('waitingScreen').style.display = 'block';
-                document.getElementById('questionScreen').style.display = 'none';
-                document.getElementById('resultsScreen').style.display = 'none';
-                document.getElementById('gameOverScreen').style.display = 'none';
-            }
-
-            showQuestion(question) {
-                console.log('📝 Mostrando pregunta:', question.question_text);
-                
-                currentQuestion = question;
-                questionStartTime = Date.now();
-                selectedOption = null;
-
-                // Ocultar otras pantallas, mostrar pregunta
-                document.getElementById('waitingScreen').style.display = 'none';
-                document.getElementById('questionScreen').style.display = 'block';
-                document.getElementById('resultsScreen').style.display = 'none';
-                document.getElementById('gameOverScreen').style.display = 'none';
-
-                // Mostrar pregunta
-                document.getElementById('questionText').textContent = question.question_text;
-
-                // Mostrar opciones
-                const optionsContainer = document.getElementById('optionsContainer');
-                optionsContainer.innerHTML = '';
-                
-                const letters = ['A', 'B', 'C', 'D'];
-                question.options.forEach((option, index) => {
-                    const optionDiv = document.createElement('div');
-                    optionDiv.className = 'col-md-6 mb-3';
-                    optionDiv.innerHTML = `
-                        <button class="option-btn btn w-100 p-3 text-start" 
-                                onclick="playerGame.selectOption(${index}, ${option.id})"
-                                data-option-id="${option.id}">
-                            <span class="fw-bold me-2">${letters[index]}.</span>
-                            ${option.text}
-                        </button>
-                    `;
-                    optionsContainer.appendChild(optionDiv);
-                });
-
-                // Iniciar temporizador
-                this.startTimer(question.time_limit || 30);
-            }
-
-            startTimer(seconds) {
-                let timeLeft = seconds;
-                const timerDisplay = document.getElementById('timerDisplay');
-                const timerBar = document.getElementById('timerBar');
-                
-                timerDisplay.textContent = timeLeft;
-                timerBar.style.width = '100%';
-                timerBar.className = 'timer-bar bg-success';
-
-                clearInterval(timerInterval);
-                timerInterval = setInterval(() => {
-                    timeLeft--;
-                    timerDisplay.textContent = timeLeft;
-                    const percentage = (timeLeft / seconds) * 100;
-                    timerBar.style.width = percentage + '%';
-
-                    // Cambiar color según el tiempo
-                    if (timeLeft <= 10) {
-                        timerBar.className = 'timer-bar bg-danger';
-                    } else if (timeLeft <= 20) {
-                        timerBar.className = 'timer-bar bg-warning';
-                    }
-
-                    if (timeLeft <= 0) {
-                        clearInterval(timerInterval);
-                        this.submitAnswer();
-                    }
-                }, 1000);
-            }
-
-            selectOption(optionIndex, optionId) {
-                if (selectedOption !== null) {
-                    console.log('⚠️ Ya se seleccionó una opción');
-                    return; // Ya respondió
-                }
-
-                selectedOption = { index: optionIndex, id: optionId };
-                
-                console.log('✅ Opción seleccionada:', selectedOption);
-                
-                // Marcar opción seleccionada
-                const optionButtons = document.querySelectorAll('.option-btn');
-                optionButtons.forEach(btn => {
-                    btn.classList.remove('selected');
-                    btn.disabled = true;
-                });
-                optionButtons[optionIndex].classList.add('selected');
-
-                // Enviar respuesta automáticamente
-                setTimeout(() => this.submitAnswer(), 500);
-            }
-
-            async submitAnswer() {
-                console.log('📤 Enviando respuesta...');
-                
-                clearInterval(timerInterval);
-
-                const responseTime = Date.now() - questionStartTime;
-                
-                try {
-                    const response = await fetch('/microservices/tata-trivia/api/player_communication.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'submit_answer',
-                            trivia_id: triviaId,
-                            player_id: playerId,
-                            question_id: currentQuestion.id,
-                            option_id: selectedOption ? selectedOption.id : null,
-                            response_time: responseTime
-                        })
-                    });
-
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        this.showResult(data.is_correct, responseTime);
-                        
-                        // Actualizar puntaje
-                        if (data.is_correct) {
-                            const points = Math.max(1000 - Math.floor(responseTime / 10), 100);
-                            playerScore += points;
-                            document.getElementById('playerScore').textContent = playerScore;
-                        }
-                    } else {
-                        this.showResult(false, responseTime, data.error);
-                    }
-
-                } catch (error) {
-                    console.error('Error submitting answer:', error);
-                    this.showResult(false, responseTime, 'Error al enviar respuesta');
-                }
-            }
-
-            showResult(isCorrect, responseTime, message = '') {
-                console.log('📊 Mostrando resultado:', { isCorrect, responseTime });
-                
-                document.getElementById('questionScreen').style.display = 'none';
-                document.getElementById('resultsScreen').style.display = 'block';
-
-                const resultIcon = document.getElementById('resultIcon');
-                const resultTitle = document.getElementById('resultTitle');
-                const resultMessage = document.getElementById('resultMessage');
-                const responseTimeElement = document.getElementById('responseTime');
-
-                if (isCorrect) {
-                    resultIcon.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
-                    resultTitle.textContent = '¡Correcto! 🎉';
-                    resultTitle.className = 'text-success';
-                    resultMessage.textContent = message || '¡Bien hecho! Respuesta correcta.';
-                } else {
-                    resultIcon.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
-                    resultTitle.textContent = 'Incorrecto 😔';
-                    resultTitle.className = 'text-danger';
-                    resultMessage.textContent = message || 'Respuesta incorrecta.';
-                }
-
-                responseTimeElement.textContent = (responseTime / 1000).toFixed(1);
-
-                // Mostrar respuesta correcta si fue incorrecta
-                if (!isCorrect && currentQuestion) {
-                    const correctOption = currentQuestion.options.find(opt => opt.is_correct);
-                    if (correctOption) {
-                        const letters = ['A', 'B', 'C', 'D'];
-                        const correctIndex = currentQuestion.options.findIndex(opt => opt.is_correct);
-                        document.getElementById('correctAnswer').innerHTML = `
-                            <div class="alert alert-info">
-                                <strong><i class="fas fa-lightbulb me-2"></i>Respuesta correcta:</strong> 
-                                ${letters[correctIndex]}. ${correctOption.text}
-                            </div>
-                        `;
+        setupCommunication() {
+            // Escuchar mensajes del host vía localStorage
+            window.addEventListener('storage', (e) => {
+                if (e.key === `trivia_${triviaId}_to_players` && e.newValue) {
+                    try {
+                        const message = JSON.parse(e.newValue);
+                        this.handleHostMessage(message);
+                    } catch (error) {
+                        console.error('Error procesando mensaje del host:', error);
                     }
                 }
-            }
+            });
+        }
 
-            showGameOver() {
-                console.log('🏁 Juego terminado');
-                
-                document.getElementById('waitingScreen').style.display = 'none';
-                document.getElementById('questionScreen').style.display = 'none';
-                document.getElementById('resultsScreen').style.display = 'none';
-                document.getElementById('gameOverScreen').style.display = 'block';
+        handleHostMessage(message) {
+            console.log('📨 Mensaje recibido del host:', message.type, message.data);
+            
+            switch (message.type) {
+                case 'question_started':
+                    this.handleQuestionStarted(message.data);
+                    break;
+                case 'question_ended':
+                    this.handleQuestionEnded();
+                    break;
+                case 'show_results':
+                    this.handleShowResults(message.data);
+                    break;
+                case 'show_leaderboard':
+                    this.handleShowLeaderboard(message.data);
+                    break;
+                case 'game_ended':
+                    this.handleGameEnded();
+                    break;
             }
         }
 
-        // Inicializar juego del jugador
-        const playerGame = new PlayerGame();
+        async checkGameState() {
+            try {
+                const response = await fetch('/microservices/tata-trivia/api/game_actions.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'get_question_status',
+                        trivia_id: triviaId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.handleGameState(data);
+                } else {
+                    console.error('Error en game state:', data.error);
+                }
+            } catch (error) {
+                console.error('Error checking game state:', error);
+            }
+        }
+
+        handleGameState(state) {
+            console.log('🎮 Estado del juego:', state);
+            
+            if (state.trivia_status === 'finished') {
+                this.showGameOver();
+                return;
+            }
+
+            // ✅ CORREGIDO: Lógica mejorada para mostrar preguntas
+            if (state.trivia_status === 'active' && state.current_question) {
+                // Verificar si es una pregunta nueva
+                if (!this.isSameQuestion(state.current_question)) {
+                    console.log('🆕 Nueva pregunta detectada');
+                    this.showQuestion(state.current_question);
+                }
+            } else {
+                // Si no hay pregunta activa, mostrar pantalla de espera
+                if (document.getElementById('questionScreen').classList.contains('active')) {
+                    this.showWaiting();
+                }
+            }
+        }
+
+        isSameQuestion(question) {
+            // Verificar si es la misma pregunta por ID y contenido
+            if (!currentQuestion || !question) return false;
+            
+            const isSame = currentQuestion.id === question.id && 
+                          currentQuestion.question_text === question.question_text;
+            
+            if (!isSame) {
+                console.log('🔄 Cambio de pregunta detectado:', {
+                    anterior: currentQuestion?.id,
+                    nueva: question?.id
+                });
+            }
+            
+            return isSame;
+        }
+
+        showWaiting() {
+            console.log('⏳ Mostrando pantalla de espera');
+            setActiveScreen('waitingScreen');
+            
+            // Resetear estado de pregunta actual
+            currentQuestion = null;
+            selectedOption = null;
+            clearInterval(timerInterval);
+        }
+
+        handleQuestionStarted(data) {
+            console.log('🎯 Iniciando pregunta desde host:', data);
+            
+            if (data.question) {
+                this.showQuestion(data.question);
+            }
+        }
+
+        showQuestion(question) {
+            console.log('📝 Mostrando pregunta:', question);
+            
+            // Validar que la pregunta tenga la estructura correcta
+            if (!question || !question.question_text || !question.options) {
+                console.error('❌ Pregunta inválida:', question);
+                this.showWaiting();
+                return;
+            }
+            
+            currentQuestion = question;
+            questionStartTime = Date.now();
+            selectedOption = null;
+            lastQuestionId = question.id;
+
+            // Ocultar otras pantallas, mostrar pregunta
+            setActiveScreen('questionScreen');
+
+            // ✅ CORREGIDO: Aplicar fondo específico de la pregunta
+            this.applyQuestionBackground(question);
+
+            // Mostrar pregunta
+            document.getElementById('questionText').textContent = question.question_text;
+
+            // Mostrar opciones
+            this.displayQuestionOptions(question);
+
+            // Iniciar temporizador
+            this.startTimer(question.time_limit || 30);
+        }
+
+        // ✅ CORREGIDO: Función mejorada para aplicar fondos
+        applyQuestionBackground(question) {
+            const questionDisplay = document.getElementById('questionDisplay');
+            let questionBackground = '/microservices/tata-trivia/assets/images/themes/questions/general.jpg';
+            
+            // ✅ CORREGIDO: Lógica mejorada para determinar el fondo
+            if (question.background_image && question.background_image.trim() !== '' && question.background_image !== 'null') {
+                // Usar fondo específico de la pregunta desde la base de datos
+                questionBackground = question.background_image;
+                console.log('🎨 Player - Usando fondo de la pregunta (DB):', questionBackground);
+            } else if (question.id && questionBackgrounds[question.id]) {
+                // Usar fondo del array preparado
+                questionBackground = questionBackgrounds[question.id];
+                console.log('🎨 Player - Usando fondo de array:', questionBackground);
+            } else {
+                // Usar fondo por defecto
+                console.log('🎨 Player - Usando fondo por defecto');
+            }
+            
+            // ✅ CORREGIDO: Asegurar que la URL sea válida
+            if (!questionBackground.startsWith('http') && !questionBackground.startsWith('/')) {
+                questionBackground = '/microservices/tata-trivia/assets/images/themes/questions/' + questionBackground;
+            }
+            
+            console.log('🎨 Player - Aplicando fondo final:', questionBackground);
+            
+            questionDisplay.style.backgroundImage = `url('${questionBackground}')`;
+            questionDisplay.style.backgroundSize = 'cover';
+            questionDisplay.style.backgroundPosition = 'center';
+            questionDisplay.style.backgroundRepeat = 'no-repeat';
+        }
+
+        displayQuestionOptions(question) {
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+            
+            const letters = ['A', 'B', 'C', 'D'];
+            
+            question.options.forEach((option, index) => {
+                // Validar que la opción tenga texto
+                if (!option.text) {
+                    console.warn('⚠️ Opción sin texto:', option);
+                    return;
+                }
+                
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'col-md-6 mb-3';
+                optionDiv.innerHTML = `
+                    <button class="option-btn btn w-100 p-3 text-start" 
+                            onclick="playerGame.selectOption(${index}, ${option.id})"
+                            data-option-id="${option.id}">
+                        <span class="fw-bold me-2">${letters[index]}.</span>
+                        ${option.text}
+                    </button>
+                `;
+                optionsContainer.appendChild(optionDiv);
+            });
+        }
+
+        startTimer(seconds) {
+            // Limpiar timer anterior si existe
+            clearInterval(timerInterval);
+            
+            let timeLeft = seconds;
+            const timerDisplay = document.getElementById('timerDisplay');
+            const timerBar = document.getElementById('timerBar');
+            
+            timerDisplay.textContent = timeLeft;
+            timerBar.style.width = '100%';
+            timerBar.className = 'timer-bar bg-success';
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                const percentage = (timeLeft / seconds) * 100;
+                timerBar.style.width = percentage + '%';
+
+                // Cambiar color según el tiempo
+                if (timeLeft <= 10) {
+                    timerBar.className = 'timer-bar bg-danger';
+                    timerDisplay.parentElement.classList.add('pulse');
+                } else if (timeLeft <= 20) {
+                    timerBar.className = 'timer-bar bg-warning';
+                    timerDisplay.parentElement.classList.remove('pulse');
+                } else {
+                    timerDisplay.parentElement.classList.remove('pulse');
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    this.submitAnswer();
+                }
+            }, 1000);
+        }
+
+        selectOption(optionIndex, optionId) {
+            if (selectedOption !== null) {
+                console.log('⚠️ Ya se seleccionó una opción');
+                return; // Ya respondió
+            }
+
+            selectedOption = { index: optionIndex, id: optionId };
+            
+            console.log('✅ Opción seleccionada:', selectedOption);
+            
+            // Marcar opción seleccionada
+            const optionButtons = document.querySelectorAll('.option-btn');
+            optionButtons.forEach(btn => {
+                btn.classList.remove('selected');
+                btn.disabled = true;
+            });
+            optionButtons[optionIndex].classList.add('selected');
+
+            // Enviar respuesta automáticamente
+            setTimeout(() => this.submitAnswer(), 500);
+        }
+
+        async submitAnswer() {
+            console.log('📤 Enviando respuesta...');
+            
+            clearInterval(timerInterval);
+
+            const responseTime = Date.now() - questionStartTime;
+            
+            try {
+                const response = await fetch('/microservices/tata-trivia/api/submit_answer.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        trivia_id: triviaId,
+                        player_id: playerId,
+                        question_id: currentQuestion.id,
+                        option_id: selectedOption ? selectedOption.id : null,
+                        response_time: responseTime
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.showResult(data.is_correct, responseTime);
+                    
+                    // Actualizar puntaje
+                    if (data.is_correct) {
+                        const points = Math.max(1000 - Math.floor(responseTime / 10), 100);
+                        playerScore += points;
+                        document.getElementById('playerScore').textContent = playerScore;
+                    }
+                } else {
+                    this.showResult(false, responseTime, data.error);
+                }
+
+            } catch (error) {
+                console.error('Error submitting answer:', error);
+                this.showResult(false, responseTime, 'Error al enviar respuesta');
+            }
+        }
+
+        showResult(isCorrect, responseTime, message = '') {
+            console.log('📊 Mostrando resultado:', { isCorrect, responseTime });
+            
+            setActiveScreen('resultsScreen');
+
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultMessage = document.getElementById('resultMessage');
+            const responseTimeElement = document.getElementById('responseTime');
+
+            if (isCorrect) {
+                resultIcon.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
+                resultTitle.textContent = '¡Correcto! 🎉';
+                resultTitle.className = 'text-success';
+                resultMessage.textContent = message || '¡Bien hecho! Respuesta correcta.';
+            } else {
+                resultIcon.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
+                resultTitle.textContent = 'Incorrecto 😔';
+                resultTitle.className = 'text-danger';
+                resultMessage.textContent = message || 'Respuesta incorrecta.';
+            }
+
+            responseTimeElement.textContent = (responseTime / 1000).toFixed(1);
+
+            // Mostrar respuesta correcta si fue incorrecta
+            if (!isCorrect && currentQuestion) {
+                const correctOption = currentQuestion.options.find(opt => opt.is_correct);
+                if (correctOption) {
+                    const letters = ['A', 'B', 'C', 'D'];
+                    const correctIndex = currentQuestion.options.findIndex(opt => opt.is_correct);
+                    document.getElementById('correctAnswer').innerHTML = `
+                        <div class="alert alert-info">
+                            <strong><i class="fas fa-lightbulb me-2"></i>Respuesta correcta:</strong> 
+                            ${letters[correctIndex]}. ${correctOption.text}
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        handleQuestionEnded() {
+            console.log('⏹️ Pregunta finalizada por el host');
+            this.showWaiting();
+        }
+
+        handleShowResults(data) {
+            console.log('📊 Mostrando resultados:', data);
+            // El host muestra resultados generales
+        }
+
+        handleShowLeaderboard(data) {
+            console.log('🏆 Mostrando leaderboard:', data);
+            // El host muestra leaderboard
+        }
+
+        handleGameEnded() {
+            console.log('🏁 Juego terminado por el host');
+            this.showGameOver();
+        }
+
+        showGameOver() {
+            console.log('🏁 Juego terminado');
+            setActiveScreen('gameOverScreen');
+            
+            // Limpiar timers
+            clearInterval(timerInterval);
+        }
+    }
+
+    // Inicializar juego del jugador
+    const playerGame = new PlayerGame();
+    
+    console.log('🔍 Debug - Player inicializado:', {
+        currentQuestion,
+        questionBackgrounds,
+        backgroundFromDB: currentQuestion?.background_image,
+        backgroundFromArray: currentQuestion?.id ? questionBackgrounds[currentQuestion.id] : 'N/A'
+    });
     </script>
 </body>
 </html>

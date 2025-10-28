@@ -1,8 +1,17 @@
 <?php
-// microservices/tata-trivia/api/game_actions.php - VERSIÓN CORREGIDA
+// microservices/tata-trivia/api/game_actions.php - VERSIÓN COMPLETA CORREGIDA
 
 // HEADERS PRIMERO
 header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Manejar preflight OPTIONS
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
 // Iniciar sesión si no está activa
 if (session_status() === PHP_SESSION_NONE) {
@@ -14,14 +23,18 @@ function sendError($message, $code = 400) {
     http_response_code($code);
     echo json_encode([
         'success' => false,
-        'error' => $message
+        'error' => $message,
+        'timestamp' => time()
     ]);
     exit;
 }
 
 // Respuesta de éxito
 function sendSuccess($data = []) {
-    echo json_encode(array_merge(['success' => true], $data));
+    echo json_encode(array_merge([
+        'success' => true,
+        'timestamp' => time()
+    ], $data));
     exit;
 }
 
@@ -41,12 +54,10 @@ try {
     if (!empty($rawInput)) {
         $input = json_decode($rawInput, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            // Si falla JSON, intentar con POST normal
-            $input = $_POST;
+            sendError('JSON inválido: ' . json_last_error_msg());
         }
     } else {
-        // Si no hay input JSON, usar POST normal
-        $input = $_POST;
+        sendError('No se recibieron datos');
     }
 
     // VALIDAR PARÁMETROS CRÍTICOS
@@ -88,51 +99,71 @@ try {
             
             sendSuccess([
                 'message' => 'Estado reiniciado',
-                'current_index' => -1
+                'current_index' => -1,
+                'trivia_status' => 'waiting'
             ]);
             break;
             
         case 'next_question':
-        case 'advance_question':
-            // Obtener preguntas de la trivia
-            $questions = $controller->getTriviaQuestions($trivia_id);
-            
-            if (empty($questions)) {
-                sendError("No hay preguntas configuradas para esta trivia");
-            }
-            
-            // Determinar índice actual desde BASE DE DATOS
-            $current_index = $controller->getCurrentQuestionIndex($trivia_id);
-            $next_index = $current_index + 1;
-            
-            // Verificar límites
-            if ($next_index < 0) $next_index = 0;
-            
-            if ($next_index >= count($questions)) {
-                // JUEGO TERMINADO
-                $controller->finishGame($trivia_id);
-                sendSuccess([
-                    'game_finished' => true,
-                    'message' => 'No hay más preguntas disponibles'
-                ]);
-            }
-            
-            // ACTUALIZAR BASE DE DATOS - ESTO ES CLAVE
-            $controller->setCurrentQuestion($trivia_id, $next_index);
-            
-            // Actualizar sesión también
-            $_SESSION['current_question_index'] = $next_index;
-            $_SESSION['current_question'] = $questions[$next_index];
-            $_SESSION['question_start_time'] = time();
-            
-            sendSuccess([
-                'current_question' => $next_index + 1,
-                'total_questions' => count($questions),
-                'question_data' => $questions[$next_index],
-                'question_index' => $next_index,
-                'game_active' => true
-            ]);
-            break;
+case 'advance_question':
+    // Obtener preguntas de la trivia
+    $questions = $controller->getTriviaQuestions($trivia_id);
+    
+    if (empty($questions)) {
+        sendError("No hay preguntas configuradas para esta trivia");
+    }
+    
+    // Determinar índice actual desde BASE DE DATOS
+    $current_index = $controller->getCurrentQuestionIndex($trivia_id);
+    $next_index = $current_index + 1;
+    
+    // Verificar límites
+    if ($next_index < 0) $next_index = 0;
+    
+    if ($next_index >= count($questions)) {
+        // JUEGO TERMINADO
+        $controller->finishGame($trivia_id);
+        sendSuccess([
+            'game_finished' => true,
+            'message' => '¡Juego terminado! No hay más preguntas.',
+            'total_questions' => count($questions),
+            'final_index' => $current_index
+        ]);
+    }
+    
+    // Obtener datos de la siguiente pregunta
+    $next_question = $questions[$next_index];
+    
+    // ✅ CORREGIDO: Asegurar que la pregunta tenga background_image formateado correctamente
+    if (empty($next_question['background_image']) || $next_question['background_image'] === '') {
+        $next_question['background_image'] = $controller->getQuestionBackgroundPath($next_question);
+    } else {
+        // Si ya tiene background_image, asegurarse de que sea una ruta completa
+        $current_bg = $next_question['background_image'];
+        if (strpos($current_bg, '/microservices/tata-trivia/assets/images/themes/') !== 0) {
+            // Si no es una ruta completa, convertirla
+            $next_question['background_image'] = $controller->getQuestionBackgroundPath($next_question);
+        }
+    }
+    
+    // ACTUALIZAR BASE DE DATOS - ESTO ES CLAVE
+    $controller->setCurrentQuestion($trivia_id, $next_index);
+    $controller->updateTriviaStatus($trivia_id, 'active');
+    
+    // Actualizar sesión también
+    $_SESSION['current_question_index'] = $next_index;
+    $_SESSION['current_question'] = $next_question;
+    $_SESSION['question_start_time'] = time();
+    
+    sendSuccess([
+        'question_index' => $next_index,
+        'current_question' => $next_index + 1,
+        'total_questions' => count($questions),
+        'question_data' => $next_question,
+        'game_active' => true,
+        'trivia_status' => 'active'
+    ]);
+    break;
             
         case 'start_question':
             // Iniciar pregunta específica
@@ -144,18 +175,27 @@ try {
                 sendError("Índice de pregunta inválido");
             }
             
+            $question_data = $questions[$question_index];
+            
+            // ✅ CORREGIDO: Asegurar que la pregunta tenga background_image
+            if (empty($question_data['background_image'])) {
+                $question_data['background_image'] = $controller->getQuestionBackgroundPath($question_data);
+            }
+            
             // Actualizar base de datos
             $controller->setCurrentQuestion($trivia_id, $question_index);
+            $controller->updateTriviaStatus($trivia_id, 'active');
             
             $_SESSION['current_question_index'] = $question_index;
-            $_SESSION['current_question'] = $questions[$question_index];
+            $_SESSION['current_question'] = $question_data;
             $_SESSION['question_start_time'] = time();
             
             sendSuccess([
-                'question_data' => $questions[$question_index],
+                'question_data' => $question_data,
                 'question_index' => $question_index,
                 'current_question' => $question_index + 1,
-                'total_questions' => count($questions)
+                'total_questions' => count($questions),
+                'trivia_status' => 'active'
             ]);
             break;
             
@@ -167,6 +207,11 @@ try {
             
             if ($current_index >= 0 && $current_index < count($questions)) {
                 $current_question = $questions[$current_index];
+                
+                // ✅ CORREGIDO: Asegurar que la pregunta tenga background_image
+                if (empty($current_question['background_image'])) {
+                    $current_question['background_image'] = $controller->getQuestionBackgroundPath($current_question);
+                }
             }
             
             sendSuccess([
@@ -181,19 +226,31 @@ try {
             
         case 'end_question':
             // Finalizar pregunta actual
+            $current_index = $controller->getCurrentQuestionIndex($trivia_id);
             unset($_SESSION['current_question']);
             $_SESSION['question_end_time'] = time();
             
+            // Cambiar estado a waiting para la siguiente pregunta
+            $controller->updateTriviaStatus($trivia_id, 'waiting');
+            
             sendSuccess([
-                'message' => 'Pregunta finalizada'
+                'message' => 'Pregunta finalizada',
+                'question_index' => $current_index,
+                'trivia_status' => 'waiting'
             ]);
             break;
             
         case 'finish_game':
             // Finalizar juego completamente
             $controller->finishGame($trivia_id);
+            
+            // Limpiar sesión
+            unset($_SESSION['current_question_index']);
+            unset($_SESSION['current_question']);
+            
             sendSuccess([
-                'message' => 'Juego finalizado'
+                'message' => 'Juego finalizado',
+                'trivia_status' => 'finished'
             ]);
             break;
             
@@ -208,7 +265,32 @@ try {
             $controller->updateTriviaStatus($trivia_id, $status);
             
             sendSuccess([
-                'message' => 'Estado actualizado'
+                'message' => 'Estado actualizado',
+                'question_index' => $question_index,
+                'trivia_status' => $status
+            ]);
+            break;
+            
+        case 'get_game_data':
+            // Obtener todos los datos del juego
+            $questions = $controller->getTriviaQuestions($trivia_id);
+            $players = $controller->getLobbyPlayers($trivia_id);
+            $current_index = $controller->getCurrentQuestionIndex($trivia_id);
+            
+            // Procesar preguntas para incluir fondos
+            foreach ($questions as &$question) {
+                if (empty($question['background_image'])) {
+                    $question['background_image'] = $controller->getQuestionBackgroundPath($question);
+                }
+            }
+            
+            sendSuccess([
+                'trivia' => $trivia,
+                'questions' => $questions,
+                'players' => $players,
+                'current_question_index' => $current_index,
+                'total_questions' => count($questions),
+                'total_players' => count($players)
             ]);
             break;
             
@@ -216,9 +298,14 @@ try {
             sendError("Acción no reconocida: " . $action);
     }
 
+} catch (PDOException $e) {
+    error_log("❌ ERROR PDO en game_actions: " . $e->getMessage());
+    sendError('Error de base de datos', 500);
+    
 } catch (Exception $e) {
     // Log del error completo
     error_log("❌ ERROR CRÍTICO en game_actions: " . $e->getMessage());
+    error_log("📋 Stack trace: " . $e->getTraceAsString());
     
     sendError('Error interno del servidor: ' . $e->getMessage(), 500);
 }
