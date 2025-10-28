@@ -157,10 +157,7 @@ $debugInfo[] = "=== END DEBUG ===";
                         </div>
 
                         <!-- Debug info -->
-                        <div class="debug-info">
-                            <strong>Debug Info:</strong><br>
-                            <?php echo implode("<br>", $debugInfo); ?>
-                        </div>
+                        
 
                         <!-- Mensajes de error -->
                         <?php if (isset($error)): ?>
