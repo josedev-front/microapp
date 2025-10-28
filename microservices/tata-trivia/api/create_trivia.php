@@ -1,4 +1,6 @@
 <?php
+// microservices/tata-trivia/api/create_trivia.php - VERSIÓN MEJORADA
+
 require_once __DIR__ . '/../init.php';
 
 header('Content-Type: application/json');
@@ -14,7 +16,8 @@ try {
     $input = json_decode(file_get_contents('php://input'), true);
     
     if (!$input) {
-        throw new Exception('Datos inválidos');
+        // Intentar con form data si json falla
+        $input = $_POST;
     }
 
     // Validar datos requeridos
@@ -22,32 +25,31 @@ try {
         throw new Exception('El título es requerido');
     }
 
-    if (empty($input['gameMode']) || !in_array($input['gameMode'], ['individual', 'teams'])) {
-        throw new Exception('Modalidad de juego inválida');
-    }
-
     // Crear controlador y crear trivia
     $triviaController = new TriviaController();
     
     $hostData = [
-        'user_id' => $input['hostData']['user_id'] ?? null,
+        'user_id' => $input['user_id'] ?? ($_SESSION['user_id'] ?? null),
         'title' => $input['title'],
-        'background_image' => $input['customImage'] ? 'custom' : ($input['theme'] ?? 'default')
+        'theme' => $input['theme'] ?? 'default',
+        'game_mode' => $input['game_mode'] ?? 'individual',
+        'max_winners' => intval($input['max_winners'] ?? 1),
+        'background_image' => $input['theme'] ?? 'default'
     ];
 
-    $result = $triviaController->createTrivia(
-        $hostData,
-        $input['theme'] ?? 'default',
-        $input['gameMode'],
-        intval($input['maxWinners'] ?? 1)
-    );
+    $result = $triviaController->createTrivia($hostData);
 
-    // Responder con éxito
-    echo json_encode([
-        'success' => true,
-        'message' => 'Trivia creada exitosamente',
-        'data' => $result
-    ]);
+    if ($result['success']) {
+        // Responder con éxito
+        echo json_encode([
+            'success' => true,
+            'message' => 'Trivia creada exitosamente',
+            'trivia_id' => $result['trivia_id'],
+            'join_code' => $result['join_code']
+        ]);
+    } else {
+        throw new Exception($result['error'] ?? 'Error al crear trivia');
+    }
 
 } catch (Exception $e) {
     error_log('Error creating trivia: ' . $e->getMessage());

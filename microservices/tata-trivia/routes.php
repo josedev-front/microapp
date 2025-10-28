@@ -48,6 +48,9 @@ try {
     }
 
     switch($segments[0]) {
+        case 'game_host':
+            loadTriviaView('host/game_host');
+        break;
         case 'host':
             if (!class_exists('HostController')) {
                 error_log("HostController no existe");

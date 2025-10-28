@@ -1,6 +1,10 @@
 <?php
-$user = $user ?? getTriviaMicroappsUser();
+// microservices/tata-trivia/views/host/lobby.php - VERSIÓN CORREGIDA
+
+require_once __DIR__ . '/../../init.php';
+
 $trivia_id = $_GET['trivia_id'] ?? null;
+$join_code = $_GET['join_code'] ?? '';
 
 if (!$trivia_id) {
     header('Location: /microservices/tata-trivia/host/setup');
@@ -8,191 +12,217 @@ if (!$trivia_id) {
 }
 
 // Obtener información de la trivia
-try {
-    $triviaController = new TriviaController();
-    $trivia = $triviaController->getTriviaById($trivia_id);
-    $join_code = $trivia['join_code'] ?? $trivia_id;
-    
-    // URL para unirse
-    $join_url = "http://" . $_SERVER['HTTP_HOST'] . "/microservices/tata-trivia/player/join?code=" . $join_code;
-    $qr_url = "/microservices/tata-trivia/api/generate_qr.php?code=" . $join_code . "&size=200";
-    
-} catch (Exception $e) {
-    $join_code = $trivia_id;
-    $join_url = "http://" . $_SERVER['HTTP_HOST'] . "/microservices/tata-trivia/player/join?code=" . $trivia_id;
-    $qr_url = "/microservices/tata-trivia/api/generate_qr.php?code=" . $trivia_id . "&size=200";
-}
+$triviaController = new TriviaController();
+$trivia = $triviaController->getTriviaById($trivia_id);
+$players = $triviaController->getLobbyPlayers($trivia_id);
+
+// DEBUG: Verificar jugadores
+error_log("Lobby - Trivia ID: $trivia_id, Jugadores encontrados: " . count($players));
+
+// Obtener imagen de fondo de la trivia
+$backgroundImage = $triviaController->getBackgroundImagePath($trivia_id);
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lobby - Tata Trivia</title>
+    <title>Sala de Espera - Tata Trivia</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .qr-container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: inline-block;
+        body {
+            background: url('<?= $backgroundImage ?>') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
         }
-        .join-code {
-            font-family: 'Courier New', monospace;
-            letter-spacing: 2px;
+        .lobby-container {
+            background: rgba(255, 255, 255, 0.95);
+            min-height: 100vh;
+            padding: 20px 0;
         }
         .player-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
         }
         .player-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
-        .copy-btn {
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #dee2e6;
+        }
+        .qr-code {
+            max-width: 200px;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+        }
+        .join-info {
+            background: rgba(0, 123, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .copy-link {
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        .copy-btn:hover {
-            background-color: #e9ecef;
+        .copy-link:hover {
+            background-color: #f8f9fa;
         }
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        .empty-players {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid bg-light min-vh-100 py-4">
-        <div class="row justify-content-center">
-            <div class="col-12 col-lg-10">
-                <!-- Header -->
-                <div class="card mb-4">
-                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h3 class="mb-0"><i class="fas fa-users me-2"></i>Sala de Espera</h3>
-                        <span class="badge bg-warning pulse">
-                            <i class="fas fa-clock me-1"></i>Esperando jugadores...
-                        </span>
+    <div class="lobby-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    
+                    <!-- Header -->
+                    <div class="text-center mb-4">
+                        <h1 class="text-primary">
+                            <i class="fas fa-door-open me-2"></i>Sala de Espera
+                        </h1>
+                        <p class="lead">Esperando a que los jugadores se unan...</p>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <!-- Código y QR -->
-                            <div class="col-md-6 text-center">
-                                <h4 class="text-success mb-3">
-                                    <i class="fas fa-gamepad me-2"></i>¡Trivia Creada!
-                                </h4>
-                                
-                                <div class="mb-4">
-                                    <p class="text-muted mb-2">Comparte este código:</p>
-                                    <div class="alert alert-info mb-3">
-                                        <h1 class="join-code display-4 mb-0"><?php echo htmlspecialchars($join_code); ?></h1>
-                                    </div>
-                                    
-                                    <div class="d-flex justify-content-center gap-2 mb-3">
-                                        <button class="btn btn-outline-primary copy-btn" data-text="<?php echo htmlspecialchars($join_code); ?>">
-                                            <i class="fas fa-copy me-1"></i>Copiar Código
-                                        </button>
-                                        <button class="btn btn-outline-secondary copy-btn" data-text="<?php echo htmlspecialchars($join_url); ?>">
-                                            <i class="fas fa-link me-1"></i>Copiar Enlace
-                                        </button>
-                                    </div>
-                                </div>
 
-                                <!-- QR Code -->
-                                <div class="mb-4">
-                                    <p class="text-muted mb-2">O escanea el QR:</p>
-                                    <div class="qr-container">
-                                        <img src="<?php echo $qr_url; ?>" 
-                                             alt="QR Code para unirse a la trivia" 
-                                             class="img-fluid"
-                                             style="max-width: 200px;">
+                    <!-- Información de la trivia -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title"><?= htmlspecialchars($trivia['title']) ?></h5>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <strong>Modalidad:</strong> 
+                                            <?= $trivia['game_mode'] === 'teams' ? 'Por Equipos' : 'Individual' ?>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Ganadores:</strong> <?= $trivia['max_winners'] ?>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <strong>Jugadores:</strong> 
+                                            <span id="playerCount"><?= count($players) ?></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Jugadores Conectados -->
-                            <div class="col-md-6">
-                                <h5 class="text-center mb-3">
-                                    <i class="fas fa-users me-2"></i>Jugadores Conectados
-                                    <span class="badge bg-primary" id="playerCount">0</span>
-                                </h5>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="join-info text-center">
+                                <h4 class="text-primary mb-3"><?= $join_code ?></h4>
+                                <p class="mb-2"><strong>Código para unirse</strong></p>
+                                <img src="/microservices/tata-trivia/api/generate_qr.php?code=<?= $join_code ?>" 
+                                     class="qr-code img-fluid mb-3" alt="QR Code">
                                 
-                                <div id="playersList" class="mb-3" style="max-height: 300px; overflow-y: auto;">
-                                    <div class="text-center text-muted py-4">
-                                        <i class="fas fa-user-clock fa-2x mb-2"></i>
-                                        <p>Esperando que se unan jugadores...</p>
+                                <!-- Link para compartir -->
+                                <div class="mb-3">
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" class="form-control" id="gameLink" 
+                                               value="<?= "http://$_SERVER[HTTP_HOST]/microservices/tata-trivia/player/join?code=$join_code" ?>" 
+                                               readonly>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="copyGameLink()">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
                                     </div>
+                                    <small class="text-muted">Comparte este link</small>
                                 </div>
                                 
-                                <div class="text-center">
+                                <!-- Información de debug -->
+                                <div class="mt-3 p-2 bg-light rounded">
                                     <small class="text-muted">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        Los jugadores aparecerán aquí automáticamente
+                                        Trivia ID: <?= $trivia_id ?>
                                     </small>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Acciones -->
-                <div class="card">
-                    <div class="card-body text-center">
-                        <div class="row">
-                            <div class="col-md-4 mb-2">
-                                <button class="btn btn-outline-primary w-100" onclick="refreshQR()">
-                                    <i class="fas fa-sync-alt me-2"></i>Actualizar QR
-                                </button>
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <button class="btn btn-success w-100" onclick="startGame()" id="startBtn">
-                                    <i class="fas fa-play me-2"></i>Comenzar Juego
-                                </button>
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <a href="/microservices/tata-trivia/" class="btn btn-outline-secondary w-100">
-                                    <i class="fas fa-home me-2"></i>Salir
-                                </a>
+                    <!-- Lista de jugadores -->
+                    <div class="card">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-users me-2"></i>
+                                Jugadores Conectados
+                            </h5>
+                            <span class="badge bg-light text-dark fs-6">
+                                <span id="livePlayerCount"><?= count($players) ?></span> jugadores
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div id="playersList">
+                                <?php if (empty($players)): ?>
+                                    <div class="empty-players">
+                                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                        <h5 class="text-muted">Aún no hay jugadores conectados</h5>
+                                        <p class="text-muted">Los jugadores aparecerán aquí cuando se unan con el código</p>
+                                        <div class="spinner-border text-primary mt-3" role="status">
+                                            <span class="visually-hidden">Esperando jugadores...</span>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="row">
+                                        <?php foreach ($players as $player): ?>
+                                        <div class="col-md-6 col-lg-4 mb-3">
+                                            <div class="player-card">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="player-avatar me-3"
+                                                         style="background-image: url('/microservices/tata-trivia/assets/images/avatars/<?= $player['avatar'] ?>.png')"
+                                                         onerror="this.style.backgroundImage='url(/microservices/tata-trivia/assets/images/themes/default.jpg)'">
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-1"><?= htmlspecialchars($player['player_name']) ?></h6>
+                                                        <small class="text-muted d-block">
+                                                            <?= !empty($player['work_area']) ? htmlspecialchars($player['work_area']) : 'Participante' ?>
+                                                        </small>
+                                                        <?php if (!empty($player['team_name'])): ?>
+                                                        <small class="text-info">
+                                                            <i class="fas fa-users me-1"></i><?= htmlspecialchars($player['team_name']) ?>
+                                                        </small>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <small class="text-success">
+                                                            <i class="fas fa-circle fa-xs me-1"></i>Conectado
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Información adicional -->
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-info text-white">
-                                <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Instrucciones</h6>
-                            </div>
-                            <div class="card-body">
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2"><i class="fas fa-share-alt text-primary me-2"></i>Comparte el código o QR</li>
-                                    <li class="mb-2"><i class="fas fa-users text-success me-2"></i>Espera a que se unan los jugadores</li>
-                                    <li class="mb-2"><i class="fas fa-play text-warning me-2"></i>Inicia el juego cuando estén todos</li>
-                                    <li><i class="fas fa-trophy text-danger me-2"></i>¡Diviértanse!</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header bg-warning text-dark">
-                                <h6 class="mb-0"><i class="fas fa-mobile-alt me-2"></i>Para Jugadores</h6>
-                            </div>
-                            <div class="card-body">
-                                <p class="mb-2">Pueden unirse de dos formas:</p>
-                                <ol class="small">
-                                    <li class="mb-1">Escaneando el código QR con su celular</li>
-                                    <li class="mb-1">Ingresando el código en <strong>Tata Trivia → Unirse</strong></li>
-                                </ol>
-                            </div>
-                        </div>
+                    <!-- Botones de acción -->
+                    <div class="text-center mt-4">
+                        <button class="btn btn-success btn-lg me-3" onclick="startGame()" id="startBtn">
+                            <i class="fas fa-play me-2"></i>Iniciar Trivia
+                        </button>
+                        <a href="/microservices/tata-trivia/host/questions?trivia_id=<?= $trivia_id ?>&join_code=<?= $join_code ?>" 
+                           class="btn btn-outline-primary btn-lg me-3">
+                            <i class="fas fa-edit me-2"></i>Editar Preguntas
+                        </a>
+                        <a href="/microservices/tata-trivia/host/setup" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-plus me-2"></i>Nueva Trivia
+                        </a>
                     </div>
                 </div>
             </div>
@@ -201,149 +231,169 @@ try {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let playerInterval;
-        const triviaId = '<?php echo $trivia_id; ?>';
-        const joinCode = '<?php echo $join_code; ?>';
-
-        // Copiar texto al portapapeles
-        document.querySelectorAll('.copy-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const text = this.getAttribute('data-text');
-                copyToClipboard(text);
-                
-                // Feedback visual
-                const originalHtml = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-check me-1"></i>Copiado!';
-                this.classList.add('btn-success');
-                this.classList.remove('btn-outline-primary', 'btn-outline-secondary');
-                
-                setTimeout(() => {
-                    this.innerHTML = originalHtml;
-                    this.classList.remove('btn-success');
-                    this.classList.add(this.getAttribute('data-text').length > 10 ? 'btn-outline-secondary' : 'btn-outline-primary');
-                }, 2000);
-            });
-        });
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                console.log('Texto copiado: ' + text);
-            }).catch(err => {
-                console.error('Error al copiar: ', err);
-                // Fallback para navegadores antiguos
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-            });
-        }
-
-        function refreshQR() {
-            const qrImg = document.querySelector('.qr-container img');
-            if (qrImg) {
-                qrImg.src = qrImg.src.split('?')[0] + '?code=' + joinCode + '&size=200&t=' + new Date().getTime();
-            }
-        }
-
-        // Actualizar lista de jugadores
-        async function updatePlayers() {
+        const triviaId = '<?= $trivia_id ?>';
+        let playerUpdateInterval;
+        
+        // Función para copiar el link del juego
+        function copyGameLink() {
+            const gameLinkInput = document.getElementById('gameLink');
+            gameLinkInput.select();
+            gameLinkInput.setSelectionRange(0, 99999);
+            
             try {
-                const response = await fetch('/microservices/tata-trivia/api/get_lobby_players.php?trivia_id=' + triviaId);
-                const result = await response.json();
+                navigator.clipboard.writeText(gameLinkInput.value).then(() => {
+                    const button = event.target.closest('button');
+                    const originalHTML = button.innerHTML;
+                    button.innerHTML = '<i class="fas fa-check"></i>';
+                    button.classList.remove('btn-outline-secondary');
+                    button.classList.add('btn-success');
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalHTML;
+                        button.classList.remove('btn-success');
+                        button.classList.add('btn-outline-secondary');
+                    }, 2000);
+                });
+            } catch (err) {
+                document.execCommand('copy');
+                alert('Link copiado al portapapeles');
+            }
+        }
+        
+        // Actualizar lista de jugadores
+        function updatePlayers() {
+            console.log('Actualizando lista de jugadores...');
+            
+            fetch(`/microservices/tata-trivia/api/get_lobby_players.php?trivia_id=${triviaId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Datos recibidos:', data);
+                    
+                    if (data.success) {
+                        const playersList = document.getElementById('playersList');
+                        const playerCount = document.getElementById('playerCount');
+                        const livePlayerCount = document.getElementById('livePlayerCount');
+                        const startBtn = document.getElementById('startBtn');
+                        
+                        // Actualizar contadores
+                        playerCount.textContent = data.players.length;
+                        livePlayerCount.textContent = data.players.length;
+                        
+                        // Habilitar/deshabilitar botón de inicio
+                        startBtn.disabled = data.players.length === 0;
+                        
+                        if (data.players.length === 0) {
+                            playersList.innerHTML = `
+                                <div class="empty-players">
+                                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">Aún no hay jugadores conectados</h5>
+                                    <p class="text-muted">Los jugadores aparecerán aquí cuando se unan con el código</p>
+                                    <div class="spinner-border text-primary mt-3" role="status">
+                                        <span class="visually-hidden">Esperando jugadores...</span>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            playersList.innerHTML = `
+                                <div class="row">
+                                    ${data.players.map(player => `
+                                        <div class="col-md-6 col-lg-4 mb-3">
+                                            <div class="player-card">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="player-avatar me-3"
+                                                         style="background-image: url('/microservices/tata-trivia/assets/images/avatars/${player.avatar || 'default1'}.png')"
+                                                         onerror="this.style.backgroundImage='url(/microservices/tata-trivia/assets/images/themes/default.jpg)'">
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-1">${player.player_name}</h6>
+                                                        <small class="text-muted d-block">
+                                                            ${player.work_area || 'Participante'}
+                                                        </small>
+                                                        ${player.team_name ? `<small class="text-info"><i class="fas fa-users me-1"></i>${player.team_name}</small>` : ''}
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <small class="text-success">
+                                                            <i class="fas fa-circle fa-xs me-1"></i>Conectado
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                        }
+                    } else {
+                        console.error('Error en la respuesta:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al actualizar jugadores:', error);
+                });
+        }
+        
+        function startGame() {
+            const playerCount = document.getElementById('playerCount').textContent;
+            
+            if (parseInt(playerCount) === 0) {
+                alert('No hay jugadores conectados. Espera a que al menos un jugador se una.');
+                return;
+            }
+            
+            if (confirm(`¿Estás seguro de que quieres iniciar la trivia con ${playerCount} jugador(es)?`)) {
+                // Mostrar loading
+                const startBtn = document.getElementById('startBtn');
+                const originalText = startBtn.innerHTML;
+                startBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Iniciando...';
+                startBtn.disabled = true;
                 
-                if (result.success) {
-                    displayPlayers(result.data.players || []);
-                }
-            } catch (error) {
-                console.error('Error actualizando jugadores:', error);
+                fetch('/microservices/tata-trivia/api/start_game.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        trivia_id: triviaId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = `/microservices/tata-trivia/host/game_host?trivia_id=${triviaId}`;
+                    } else {
+                        alert('Error: ' + data.error);
+                        // Restaurar botón
+                        startBtn.innerHTML = originalText;
+                        startBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al iniciar el juego');
+                    // Restaurar botón
+                    startBtn.innerHTML = originalText;
+                    startBtn.disabled = false;
+                });
             }
         }
-
-        function displayPlayers(players) {
-            const container = document.getElementById('playersList');
-            const countElement = document.getElementById('playerCount');
-            
-            countElement.textContent = players.length;
-            
-            if (players.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-user-clock fa-2x mb-2"></i>
-                        <p>Esperando que se unan jugadores...</p>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = players.map(player => `
-                    <div class="card player-card mb-2">
-                        <div class="card-body py-2">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-0">${player.player_name}</h6>
-                                    ${player.team_name ? `<small class="text-muted">Equipo: ${player.team_name}</small>` : ''}
-                                </div>
-                                <div class="text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-            }
-            
-            // Habilitar/deshabilitar botón de comenzar
-            const startBtn = document.getElementById('startBtn');
-            startBtn.disabled = players.length === 0;
-        }
-
-        async function startGame() {
-    const startBtn = document.getElementById('startBtn');
-    const originalText = startBtn.innerHTML;
-    
-    startBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Iniciando...';
-    startBtn.disabled = true;
-
-    try {
-        const response = await fetch('/microservices/tata-trivia/api/start_game.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                trivia_id: triviaId
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            // Redirigir a la pantalla del juego del host
-            window.location.href = '/microservices/tata-trivia/host/game?trivia_id=' + triviaId;
-        } else {
-            alert('Error: ' + result.error);
-            startBtn.innerHTML = originalText;
-            startBtn.disabled = false;
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al iniciar el juego. Por favor intenta nuevamente.');
-        startBtn.innerHTML = originalText;
-        startBtn.disabled = false;
-    }
-}
-
-        // Iniciar actualización automática de jugadores
+        
+        // Inicializar
         document.addEventListener('DOMContentLoaded', function() {
-            updatePlayers(); // Actualizar inmediatamente
-            playerInterval = setInterval(updatePlayers, 3000); // Actualizar cada 3 segundos
-        });
-
-        // Limpiar intervalo al salir
-        window.addEventListener('beforeunload', function() {
-            if (playerInterval) {
-                clearInterval(playerInterval);
-            }
+            // Actualizar jugadores inmediatamente
+            updatePlayers();
+            
+            // Actualizar jugadores cada 2 segundos
+            playerUpdateInterval = setInterval(updatePlayers, 2000);
+            
+            // Detener actualización cuando se cierre la página
+            window.addEventListener('beforeunload', function() {
+                clearInterval(playerUpdateInterval);
+            });
         });
     </script>
 </body>

@@ -1,458 +1,505 @@
 <?php
 // microservices/tata-trivia/views/player/game_player.php
 
-$trivia_id = $_GET['trivia_id'] ?? '';
-$player_id = $_SESSION['player_id'] ?? '';
+require_once __DIR__ . '/../../init.php';
 
-if (empty($trivia_id) || empty($player_id)) {
-    header('Location: /microservices/tata-trivia/player/join');
+$trivia_id = $_GET['trivia_id'] ?? null;
+$player_id = $_GET['player_id'] ?? null;
+
+// DEBUG
+error_log("=== GAME_PLAYER.PHP ===");
+error_log("GET - trivia_id: $trivia_id, player_id: $player_id");
+
+// INTENTAR OBTENER player_id DE DIFERENTES FUENTES
+if (!$player_id) {
+    // 1. Intentar de la sesión específica de la trivia
+    $session_key = 'player_id_' . $trivia_id;
+    if (isset($_SESSION[$session_key])) {
+        $player_id = $_SESSION[$session_key];
+        error_log("Player ID obtenido de sesión específica: $player_id");
+    }
+    // 2. Intentar de la sesión general
+    elseif (isset($_SESSION['current_player_id'])) {
+        $player_id = $_SESSION['current_player_id'];
+        error_log("Player ID obtenido de sesión general: $player_id");
+    }
+    // 3. Intentar de current_trivia_id
+    elseif (isset($_SESSION['current_trivia_id']) && $_SESSION['current_trivia_id'] == $trivia_id) {
+        $player_id = $_SESSION['player_id_' . $trivia_id] ?? null;
+        error_log("Player ID obtenido de current_trivia_id: $player_id");
+    }
+}
+
+// Si aún no hay player_id, mostrar página de error con opciones
+if (!$trivia_id || !$player_id) {
+    ?>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Error - Tata Trivia</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-light">
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card shadow">
+                        <div class="card-body text-center p-5">
+                            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-4"></i>
+                            <h3 class="text-danger mb-4">No se pudo cargar el juego</h3>
+                            
+                            <div class="alert alert-info text-start mb-4">
+                                <strong>Información del error:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li><strong>Trivia ID:</strong> <?= htmlspecialchars($trivia_id ?? 'No proporcionado') ?></li>
+                                    <li><strong>Player ID:</strong> <?= htmlspecialchars($player_id ?? 'No proporcionado') ?></li>
+                                    <li><strong>Sesión activa:</strong> <?= session_id() ?></li>
+                                </ul>
+                            </div>
+                            
+                            <p class="text-muted mb-4">
+                                Esto puede pasar si:
+                                <br>• Recargaste la página después de unirse
+                                <br>• Los parámetros se perdieron en la URL
+                                <br>• La sesión expiró
+                            </p>
+                            
+                            <div class="mt-4">
+                                <a href="/microservices/tata-trivia/player/join" class="btn btn-primary btn-lg me-3">
+                                    <i class="fas fa-door-open me-1"></i>Volver a Unirse
+                                </a>
+                                <a href="/microservices/tata-trivia/" class="btn btn-outline-secondary btn-lg">
+                                    <i class="fas fa-home me-1"></i>Ir al Inicio
+                                </a>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <small class="text-muted">
+                                    Si el problema persiste, contacta al anfitrión del juego.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    <?php
     exit;
 }
 
-// Obtener información del jugador
+// CONTINUAR CON LA LÓGICA NORMAL SI TENEMOS LOS PARÁMETROS
 try {
     $triviaController = new TriviaController();
-    $player = $triviaController->getPlayerById($player_id);
     $trivia = $triviaController->getTriviaById($trivia_id);
+    $player = $triviaController->getPlayerById($player_id);
     
-    if (!$player || !$trivia) {
-        throw new Exception('Datos no encontrados');
+    error_log("Datos obtenidos - Trivia: " . ($trivia ? 'SÍ' : 'NO') . ", Player: " . ($player ? 'SÍ' : 'NO'));
+    
+    // Si no se encuentran datos, mostrar error
+    if (!$trivia || !$player) {
+        error_log("ERROR: Trivia o Player no encontrados en BD");
+        ?>
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Error - Tata Trivia</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        </head>
+        <body class="bg-light">
+            <div class="container mt-5">
+                <div class="alert alert-warning">
+                    <h4><i class="fas fa-user-slash"></i> Jugador o Trivia no encontrados</h4>
+                    <p>La información del juego no existe en el sistema.</p>
+                    <div class="mt-3">
+                        <a href="/microservices/tata-trivia/player/join" class="btn btn-primary me-2">Unirse a otra trivia</a>
+                        <a href="/microservices/tata-trivia/" class="btn btn-outline-secondary">Volver al inicio</a>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        <?php
+        exit;
     }
+    
+    // DATOS ENCONTRADOS - CONTINUAR NORMALMENTE
+    $currentQuestionIndex = $triviaController->getCurrentQuestionIndex($trivia_id);
+    $backgroundImage = $triviaController->getBackgroundImagePath($trivia_id);
+    
+    $currentQuestion = null;
+    $questionBackground = $backgroundImage;
+
+    if ($currentQuestionIndex >= 0) {
+        $questions = $triviaController->getTriviaQuestions($trivia_id);
+        if (isset($questions[$currentQuestionIndex])) {
+            $currentQuestion = $questions[$currentQuestionIndex];
+            if (!empty($currentQuestion['background_image'])) {
+                $questionBackground = $currentQuestion['background_image'];
+            } else {
+                $questionBackground = $triviaController->getRandomQuestionBackground();
+            }
+        }
+    }
+    
+    error_log("Juego cargado - Status: " . $trivia['status'] . ", QuestionIndex: $currentQuestionIndex");
+    
 } catch (Exception $e) {
-    header('Location: /microservices/tata-trivia/player/join');
+    error_log("EXCEPCIÓN en game_player: " . $e->getMessage());
+    ?>
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Error - Tata Trivia</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-light">
+        <div class="container mt-5">
+            <div class="alert alert-danger">
+                <h4><i class="fas fa-bug"></i> Error del sistema</h4>
+                <p>Ocurrió un error al cargar el juego.</p>
+                <a href="/microservices/tata-trivia/" class="btn btn-primary">Volver al inicio</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    <?php
     exit;
 }
+
+// Si llegamos aquí, todo está bien - mostrar el juego
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jugando - Tata Trivia</title>
+    <title>Jugando - <?= htmlspecialchars($trivia['title']) ?> - Tata Trivia</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .game-container { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            min-height: 100vh; 
-            color: white; 
+        body {
+            background: url('<?= $questionBackground ?>') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
         }
-        .question-display { 
-            background: rgba(255,255,255,0.95); 
-            color: #333; 
-            border-radius: 15px; 
-            min-height: 200px;
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .question-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        .option-btn {
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            text-align: left;
+        }
+        .option-btn:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+        .option-btn.selected {
+            border-color: #007bff;
+            background: #007bff;
+            color: white;
+        }
+        .option-btn.correct {
+            border-color: #28a745;
+            background: #28a745;
+            color: white;
+        }
+        .option-btn.incorrect {
+            border-color: #dc3545;
+            background: #dc3545;
+            color: white;
+        }
+        .timer-container {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
-        }
-        .option-btn { 
-            background: rgba(255,255,255,0.9); 
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-        }
-        .option-btn:hover { 
-            background: rgba(255,255,255,1); 
-            border-color: #007bff;
-            transform: translateY(-2px);
-        }
-        .option-btn.selected { 
-            background: #007bff; 
-            color: white; 
-            border-color: #0056b3;
-        }
-        .option-btn.correct { 
-            background: #28a745; 
-            color: white; 
-            border-color: #1e7e34;
-        }
-        .option-btn.incorrect { 
-            background: #dc3545; 
-            color: white; 
-            border-color: #c82333;
-        }
-        .option-btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-        .timer-bar { 
-            height: 10px; 
-            background: #28a745; 
-            transition: width 1s linear;
-            border-radius: 5px;
+            font-size: 1.5rem;
+            font-weight: bold;
         }
         .player-info {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .waiting-message {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
         }
     </style>
 </head>
-<body class="game-container">
-    <div class="container py-4">
-        <!-- Información del Jugador -->
-        <div class="player-info">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <h4 class="mb-0">
-                        <i class="fas fa-user me-2"></i>
-                        <?php echo htmlspecialchars($player['player_name']); ?>
-                    </h4>
-                    <small class="text-light"><?php echo htmlspecialchars($trivia['title']); ?></small>
-                </div>
-                <div class="col-md-6 text-end">
-                    <div class="h5 mb-0">
-                        <i class="fas fa-star text-warning me-1"></i>
-                        <span id="playerScore">0</span> puntos
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pantalla de Espera -->
-        <div id="waitingScreen" class="text-center py-5">
-            <div class="spinner-border text-warning mb-4" style="width: 4rem; height: 4rem;" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-            <h2 class="text-warning">Esperando pregunta...</h2>
-            <p class="lead">El anfitrión prepara la siguiente ronda</p>
-            <div class="mt-4">
-                <div class="badge bg-info fs-6">
-                    <i class="fas fa-users me-1"></i> Conectado
-                </div>
-            </div>
-        </div>
-
-        <!-- Pantalla de Pregunta -->
-        <div id="questionScreen" style="display: none;">
-            <div class="card bg-dark border-light shadow-lg">
-                <div class="card-header bg-light text-dark d-flex justify-content-between align-items-center">
-                    <h4 id="questionHeader" class="mb-0">
-                        <i class="fas fa-question-circle me-2"></i>Pregunta
-                    </h4>
-                    <div class="d-flex align-items-center">
-                        <span class="badge bg-primary me-2" id="questionCounter">1/10</span>
-                        <div class="bg-danger text-white rounded-pill px-3 py-1">
-                            <i class="fas fa-clock me-1"></i><span id="timerDisplay">30</span>s
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Barra de tiempo -->
-                    <div class="mb-4">
-                        <div class="progress" style="height: 12px; border-radius: 6px;">
-                            <div id="timerBar" class="timer-bar" style="width: 100%"></div>
-                        </div>
-                    </div>
+<body>
+    <div class="game-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-8">
                     
-                    <!-- Pregunta -->
-                    <div class="question-display mb-4">
-                        <h2 id="questionText" class="text-center mb-0 fw-bold"></h2>
-                    </div>
-                    
-                    <!-- Opciones -->
-                    <div class="row" id="optionsContainer">
-                        <!-- Opciones se generan aquí -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pantalla de Resultados -->
-        <div id="resultsScreen" style="display: none;">
-            <div class="card bg-dark border-light shadow-lg">
-                <div class="card-body text-center py-5">
-                    <div id="resultIcon" class="mb-3" style="font-size: 4rem;"></div>
-                    <h2 id="resultTitle" class="mb-3"></h2>
-                    <p id="resultMessage" class="lead mb-4"></p>
-                    <div id="correctAnswer" class="mt-3"></div>
-                    <div class="mt-4">
-                        <div class="badge bg-secondary fs-6">
-                            <i class="fas fa-clock me-1"></i>
-                            Tiempo: <span id="responseTime">0</span>s
+                    <!-- Información del jugador -->
+                    <div class="player-info">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="player-avatar me-3" 
+                                     style="width: 50px; height: 50px; border-radius: 50%; background-image: url('/microservices/tata-trivia/assets/images/avatars/<?= $player['avatar'] ?? 'default1' ?>.png'); background-size: cover;">
+                                </div>
+                                <div>
+                                    <h5 class="mb-0"><?= htmlspecialchars($player['player_name'] ?? 'Jugador') ?></h5>
+                                    <small class="text-muted">Puntuación: <span id="playerScore"><?= $player['score'] ?? 0 ?></span></small>
+                                    <br><small class="text-info">ID: <?= $player_id ?></small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <?php if ($trivia['status'] === 'active' && $currentQuestion): ?>
+                                <div class="timer-container" id="timer">
+                                    <?= $currentQuestion['time_limit'] ?? 30 ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Pantalla de Juego Terminado -->
-        <div id="gameOverScreen" style="display: none;">
-            <div class="text-center py-5">
-                <i class="fas fa-flag-checkered fa-5x text-warning mb-4"></i>
-                <h2 class="text-warning">¡Juego Terminado!</h2>
-                <p class="lead">Gracias por participar en <?php echo htmlspecialchars($trivia['title']); ?></p>
-                <div class="mt-4">
-                    <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='/microservices/tata-trivia/results?trivia_id=<?php echo $trivia_id; ?>'">
-                        <i class="fas fa-trophy me-2"></i>Ver Resultados Finales
-                    </button>
-                    <button class="btn btn-outline-light btn-lg" onclick="window.location.href='/microservices/tata-trivia/'">
-                        <i class="fas fa-home me-2"></i>Volver al Inicio
-                    </button>
+                    <!-- Contenido del juego -->
+                    <div id="gameContent">
+                        <?php if ($trivia['status'] === 'setup' || $trivia['status'] === 'waiting'): ?>
+                            <!-- Esperando a que comience el juego -->
+                            <div class="waiting-message">
+                                <i class="fas fa-hourglass-half fa-3x text-primary mb-3"></i>
+                                <h3>Esperando a que el anfitrión inicie el juego</h3>
+                                <p class="text-muted mb-4">Mantente atento, la trivia comenzará pronto...</p>
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                                <div class="mt-3">
+                                    <small class="text-muted">Estado actual: <?= strtoupper($trivia['status']) ?></small><br>
+                                    <small class="text-muted">Trivia: <?= htmlspecialchars($trivia['title']) ?></small>
+                                </div>
+                            </div>
+                            
+                        <?php elseif ($trivia['status'] === 'active' && $currentQuestion): ?>
+                            <!-- Pregunta activa -->
+                            <div class="question-card">
+                                <div class="card-body">
+                                    <div class="text-center mb-4">
+                                        <h2 class="text-primary">Pregunta <?= $currentQuestionIndex + 1 ?></h2>
+                                    </div>
+                                    
+                                    <div class="question-text mb-4">
+                                        <h4 class="text-center"><?= htmlspecialchars($currentQuestion['question_text']) ?></h4>
+                                    </div>
+                                    
+                                    <div class="options-container">
+                                        <?php 
+                                        // Obtener opciones de la pregunta
+                                        $options = [];
+                                        try {
+                                            $db = getTriviaDatabaseConnection();
+                                            $stmt = $db->prepare("SELECT * FROM question_options WHERE question_id = ? ORDER BY id");
+                                            $stmt->execute([$currentQuestion['id']]);
+                                            $options = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                        } catch (Exception $e) {
+                                            error_log("Error getting options: " . $e->getMessage());
+                                        }
+                                        
+                                        foreach ($options as $index => $option): 
+                                        ?>
+                                        <div class="option-btn" data-option-id="<?= $option['id'] ?>" 
+                                             onclick="selectOption(this, <?= $option['id'] ?>)">
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-primary me-3"><?= chr(65 + $index) ?></span>
+                                                <span><?= htmlspecialchars($option['option_text']) ?></span>
+                                            </div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        <?php elseif ($trivia['status'] === 'finished'): ?>
+                            <!-- Juego terminado -->
+                            <div class="waiting-message">
+                                <i class="fas fa-flag-checkered fa-3x text-success mb-3"></i>
+                                <h3>¡Trivia Terminada!</h3>
+                                <p class="text-muted mb-4">Gracias por participar</p>
+                                <a href="/microservices/tata-trivia/player/results?trivia_id=<?= $trivia_id ?>&player_id=<?= $player_id ?>" 
+                                   class="btn btn-primary btn-lg">
+                                    Ver Resultados
+                                </a>
+                            </div>
+                            
+                        <?php else: ?>
+                            <!-- Estado desconocido o sin pregunta activa -->
+                            <div class="waiting-message">
+                                <i class="fas fa-question-circle fa-3x text-warning mb-3"></i>
+                                <h3>Preparando siguiente pregunta...</h3>
+                                <p class="text-muted mb-4">Por favor espera</p>
+                                <div class="spinner-border text-warning" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const triviaId = '<?php echo $trivia_id; ?>';
-        const playerId = '<?php echo $player_id; ?>';
-        const playerName = '<?php echo addslashes($player['player_name']); ?>';
-        let currentQuestion = null;
-        let selectedOption = null;
-        let questionStartTime = null;
-        let timerInterval = null;
-        let playerScore = 0;
+        const triviaId = '<?= $trivia_id ?>';
+        const playerId = '<?= $player_id ?>';
+        let timerInterval;
+        let timeLeft = <?= $currentQuestion['time_limit'] ?? 30 ?>;
 
-        class PlayerGame {
-            constructor() {
-                this.checkGameState();
-                // Consultar estado cada 2 segundos
-                setInterval(() => this.checkGameState(), 2000);
+        // Timer countdown - solo si hay pregunta activa
+        function startTimer() {
+            const timerElement = document.getElementById('timer');
+            if (!timerElement) return;
+            
+            timeLeft = <?= $currentQuestion['time_limit'] ?? 30 ?>;
+            timerElement.textContent = timeLeft;
+            
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
                 
-                console.log('🎮 Jugador inicializado:', { playerId, playerName, triviaId });
-            }
-
-            async checkGameState() {
-                try {
-                    const response = await fetch('/microservices/tata-trivia/api/player_communication.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'get_game_state',
-                            trivia_id: triviaId
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        this.handleGameState(data);
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    // El tiempo se agotó
+                    if (document.querySelector('.option-btn.selected')) {
+                        submitAnswer();
                     } else {
-                        console.error('Error en game state:', data.error);
-                    }
-                } catch (error) {
-                    console.error('Error checking game state:', error);
-                }
-            }
-
-            handleGameState(state) {
-                console.log('🎮 Estado del juego:', state);
-                
-                if (state.trivia_status === 'finished') {
-                    this.showGameOver();
-                    return;
-                }
-
-                if (state.current_question && !this.isSameQuestion(state.current_question)) {
-                    this.showQuestion(state.current_question);
-                } else if (!state.current_question && document.getElementById('questionScreen').style.display !== 'none') {
-                    this.showWaiting();
-                }
-            }
-
-            isSameQuestion(question) {
-                return currentQuestion && currentQuestion.id === question.id;
-            }
-
-            showWaiting() {
-                document.getElementById('waitingScreen').style.display = 'block';
-                document.getElementById('questionScreen').style.display = 'none';
-                document.getElementById('resultsScreen').style.display = 'none';
-                document.getElementById('gameOverScreen').style.display = 'none';
-            }
-
-            showQuestion(question) {
-                console.log('📝 Mostrando pregunta:', question.question_text);
-                
-                currentQuestion = question;
-                questionStartTime = Date.now();
-                selectedOption = null;
-
-                // Ocultar otras pantallas, mostrar pregunta
-                document.getElementById('waitingScreen').style.display = 'none';
-                document.getElementById('questionScreen').style.display = 'block';
-                document.getElementById('resultsScreen').style.display = 'none';
-                document.getElementById('gameOverScreen').style.display = 'none';
-
-                // Mostrar pregunta
-                document.getElementById('questionText').textContent = question.question_text;
-
-                // Mostrar opciones
-                const optionsContainer = document.getElementById('optionsContainer');
-                optionsContainer.innerHTML = '';
-                
-                const letters = ['A', 'B', 'C', 'D'];
-                question.options.forEach((option, index) => {
-                    const optionDiv = document.createElement('div');
-                    optionDiv.className = 'col-md-6 mb-3';
-                    optionDiv.innerHTML = `
-                        <button class="option-btn btn w-100 p-3 text-start" 
-                                onclick="playerGame.selectOption(${index}, ${option.id})"
-                                data-option-id="${option.id}">
-                            <span class="fw-bold me-2">${letters[index]}.</span>
-                            ${option.text}
-                        </button>
-                    `;
-                    optionsContainer.appendChild(optionDiv);
-                });
-
-                // Iniciar temporizador
-                this.startTimer(question.time_limit || 30);
-            }
-
-            startTimer(seconds) {
-                let timeLeft = seconds;
-                const timerDisplay = document.getElementById('timerDisplay');
-                const timerBar = document.getElementById('timerBar');
-                
-                timerDisplay.textContent = timeLeft;
-                timerBar.style.width = '100%';
-                timerBar.className = 'timer-bar bg-success';
-
-                clearInterval(timerInterval);
-                timerInterval = setInterval(() => {
-                    timeLeft--;
-                    timerDisplay.textContent = timeLeft;
-                    const percentage = (timeLeft / seconds) * 100;
-                    timerBar.style.width = percentage + '%';
-
-                    // Cambiar color según el tiempo
-                    if (timeLeft <= 10) {
-                        timerBar.className = 'timer-bar bg-danger';
-                    } else if (timeLeft <= 20) {
-                        timerBar.className = 'timer-bar bg-warning';
-                    }
-
-                    if (timeLeft <= 0) {
-                        clearInterval(timerInterval);
-                        this.submitAnswer();
-                    }
-                }, 1000);
-            }
-
-            selectOption(optionIndex, optionId) {
-                if (selectedOption !== null) {
-                    console.log('⚠️ Ya se seleccionó una opción');
-                    return; // Ya respondió
-                }
-
-                selectedOption = { index: optionIndex, id: optionId };
-                
-                console.log('✅ Opción seleccionada:', selectedOption);
-                
-                // Marcar opción seleccionada
-                const optionButtons = document.querySelectorAll('.option-btn');
-                optionButtons.forEach(btn => {
-                    btn.classList.remove('selected');
-                    btn.disabled = true;
-                });
-                optionButtons[optionIndex].classList.add('selected');
-
-                // Enviar respuesta automáticamente
-                setTimeout(() => this.submitAnswer(), 500);
-            }
-
-            async submitAnswer() {
-                console.log('📤 Enviando respuesta...');
-                
-                clearInterval(timerInterval);
-
-                const responseTime = Date.now() - questionStartTime;
-                
-                try {
-                    const response = await fetch('/microservices/tata-trivia/api/player_communication.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'submit_answer',
-                            trivia_id: triviaId,
-                            player_id: playerId,
-                            question_id: currentQuestion.id,
-                            option_id: selectedOption ? selectedOption.id : null,
-                            response_time: responseTime
-                        })
-                    });
-
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        this.showResult(data.is_correct, responseTime);
-                        
-                        // Actualizar puntaje
-                        if (data.is_correct) {
-                            const points = Math.max(1000 - Math.floor(responseTime / 10), 100);
-                            playerScore += points;
-                            document.getElementById('playerScore').textContent = playerScore;
-                        }
-                    } else {
-                        this.showResult(false, responseTime, data.error);
-                    }
-
-                } catch (error) {
-                    console.error('Error submitting answer:', error);
-                    this.showResult(false, responseTime, 'Error al enviar respuesta');
-                }
-            }
-
-            showResult(isCorrect, responseTime, message = '') {
-                console.log('📊 Mostrando resultado:', { isCorrect, responseTime });
-                
-                document.getElementById('questionScreen').style.display = 'none';
-                document.getElementById('resultsScreen').style.display = 'block';
-
-                const resultIcon = document.getElementById('resultIcon');
-                const resultTitle = document.getElementById('resultTitle');
-                const resultMessage = document.getElementById('resultMessage');
-                const responseTimeElement = document.getElementById('responseTime');
-
-                if (isCorrect) {
-                    resultIcon.innerHTML = '<i class="fas fa-check-circle text-success"></i>';
-                    resultTitle.textContent = '¡Correcto! 🎉';
-                    resultTitle.className = 'text-success';
-                    resultMessage.textContent = message || '¡Bien hecho! Respuesta correcta.';
-                } else {
-                    resultIcon.innerHTML = '<i class="fas fa-times-circle text-danger"></i>';
-                    resultTitle.textContent = 'Incorrecto 😔';
-                    resultTitle.className = 'text-danger';
-                    resultMessage.textContent = message || 'Respuesta incorrecta.';
-                }
-
-                responseTimeElement.textContent = (responseTime / 1000).toFixed(1);
-
-                // Mostrar respuesta correcta si fue incorrecta
-                if (!isCorrect && currentQuestion) {
-                    const correctOption = currentQuestion.options.find(opt => opt.is_correct);
-                    if (correctOption) {
-                        const letters = ['A', 'B', 'C', 'D'];
-                        const correctIndex = currentQuestion.options.findIndex(opt => opt.is_correct);
-                        document.getElementById('correctAnswer').innerHTML = `
-                            <div class="alert alert-info">
-                                <strong><i class="fas fa-lightbulb me-2"></i>Respuesta correcta:</strong> 
-                                ${letters[correctIndex]}. ${correctOption.text}
-                            </div>
-                        `;
+                        // Si no seleccionó ninguna opción, marcar como no respondida
+                        document.querySelectorAll('.option-btn').forEach(btn => {
+                            btn.style.pointerEvents = 'none';
+                        });
                     }
                 }
-            }
-
-            showGameOver() {
-                console.log('🏁 Juego terminado');
-                
-                document.getElementById('waitingScreen').style.display = 'none';
-                document.getElementById('questionScreen').style.display = 'none';
-                document.getElementById('resultsScreen').style.display = 'none';
-                document.getElementById('gameOverScreen').style.display = 'block';
-            }
+            }, 1000);
         }
 
-        // Inicializar juego del jugador
-        const playerGame = new PlayerGame();
+        function selectOption(optionElement, optionId) {
+            // Deseleccionar todas las opciones
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Seleccionar la opción clickeada
+            optionElement.classList.add('selected');
+            
+            // Enviar respuesta automáticamente después de seleccionar
+            setTimeout(submitAnswer, 500);
+        }
+
+        function submitAnswer() {
+            const selectedOption = document.querySelector('.option-btn.selected');
+            if (!selectedOption) return;
+            
+            const optionId = selectedOption.dataset.optionId;
+            const responseTime = <?= $currentQuestion['time_limit'] ?? 30 ?> - timeLeft;
+            
+            // Deshabilitar más clicks
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.style.pointerEvents = 'none';
+            });
+            
+            // Detener el timer
+            clearInterval(timerInterval);
+            
+            // Enviar respuesta al servidor
+            fetch('/microservices/tata-trivia/api/submit_answer.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    player_id: playerId,
+                    question_id: <?= $currentQuestion['id'] ?? 0 ?>,
+                    option_id: optionId,
+                    response_time: responseTime
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mostrar si la respuesta fue correcta o incorrecta
+                    if (data.is_correct) {
+                        selectedOption.classList.add('correct');
+                        // Actualizar puntuación
+                        if (document.getElementById('playerScore')) {
+                            document.getElementById('playerScore').textContent = data.new_score;
+                        }
+                    } else {
+                        selectedOption.classList.add('incorrect');
+                        // Mostrar la opción correcta
+                        document.querySelectorAll('.option-btn').forEach(btn => {
+                            if (btn.dataset.optionId == data.correct_option_id) {
+                                btn.classList.add('correct');
+                            }
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Verificar estado del juego periódicamente - SOLO si no hay pregunta activa
+        function checkGameStatus() {
+            // No verificar si estamos en medio de una pregunta
+            if (document.querySelector('.option-btn') && !document.querySelector('.option-btn').style.pointerEvents) {
+                return;
+            }
+            
+            fetch(`/microservices/tata-trivia/api/game_status.php?trivia_id=${triviaId}&player_id=${playerId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status_changed || data.question_changed) {
+                        console.log('Estado cambiado, recargando...');
+                        location.reload();
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            <?php if ($trivia['status'] === 'active' && $currentQuestion): ?>
+            startTimer();
+            <?php else: ?>
+            // Verificar estado cada 3 segundos solo si estamos esperando
+            setInterval(checkGameStatus, 3000);
+            <?php endif; ?>
+        });
     </script>
 </body>
 </html>
