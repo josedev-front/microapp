@@ -86,17 +86,20 @@ try {
             border-radius: 5px;
         }
         .player-info {
-            background: rgba(255,255,255,0.1);
+            background: purple;
             border-radius: 10px;
             padding: 1rem;
             margin-bottom: 1rem;
         }
+        #waitingScreen {
+            background: purple;
+        }
     </style>
 </head>
-<body class="game-container">
+<body class="game-container" style="background-image: url('<?php echo get_theme_image('TRIVIA.png'); ?>'); background-size: cover; background-position: center; background-attachment: fixed;">
     <div class="container py-4">
         <!-- Información del Jugador -->
-        <div class="player-info">
+        <div class="player-info card">
             <div class="row align-items-center">
                 <div class="col-md-6">
                     <h4 class="mb-0">
@@ -115,12 +118,12 @@ try {
         </div>
 
         <!-- Pantalla de Espera -->
-        <div id="waitingScreen" class="text-center py-5">
-            <div class="spinner-border text-warning mb-4" style="width: 4rem; height: 4rem;" role="status">
+        <div id="waitingScreen" class="text-center py-5 card">
+            <div class="spinner-border text-white mb-4" style="width: 4rem; height: 4rem;" role="status">
                 <span class="visually-hidden">Cargando...</span>
             </div>
-            <h2 class="text-warning">Esperando pregunta...</h2>
-            <p class="lead">El anfitrión prepara la siguiente ronda</p>
+            <h2 class="text-white">Esperando pregunta...</h2>
+            <p class="lead text-white">El anfitrión prepara la siguiente ronda</p>
             <div class="mt-4">
                 <div class="badge bg-info fs-6">
                     <i class="fas fa-users me-1"></i> Conectado

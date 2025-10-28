@@ -76,7 +76,7 @@ require_once __DIR__ . '/../init.php';
                         <div class="mb-4">
                             <i class="fas fa-trophy fa-4x text-warning mb-3"></i>
                             <h1 class="display-4 fw-bold text-dark">Tata Trivia</h1>
-                            <p class="lead text-muted">¡Crea y participa en trivias emocionantes!</p>
+                            <p class="lead text-dark">¡Crea y participa en trivias emocionantes!</p>
                         </div>
 
                         <div class="row g-4">
@@ -131,8 +131,8 @@ require_once __DIR__ . '/../init.php';
                                 <div class="d-flex">
                                     <i class="fas fa-mobile-alt fa-2x text-primary me-3"></i>
                                     <div>
-                                        <h6>Totalmente Responsivo</h6>
-                                        <small class="text-muted">Juega desde cualquier dispositivo</small>
+                                        <h6 class="text-dark">Totalmente Responsivo</h6>
+                                        <small class="text-dark">Juega desde cualquier dispositivo</small>
                                     </div>
                                 </div>
                             </div>
@@ -140,8 +140,8 @@ require_once __DIR__ . '/../init.php';
                                 <div class="d-flex">
                                     <i class="fas fa-bolt fa-2x text-warning me-3"></i>
                                     <div>
-                                        <h6>Tiempo Real</h6>
-                                        <small class="text-muted">Resultados instantáneos</small>
+                                        <h6 class="text-dark">Tiempo Real</h6>
+                                        <small class="text-dark">Resultados instantáneos</small>
                                     </div>
                                 </div>
                             </div>
@@ -149,8 +149,8 @@ require_once __DIR__ . '/../init.php';
                                 <div class="d-flex">
                                     <i class="fas fa-users fa-2x text-success me-3"></i>
                                     <div>
-                                        <h6>Multijugador</h6>
-                                        <small class="text-muted">Hasta 8 equipos o individual</small>
+                                        <h6 class="text-dark">Multijugador</h6>
+                                        <small class="text-dark">Hasta 8 equipos o individual</small>
                                     </div>
                                 </div>
                             </div>

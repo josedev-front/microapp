@@ -44,8 +44,8 @@ if (!$trivia_id) {
         }
     </style>
 </head>
-<body>
-    <div class="container-fluid bg-light min-vh-100 py-4">
+<body >
+    <div class="container-fluid bg-light min-vh-100 py-4" style="background-image: url('<?php echo get_theme_image('TRIVIA.png'); ?>'); background-size: cover; background-position: center; background-attachment: fixed;">
         <div class="row justify-content-center">
             <div class="col-12 col-lg-10">
                 <!-- Header -->
@@ -134,12 +134,6 @@ if (!$trivia_id) {
                                 <option value="45">45 segundos</option>
                                 <option value="60">60 segundos</option>
                             </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Imagen de fondo (opcional)</label>
-                            <input type="file" class="form-control question-image" accept="image/*">
-                            <small class="text-muted">Puedes agregar una imagen para esta pregunta</small>
                         </div>
                     </div>
                 </div>

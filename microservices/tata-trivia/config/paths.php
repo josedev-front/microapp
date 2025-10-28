@@ -25,3 +25,22 @@ define('TATA_API_LOBBY_PLAYERS', TATA_BASE_URL . '/api/get_lobby_players.php');
 define('TATA_API_SUBMIT_ANSWER', TATA_BASE_URL . '/api/submit_answer.php');
 define('TATA_API_GAME_ACTIONS', TATA_BASE_URL . '/api/game_actions.php');
 define('TATA_API_GET_RESULTS', TATA_BASE_URL . '/api/get_results.php');
+
+
+define('TATA_TRIVIA_IMAGES', TATA_TRIVIA_ASSETS . 'images/');
+define('TATA_TRIVIA_THEMES', TATA_TRIVIA_IMAGES . 'themes/');
+define('TATA_TRIVIA_CUSTOM', TATA_TRIVIA_IMAGES . 'custom/');
+define('TATA_TRIVIA_QUESTIONS', TATA_TRIVIA_IMAGES . 'questions/');
+
+function get_theme_image($image_name) {
+    $base_url = '/microservices/tata-trivia/assets/images/themes/';
+    $default_image = '/microservices/tata-trivia/assets/images/themes/TRIVIA.png';
+    
+    $image_path = TATA_TRIVIA_THEMES . $image_name;
+    
+    if (file_exists($image_path)) {
+        return $base_url . $image_name;
+    }
+    
+    return $default_image;
+}

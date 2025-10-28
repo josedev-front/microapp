@@ -142,8 +142,7 @@ $debugInfo[] = "=== END DEBUG ===";
         }
     </style>
 </head>
-<body class="setup-container">
-    <div class="container">
+<body class="setup-container" style="background-image: url('<?php echo get_theme_image('TRIVIA.png'); ?>'); background-size: cover; background-position: center; background-attachment: fixed;"></body>
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="setup-card">
@@ -180,64 +179,6 @@ $debugInfo[] = "=== END DEBUG ===";
                                        required value="Test Trivia <?php echo date('Y-m-d H:i:s'); ?>">
                                 <div class="form-text">Usa un título descriptivo para tu trivia</div>
                             </div>
-
-                            <!-- Tema -->
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">
-                                    <i class="fas fa-palette me-2"></i>Tema de la Trivia
-                                </label>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="theme-option selected" data-theme="fiestas_patrias">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="theme" 
-                                                       id="theme_fiestas" value="fiestas_patrias" checked>
-                                                <label class="form-check-label fw-bold" for="theme_fiestas">
-                                                    Fiestas Patrias
-                                                </label>
-                                            </div>
-                                            <small class="text-muted">Tema patriótico chileno</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="theme-option" data-theme="navidad">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="theme" 
-                                                       id="theme_navidad" value="navidad">
-                                                <label class="form-check-label fw-bold" for="theme_navidad">
-                                                    Navidad
-                                                </label>
-                                            </div>
-                                            <small class="text-muted">Tema navideño festivo</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="theme-option" data-theme="halloween">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="theme" 
-                                                       id="theme_halloween" value="halloween">
-                                                <label class="form-check-label fw-bold" for="theme_halloween">
-                                                    Halloween
-                                                </label>
-                                            </div>
-                                            <small class="text-muted">Tema de terror y diversión</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="theme-option" data-theme="default">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="theme" 
-                                                       id="theme_default" value="default">
-                                                <label class="form-check-label fw-bold" for="theme_default">
-                                                    General
-                                                </label>
-                                            </div>
-                                            <small class="text-muted">Tema neutro y profesional</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                             <!-- Modalidad de Juego -->
                             <div class="mb-4">
                                 <label for="game_mode" class="form-label fw-bold">

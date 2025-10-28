@@ -68,7 +68,7 @@ try {
     </style>
 </head>
 <body>
-    <div class="container-fluid bg-light min-vh-100 py-4">
+    <div class="container-fluid bg-light min-vh-100 py-4" style="background-image: url('<?php echo get_theme_image('TRIVIA.png'); ?>'); background-size: cover; background-position: center; background-attachment: fixed;">
         <div class="row justify-content-center">
             <div class="col-12 col-lg-10">
                 <!-- Header -->

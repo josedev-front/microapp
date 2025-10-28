@@ -332,16 +332,7 @@ function validateTrivia($triviaId) {
 // ==================================================
 
 // Temas disponibles para trivias
-define('TATA_TRIVIA_THEMES', [
-    'fiestas_patrias' => 'Fiestas Patrias',
-    'navidad' => 'Navidad',
-    'halloween' => 'Halloween',
-    'dia_mujer' => 'Día de la Mujer',
-    'amor_amistad' => 'Día del Amor y la Amistad',
-    'pascua' => 'Pascua',
-    'lgbt' => 'Diversidad LGBT',
-    'default' => 'General'
-]);
+
 
 // Modos de juego
 define('TATA_TRIVIA_GAME_MODES', [

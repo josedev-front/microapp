@@ -34,9 +34,12 @@ try {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .game-container {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            
             min-height: 100vh;
             color: white;
+        }
+        .titulo {
+            background: purple;
         }
         .question-display {
             background: rgba(255,255,255,0.95);
@@ -119,12 +122,12 @@ try {
         }
     </style>
 </head>
-<body class="game-container">
+<body class="game-container" style="background-image: url('<?php echo get_theme_image('TRIVIA.png'); ?>'); background-size: cover; background-position: center; background-attachment: fixed;">
     <div class="container-fluid py-4">
         <!-- Header -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center titulo">
                     <div>
                         <h1 class="mb-0">
                             <i class="fas fa-crown text-warning me-2"></i>
