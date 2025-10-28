@@ -485,7 +485,7 @@ class GameHost {
             
             const icon = playerElement.querySelector('i');
             if (icon) {
-                icon.className = answerData.isCorrect ? 'fas fa-check text-success' : 'fas fa-times text-danger';
+                icon.className = answerData.isCorrect ? 'text-success' : 'fas fa-times text-danger';
             }
         }
     }
@@ -677,7 +677,7 @@ function displayOptions() {
                 <div class="option-item p-3 bg-light text-dark rounded position-relative">
                     <span class="option-indicator bg-primary text-white">${letters[index]}</span>
                     <span class="option-text">${option.text}</span>
-                    ${option.is_correct ? '<span class="position-absolute top-0 end-0 badge bg-success"><i class="fas fa-check"></i></span>' : ''}
+                    ${option.is_correct ? '<span class="position-absolute top-0 end-0 badge bg-success"></span>' : ''}
                 </div>
             </div>
         `;
