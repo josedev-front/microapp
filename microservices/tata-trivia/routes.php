@@ -1,10 +1,10 @@
 <?php
-// Rutas específicas para Tata Trivia
+// microservices/tata-trivia/routes.php - VERSIÓN COMPLETA Y CORREGIDA
+
 // Debugging
 error_log("=== TATA TRIVIA ACCESSED ===");
 error_log("Full URL: http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
 error_log("REQUEST_URI: " . $_SERVER['REQUEST_URI']);
-
 
 // Evitar session_start() duplicado
 if (session_status() === PHP_SESSION_NONE) {
@@ -69,28 +69,22 @@ try {
                 loadTriviaView('history/host_history');
             } else {
                 http_response_code(404);
-                echo "Página no encontrada - Host: " . ($segments[1] ?? '');
+                loadTriviaView('404');
             }
             break;
 
         case 'player':
-            if (!class_exists('PlayerController')) {
-                error_log("PlayerController no existe");
-                http_response_code(500);
-                echo "Error: Controlador no disponible";
-                exit;
-            }
-            
-            $controller = new PlayerController();
             if (empty($segments[1]) || $segments[1] === 'join') {
-                $controller->join();
+                loadTriviaView('player/join');
             } elseif ($segments[1] === 'game') {
-                $controller->gamePlayer();
+                loadTriviaView('player/game');
+            } elseif ($segments[1] === 'game_player') {
+                loadTriviaView('player/game_player');
             } elseif ($segments[1] === 'history') {
                 loadTriviaView('history/player_history');
             } else {
                 http_response_code(404);
-                echo "Página no encontrada - Player: " . ($segments[1] ?? '');
+                loadTriviaView('404');
             }
             break;
 
@@ -113,6 +107,10 @@ try {
             loadTriviaView('results');
             break;
 
+        case 'welcome':
+            loadTriviaView('welcome');
+            break;
+
         case 'test.php':
         case 'debug.php':
             // Permitir acceso a archivos de prueba
@@ -126,12 +124,33 @@ try {
 
         default:
             http_response_code(404);
-            echo "Página no encontrada - Ruta: " . $segments[0];
+            loadTriviaView('404');
     }
 } catch (Exception $e) {
     error_log("Error en Tata Trivia: " . $e->getMessage());
     http_response_code(500);
-    echo "Error interno del servidor: " . $e->getMessage();
+    
+    // Mostrar error amigable
+    echo '<!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Error - Tata Trivia</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-light">
+        <div class="container mt-5">
+            <div class="alert alert-danger">
+                <h4><i class="fas fa-exclamation-triangle"></i> Error del Sistema</h4>
+                <p>Ha ocurrido un error interno. Por favor, intenta nuevamente.</p>
+                <small>Detalle técnico: ' . htmlspecialchars($e->getMessage()) . '</small>
+                <div class="mt-3">
+                    <a href="/microservices/tata-trivia/" class="btn btn-primary">Volver al Inicio</a>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>';
 }
 
 exit;
