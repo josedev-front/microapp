@@ -1,0 +1,21 @@
+# Habilitar rewrite engine
+RewriteEngine On
+
+# Evitar cache para archivos PHP
+<FilesMatch "\.php$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires 0
+</FilesMatch>
+
+# Configuración específica para APIs
+<Files "player_communication.php">
+    Header set Cache-Control "no-cache"
+</Files>
+
+# Manejar errores 404
+ErrorDocument 404 /error/404.php
+
+# Configuración de tiempo de ejecución
+php_value max_execution_time 60
+php_value memory_limit 256M

@@ -94,6 +94,72 @@ try {
         #waitingScreen {
             background: purple;
         }
+        /* NUEVOS ESTILOS PARA RESULTADOS FINALES */
+        .final-results-screen {
+            background: rgba(0,0,0,0.9);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 1rem 0;
+        }
+        .winner-card {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            color: #333;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+            animation: glow 2s infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3); }
+            to { box-shadow: 0 15px 40px rgba(255, 215, 0, 0.5); }
+        }
+        .podium-item {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .podium-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+        .rank-1 { background: linear-gradient(45deg, #FFD700, #FFA500); }
+        .rank-2 { background: linear-gradient(45deg, #C0C0C0, #A0A0A0); }
+        .rank-3 { background: linear-gradient(45deg, #CD7F32, #A56C27); }
+        .rank-other { background: linear-gradient(45deg, #667eea, #764ba2); }
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid;
+        }
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #FFD700;
+            border-radius: 50%;
+            animation: confetti-fall 5s linear forwards;
+            z-index: 1000;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
     </style>
 </head>
 <body class="game-container" style="background-image: url('<?php echo get_theme_image('TRIVIA.png'); ?>'); background-size: cover; background-position: center; background-attachment: fixed;">
@@ -166,7 +232,7 @@ try {
             </div>
         </div>
 
-        <!-- Pantalla de Resultados -->
+        <!-- Pantalla de Resultados de Pregunta -->
         <div id="resultsScreen" style="display: none;">
             <div class="card bg-dark border-light shadow-lg">
                 <div class="card-body text-center py-5">
@@ -180,21 +246,116 @@ try {
                             Tiempo: <span id="responseTime">0</span>s
                         </div>
                     </div>
+                    <!-- Información adicional de la pregunta -->
+                    <div class="mt-4" id="questionStats" style="display: none;">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="h4 text-success mb-1" id="correctCount">0</div>
+                                <small class="text-light">Correctas</small>
+                            </div>
+                            <div class="col-6">
+                                <div class="h4 text-danger mb-1" id="totalAnswers">0</div>
+                                <small class="text-light">Total respuestas</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Pantalla de Juego Terminado -->
-        <div id="gameOverScreen" style="display: none;">
-            <div class="text-center py-5">
-                <i class="fas fa-flag-checkered fa-5x text-warning mb-4"></i>
-                <h2 class="text-warning">¡Juego Terminado!</h2>
-                <p class="lead">Gracias por participar en <?php echo htmlspecialchars($trivia['title']); ?></p>
-                <div class="mt-4">
-                    <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='/microservices/tata-trivia/results?trivia_id=<?php echo $trivia_id; ?>'">
-                        <i class="fas fa-trophy me-2"></i>Ver Resultados Finales
+        <!-- NUEVA PANTALLA: Leaderboard entre preguntas -->
+        <div id="leaderboardScreen" style="display: none;">
+            <div class="card bg-dark border-light shadow-lg">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-trophy fa-4x text-warning mb-3"></i>
+                    <h3 class="text-warning">Clasificación Actual</h3>
+                    <div id="leaderboardList" class="mt-4">
+                        <!-- Leaderboard se genera aquí -->
+                    </div>
+                    <div class="mt-4">
+                        <div class="badge bg-info fs-6">
+                            <i class="fas fa-clock me-1"></i>Siguiente pregunta en <span id="nextQuestionCountdown">5</span>s
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NUEVA PANTALLA: Resultados Finales del Juego -->
+        <div id="finalResultsScreen" style="display: none;">
+            <div class="final-results-screen">
+                <!-- Confetti -->
+                <div id="confettiContainer"></div>
+
+                <div class="text-center mb-5">
+                    <i class="fas fa-flag-checkered fa-4x text-warning mb-3"></i>
+                    <h2 class="text-warning">¡Juego Terminado!</h2>
+                    <p class="lead text-light">Resultados Finales de <?php echo htmlspecialchars($trivia['title']); ?></p>
+                </div>
+                
+                <!-- Tu Posición -->
+                <div class="card bg-dark border-warning mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user me-2"></i>Tu Posición
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <div id="playerRankBadge" class="rank-badge rank-other">0</div>
+                            </div>
+                            <div class="col-auto">
+                                <img id="playerFinalAvatar" src="/public/assets/img/default/<?php echo $player['avatar']; ?>.png" 
+                                     alt="Tu avatar" class="player-avatar">
+                            </div>
+                            <div class="col">
+                                <h4 class="mb-1 text-light"><?php echo htmlspecialchars($player['player_name']); ?></h4>
+                                <div class="h5 text-warning mb-0">
+                                    <i class="fas fa-star me-1"></i><span id="playerFinalScore">0</span> puntos
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ganador Principal -->
+                <div class="winner-card">
+                    <i class="fas fa-crown fa-3x mb-3" style="color: #FFD700;"></i>
+                    <h1 class="display-4 fw-bold mb-3">¡Felicidades!</h1>
+                    <div class="row justify-content-center align-items-center">
+                        <div class="col-auto">
+                            <img id="winnerAvatar" src="" alt="Ganador" class="player-avatar border-warning">
+                        </div>
+                        <div class="col-auto">
+                            <h2 id="winnerName" class="fw-bold mb-1"></h2>
+                            <p class="lead mb-0">Ganador de la trivia</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span id="winnerScore" class="badge bg-dark fs-6">
+                            <i class="fas fa-star me-1"></i>0 puntos
+                        </span>
+                        <span id="winnerTeam" class="badge bg-primary fs-6 ms-2" style="display: none;"></span>
+                    </div>
+                </div>
+
+                <!-- Podio de Ganadores -->
+                <div class="mt-5">
+                    <h4 class="text-center text-light mb-4">
+                        <i class="fas fa-trophy me-2"></i>Podio de Ganadores
+                    </h4>
+                    <div id="finalLeaderboard">
+                        <!-- Podio se genera aquí dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="text-center mt-5">
+                    <button class="btn btn-warning btn-lg me-3" onclick="playAgain()">
+                        <i class="fas fa-redo me-2"></i>Jugar Otra Vez
                     </button>
-                    <button class="btn btn-outline-light btn-lg" onclick="window.location.href='/microservices/tata-trivia/'">
+                    <button class="btn btn-outline-light btn-lg" onclick="exitToMain()">
                         <i class="fas fa-home me-2"></i>Volver al Inicio
                     </button>
                 </div>
@@ -206,14 +367,17 @@ try {
         const triviaId = '<?php echo $trivia_id; ?>';
         const playerId = '<?php echo $player_id; ?>';
         const playerName = '<?php echo addslashes($player['player_name']); ?>';
+        const playerAvatar = '<?php echo $player['avatar']; ?>';
         let currentQuestion = null;
         let selectedOption = null;
         let questionStartTime = null;
         let timerInterval = null;
         let playerScore = 0;
+        let gameActive = true;
 
         class PlayerGame {
             constructor() {
+                this.setupCommunication();
                 this.checkGameState();
                 // Consultar estado cada 2 segundos
                 setInterval(() => this.checkGameState(), 2000);
@@ -221,34 +385,116 @@ try {
                 console.log('🎮 Jugador inicializado:', { playerId, playerName, triviaId });
             }
 
-            async checkGameState() {
+            setupCommunication() {
+                // Escuchar mensajes del host
+                window.addEventListener('storage', (e) => {
+                    if (e.key === `trivia_${triviaId}_to_players` && e.newValue) {
+                        try {
+                            const message = JSON.parse(e.newValue);
+                            this.handleHostMessage(message);
+                        } catch (error) {
+                            console.error('Error procesando mensaje del host:', error);
+                        }
+                    }
+                });
+
+                // También verificar sessionStorage como backup
+                window.addEventListener('storage', (e) => {
+                    if (e.key === `trivia_${triviaId}_msg` && e.newValue) {
+                        try {
+                            const message = JSON.parse(e.newValue);
+                            this.handleHostMessage(message);
+                        } catch (error) {
+                            console.error('Error procesando mensaje backup:', error);
+                        }
+                    }
+                });
+
+                // Verificar mensajes periódicamente
+                setInterval(() => {
+                    this.checkForMessages();
+                }, 1000);
+            }
+
+            async checkForMessages() {
+                // Revisar localStorage
                 try {
-                    const response = await fetch('/microservices/tata-trivia/api/player_communication.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'get_game_state',
-                            trivia_id: triviaId
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        this.handleGameState(data);
-                    } else {
-                        console.error('Error en game state:', data.error);
+                    const message = localStorage.getItem(`trivia_${triviaId}_to_players`);
+                    if (message) {
+                        const parsed = JSON.parse(message);
+                        this.handleHostMessage(parsed);
                     }
                 } catch (error) {
-                    console.error('Error checking game state:', error);
+                    console.error('Error checking messages:', error);
+                }
+
+                // Revisar sessionStorage como backup
+                try {
+                    const message = sessionStorage.getItem(`trivia_${triviaId}_msg`);
+                    if (message) {
+                        const parsed = JSON.parse(message);
+                        this.handleHostMessage(parsed);
+                        sessionStorage.removeItem(`trivia_${triviaId}_msg`);
+                    }
+                } catch (error) {
+                    console.error('Error checking backup messages:', error);
                 }
             }
+
+            handleHostMessage(message) {
+                console.log('📨 Mensaje del host:', message);
+                
+                switch (message.type) {
+                    case 'question_started':
+                        this.showQuestion(message.data.question);
+                        break;
+                    case 'question_ended':
+                        this.handleQuestionEnded();
+                        break;
+                    case 'show_results':
+                        this.showQuestionResults(message.data);
+                        break;
+                    case 'show_leaderboard':
+                        this.showLeaderboard(message.data.players);
+                        break;
+                    case 'game_ended':
+                        if (message.data.final_results) {
+                            this.showFinalResults();
+                        }
+                        break;
+                }
+            }
+
+            async checkGameState() {
+    try {
+        const apiUrl = '/microservices/tata-trivia/api/player_communication.php';
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_game_state',
+                trivia_id: triviaId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            this.handleGameState(data);
+        } else {
+            console.error('Error en game state:', data.error);
+        }
+    } catch (error) {
+        console.error('Error checking game state:', error);
+    }
+}
 
             handleGameState(state) {
                 console.log('🎮 Estado del juego:', state);
                 
                 if (state.trivia_status === 'finished') {
-                    this.showGameOver();
+                    this.showFinalResults();
+                    gameActive = false;
                     return;
                 }
 
@@ -267,7 +513,8 @@ try {
                 document.getElementById('waitingScreen').style.display = 'block';
                 document.getElementById('questionScreen').style.display = 'none';
                 document.getElementById('resultsScreen').style.display = 'none';
-                document.getElementById('gameOverScreen').style.display = 'none';
+                document.getElementById('leaderboardScreen').style.display = 'none';
+                document.getElementById('finalResultsScreen').style.display = 'none';
             }
 
             showQuestion(question) {
@@ -276,12 +523,14 @@ try {
                 currentQuestion = question;
                 questionStartTime = Date.now();
                 selectedOption = null;
+                gameActive = true;
 
                 // Ocultar otras pantallas, mostrar pregunta
                 document.getElementById('waitingScreen').style.display = 'none';
                 document.getElementById('questionScreen').style.display = 'block';
                 document.getElementById('resultsScreen').style.display = 'none';
-                document.getElementById('gameOverScreen').style.display = 'none';
+                document.getElementById('leaderboardScreen').style.display = 'none';
+                document.getElementById('finalResultsScreen').style.display = 'none';
 
                 // Mostrar pregunta
                 document.getElementById('questionText').textContent = question.question_text;
@@ -334,9 +583,16 @@ try {
 
                     if (timeLeft <= 0) {
                         clearInterval(timerInterval);
-                        this.submitAnswer();
+                        this.handleTimeUp();
                     }
                 }, 1000);
+            }
+
+            handleTimeUp() {
+                if (selectedOption === null) {
+                    // Tiempo agotado sin respuesta
+                    this.submitAnswer();
+                }
             }
 
             selectOption(optionIndex, optionId) {
@@ -358,50 +614,69 @@ try {
                 optionButtons[optionIndex].classList.add('selected');
 
                 // Enviar respuesta automáticamente
-                setTimeout(() => this.submitAnswer(), 500);
+                this.submitAnswer();
             }
 
-            async submitAnswer() {
-                console.log('📤 Enviando respuesta...');
-                
-                clearInterval(timerInterval);
+    async submitAnswer() {
+    console.log('📤 Enviando respuesta...');
+    
+    clearInterval(timerInterval);
 
-                const responseTime = Date.now() - questionStartTime;
-                
-                try {
-                    const response = await fetch('/microservices/tata-trivia/api/player_communication.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'submit_answer',
-                            trivia_id: triviaId,
-                            player_id: playerId,
-                            question_id: currentQuestion.id,
-                            option_id: selectedOption ? selectedOption.id : null,
-                            response_time: responseTime
-                        })
-                    });
+    const responseTime = Date.now() - questionStartTime;
+    
+    // PREPARAR DATOS COMPLETOS
+    const submitData = {
+        action: 'submit_answer',
+        trivia_id: triviaId,
+        player_id: playerId,
+        question_id: currentQuestion.id,
+        response_time: responseTime
+    };
+    
+    if (selectedOption !== null) {
+        submitData.option_id = selectedOption.id;
+    }
+    
+    console.log('📦 Datos a enviar:', submitData);
+    
+    try {
+        // USAR URL ABSOLUTA para evitar problemas de ruta
+        const apiUrl = '/microservices/tata-trivia/api/player_communication.php';
+        console.log('🌐 Llamando a:', apiUrl);
+        
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(submitData)
+        });
 
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        this.showResult(data.is_correct, responseTime);
-                        
-                        // Actualizar puntaje
-                        if (data.is_correct) {
-                            const points = Math.max(1000 - Math.floor(responseTime / 10), 100);
-                            playerScore += points;
-                            document.getElementById('playerScore').textContent = playerScore;
-                        }
-                    } else {
-                        this.showResult(false, responseTime, data.error);
-                    }
-
-                } catch (error) {
-                    console.error('Error submitting answer:', error);
-                    this.showResult(false, responseTime, 'Error al enviar respuesta');
-                }
+        console.log('📨 Status de respuesta:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('✅ Respuesta del servidor:', data);
+        
+        if (data.success) {
+            this.showResult(data.is_correct, responseTime, data.points_earned);
+            
+            if (data.is_correct && data.points_earned) {
+                playerScore += data.points_earned;
+                document.getElementById('playerScore').textContent = playerScore;
             }
+        } else {
+            this.showResult(false, responseTime, data.error || 'Error del servidor');
+        }
+
+    } catch (error) {
+        console.error('❌ Error submitting answer:', error);
+        this.showResult(false, responseTime, 'Error de conexión: ' + error.message);
+    }
+}
 
             showResult(isCorrect, responseTime, message = '') {
                 console.log('📊 Mostrando resultado:', { isCorrect, responseTime });
@@ -442,16 +717,249 @@ try {
                         `;
                     }
                 }
+
+                // Ocultar stats por defecto, se mostrarán cuando llegue el mensaje del host
+                document.getElementById('questionStats').style.display = 'none';
             }
 
-            showGameOver() {
-                console.log('🏁 Juego terminado');
+            handleQuestionEnded() {
+                console.log('⏹️ Pregunta finalizada por el host');
+                clearInterval(timerInterval);
                 
+                // Si aún no ha respondido, forzar envío
+                if (selectedOption === null) {
+                    this.submitAnswer();
+                }
+            }
+
+            showQuestionResults(data) {
+                console.log('📈 Mostrando resultados de pregunta:', data);
+                
+                // Mostrar estadísticas de la pregunta
+                document.getElementById('correctCount').textContent = data.correctCount || 0;
+                document.getElementById('totalAnswers').textContent = data.totalAnswers || 0;
+                document.getElementById('questionStats').style.display = 'block';
+
+                // Esperar 3 segundos y mostrar leaderboard automáticamente
+                setTimeout(() => {
+                    this.fetchLeaderboard();
+                }, 3000);
+            }
+
+            async fetchLeaderboard() {
+                try {
+                    const response = await fetch('/microservices/tata-trivia/api/player_communication.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'get_leaderboard',
+                            trivia_id: triviaId
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.showLeaderboard(data.players);
+                    }
+                } catch (error) {
+                    console.error('Error fetching leaderboard:', error);
+                }
+            }
+
+            showLeaderboard(players) {
+                console.log('🏆 Mostrando leaderboard:', players);
+                
+                document.getElementById('resultsScreen').style.display = 'none';
+                document.getElementById('leaderboardScreen').style.display = 'block';
+
+                const leaderboardList = document.getElementById('leaderboardList');
+                leaderboardList.innerHTML = '';
+
+                if (players && players.length > 0) {
+                    players.forEach((player, index) => {
+                        const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-other';
+                        const isCurrentPlayer = player.id === playerId;
+                        const itemClass = isCurrentPlayer ? 'border-warning border-2' : '';
+
+                        const leaderboardHTML = `
+                            <div class="podium-item ${itemClass}">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="rank-badge ${rankClass}">
+                                            ${index + 1}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <img src="/public/assets/img/default/${player.avatar}.png" 
+                                             alt="Avatar" class="player-avatar">
+                                    </div>
+                                    <div class="col">
+                                        <div class="fw-bold ${isCurrentPlayer ? 'text-warning' : 'text-dark'}">${player.name}</div>
+                                        ${player.team ? `<small class="text-muted">${player.team}</small>` : ''}
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="fw-bold text-dark">${player.score} pts</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        leaderboardList.innerHTML += leaderboardHTML;
+                    });
+                }
+
+                // Contador para siguiente pregunta
+                this.startNextQuestionCountdown();
+            }
+
+            startNextQuestionCountdown() {
+                let countdown = 5;
+                const countdownElement = document.getElementById('nextQuestionCountdown');
+                countdownElement.textContent = countdown;
+
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    countdownElement.textContent = countdown;
+
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        this.showWaiting();
+                    }
+                }, 1000);
+            }
+
+            async showFinalResults() {
+                console.log('🏁 Mostrando resultados finales...');
+                
+                gameActive = false;
+                clearInterval(timerInterval);
+
                 document.getElementById('waitingScreen').style.display = 'none';
                 document.getElementById('questionScreen').style.display = 'none';
                 document.getElementById('resultsScreen').style.display = 'none';
-                document.getElementById('gameOverScreen').style.display = 'block';
+                document.getElementById('leaderboardScreen').style.display = 'none';
+                document.getElementById('finalResultsScreen').style.display = 'block';
+
+                // Crear confetti
+                this.createConfetti();
+
+                try {
+                    // Obtener resultados finales
+                    const response = await fetch('/microservices/tata-trivia/api/get_results.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            trivia_id: triviaId,
+                            player_id: playerId
+                        })
+                    });
+
+                    let finalResults = [];
+                    let playerRank = 0;
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            finalResults = data.results || [];
+                            playerRank = data.player_rank || 0;
+                        }
+                    }
+
+                    // Mostrar posición del jugador
+                    document.getElementById('playerRankBadge').textContent = playerRank;
+                    document.getElementById('playerRankBadge').className = `rank-badge ${playerRank <= 3 ? `rank-${playerRank}` : 'rank-other'}`;
+                    document.getElementById('playerFinalScore').textContent = playerScore;
+                    document.getElementById('playerFinalAvatar').src = `/public/assets/img/default/${playerAvatar}.png`;
+
+                    // Mostrar ganador
+                    if (finalResults.length > 0) {
+                        const winner = finalResults[0];
+                        document.getElementById('winnerName').textContent = winner.name;
+                        document.getElementById('winnerScore').innerHTML = `<i class="fas fa-star me-1"></i>${winner.score} puntos`;
+                        document.getElementById('winnerAvatar').src = `/public/assets/img/default/${winner.avatar}.png`;
+                        
+                        if (winner.team) {
+                            document.getElementById('winnerTeam').textContent = winner.team;
+                            document.getElementById('winnerTeam').style.display = 'inline-block';
+                        }
+                    }
+
+                    // Mostrar podio completo
+                    const finalLeaderboard = document.getElementById('finalLeaderboard');
+                    finalLeaderboard.innerHTML = '';
+
+                    finalResults.forEach((player, index) => {
+                        const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-other';
+                        const borderColor = index < 3 ? ['#FFD700', '#C0C0C0', '#CD7F32'][index] : '#667eea';
+                        const isCurrentPlayer = player.id === playerId;
+                        const itemClass = isCurrentPlayer ? 'border-warning border-3' : '';
+
+                        const playerHTML = `
+                            <div class="podium-item ${itemClass}">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <div class="rank-badge ${rankClass}">
+                                            ${index + 1}
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <img src="/public/assets/img/default/${player.avatar}.png" 
+                                             alt="Avatar" class="player-avatar"
+                                             style="border-color: ${borderColor};">
+                                    </div>
+                                    <div class="col">
+                                        <h5 class="mb-1 ${isCurrentPlayer ? 'text-warning' : 'text-dark'}">${player.name}</h5>
+                                        ${player.team ? `<span class="badge bg-primary">${player.team}</span>` : ''}
+                                    </div>
+                                    <div class="col-auto">
+                                        <div class="text-end">
+                                            <div class="h4 mb-0 ${isCurrentPlayer ? 'text-warning' : 'text-dark'}">${player.score}</div>
+                                            <small class="text-muted">puntos</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        finalLeaderboard.innerHTML += playerHTML;
+                    });
+
+                } catch (error) {
+                    console.error('Error cargando resultados finales:', error);
+                }
             }
+
+            createConfetti() {
+                const confettiContainer = document.getElementById('confettiContainer');
+                const colors = ['#FFD700', '#FFA500', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
+                
+                for (let i = 0; i < 50; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 5 + 's';
+                    confetti.style.width = Math.random() * 10 + 5 + 'px';
+                    confetti.style.height = confetti.style.width;
+                    
+                    confettiContainer.appendChild(confetti);
+                    
+                    // Remover después de la animación
+                    setTimeout(() => {
+                        if (confetti.parentNode) {
+                            confetti.remove();
+                        }
+                    }, 5000);
+                }
+            }
+        }
+
+        // Funciones globales para botones
+        function playAgain() {
+            window.location.href = '/microservices/tata-trivia/player/join';
+        }
+
+        function exitToMain() {
+            window.location.href = '/microservices/tata-trivia/';
         }
 
         // Inicializar juego del jugador

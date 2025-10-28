@@ -34,7 +34,6 @@ try {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         .game-container {
-            
             min-height: 100vh;
             color: white;
         }
@@ -120,6 +119,66 @@ try {
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0.3; }
         }
+        /* NUEVOS ESTILOS PARA RESULTADOS FINALES */
+        .final-results-screen {
+            background: rgba(0,0,0,0.9);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 1rem 0;
+        }
+        .winner-card {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            color: #333;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+            animation: glow 2s infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3); }
+            to { box-shadow: 0 15px 40px rgba(255, 215, 0, 0.5); }
+        }
+        .podium-item {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .podium-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .rank-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+        .rank-1 { background: linear-gradient(45deg, #FFD700, #FFA500); }
+        .rank-2 { background: linear-gradient(45deg, #C0C0C0, #A0A0A0); }
+        .rank-3 { background: linear-gradient(45deg, #CD7F32, #A56C27); }
+        .rank-other { background: linear-gradient(45deg, #667eea, #764ba2); }
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid;
+        }
+        .auto-advance-notice {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body class="game-container" style="background-image: url('<?php echo get_theme_image('TRIVIA.png'); ?>'); background-size: cover; background-position: center; background-attachment: fixed;">
@@ -197,7 +256,7 @@ try {
                             </div>
                         </div>
 
-                        <!-- Pantalla de Resultados -->
+                        <!-- Pantalla de Resultados de Pregunta -->
                         <div id="resultsScreen" style="display: none;">
                             <div class="text-center py-4">
                                 <i class="fas fa-chart-bar fa-4x text-info mb-3"></i>
@@ -205,15 +264,22 @@ try {
                                 <div id="resultsChart" class="mt-4">
                                     <!-- Gráfico de resultados se genera aquí -->
                                 </div>
+                                <div class="auto-advance-notice text-warning">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    La siguiente pregunta comenzará automáticamente en <span id="autoAdvanceTimer">5</span> segundos
+                                </div>
                                 <div class="mt-4">
-                                    <button class="btn btn-success btn-lg" onclick="showLeaderboard()">
+                                    <button class="btn btn-success btn-lg me-2" onclick="showLeaderboard()">
                                         <i class="fas fa-trophy me-2"></i>Ver Clasificación
+                                    </button>
+                                    <button class="btn btn-outline-light btn-lg" onclick="continueToNextQuestion()">
+                                        <i class="fas fa-arrow-right me-2"></i>Continuar Ahora
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Pantalla de Leaderboard -->
+                        <!-- Pantalla de Leaderboard entre preguntas -->
                         <div id="leaderboardScreen" style="display: none;">
                             <div class="text-center py-4">
                                 <i class="fas fa-trophy fa-4x text-warning mb-3"></i>
@@ -221,12 +287,71 @@ try {
                                 <div id="leaderboardList" class="mt-4">
                                     <!-- Leaderboard se genera aquí -->
                                 </div>
+                                <div class="auto-advance-notice text-warning mt-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    La siguiente pregunta comenzará automáticamente en <span id="leaderboardAdvanceTimer">5</span> segundos
+                                </div>
                                 <div class="mt-4">
                                     <button class="btn btn-primary me-2" onclick="continueToNextQuestion()">
                                         <i class="fas fa-arrow-right me-2"></i>Siguiente Pregunta
                                     </button>
-                                    <button class="btn btn-outline-light" onclick="endGame()">
+                                    <button class="btn btn-outline-light" onclick="showFinalResults()">
                                         <i class="fas fa-flag-checkered me-2"></i>Finalizar Juego
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- NUEVA PANTALLA: Resultados Finales del Juego -->
+                        <div id="finalResultsScreen" style="display: none;">
+                            <div class="final-results-screen">
+                                <div class="text-center mb-5">
+                                    <i class="fas fa-flag-checkered fa-4x text-warning mb-3"></i>
+                                    <h2 class="text-warning">¡Juego Terminado!</h2>
+                                    <p class="lead text-light">Resultados Finales de <?php echo htmlspecialchars($trivia['title']); ?></p>
+                                </div>
+                                
+                                <!-- Ganador Principal -->
+                                <div class="winner-card">
+                                    <i class="fas fa-crown fa-3x mb-3" style="color: #FFD700;"></i>
+                                    <h1 class="display-4 fw-bold mb-3">¡Felicidades!</h1>
+                                    <div class="row justify-content-center align-items-center">
+                                        <div class="col-auto">
+                                            <img id="winnerAvatar" src="" alt="Ganador" class="player-avatar border-warning">
+                                        </div>
+                                        <div class="col-auto">
+                                            <h2 id="winnerName" class="fw-bold mb-1"></h2>
+                                            <p class="lead mb-0">Ganador de la trivia</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <span id="winnerScore" class="badge bg-dark fs-6">
+                                            <i class="fas fa-star me-1"></i>0 puntos
+                                        </span>
+                                        <span id="winnerTeam" class="badge bg-primary fs-6 ms-2" style="display: none;"></span>
+                                    </div>
+                                </div>
+
+                                <!-- Podio de Ganadores -->
+                                <div class="mt-5">
+                                    <h4 class="text-center text-light mb-4">
+                                        <i class="fas fa-trophy me-2"></i>Podio de Ganadores
+                                    </h4>
+                                    <div id="finalLeaderboard">
+                                        <!-- Podio se genera aquí dinámicamente -->
+                                    </div>
+                                </div>
+
+                                <!-- Botones de Acción -->
+                                <div class="text-center mt-5">
+                                    <button class="btn btn-warning btn-lg me-3" onclick="playAgain()">
+                                        <i class="fas fa-redo me-2"></i>Jugar Otra Vez
+                                    </button>
+                                    <button class="btn btn-outline-light btn-lg me-3" onclick="goToSetup()">
+                                        <i class="fas fa-cog me-2"></i>Nueva Configuración
+                                    </button>
+                                    <button class="btn btn-outline-info btn-lg" onclick="exitToMain()">
+                                        <i class="fas fa-home me-2"></i>Volver al Inicio
                                     </button>
                                 </div>
                             </div>
@@ -280,7 +405,7 @@ try {
                             <button class="btn btn-outline-light btn-sm" onclick="skipQuestion()">
                                 <i class="fas fa-forward me-2"></i>Saltar Pregunta
                             </button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="endGame()">
+                            <button class="btn btn-outline-danger btn-sm" onclick="showFinalResults()">
                                 <i class="fas fa-stop me-2"></i>Finalizar Juego
                             </button>
                         </div>
@@ -308,12 +433,15 @@ let timeLeft = 0;
 let gameActive = false;
 let playerAnswers = {};
 let playerStatus = {};
+let autoAdvanceTimer = null;
+let leaderboardAdvanceTimer = null;
 
 // Elementos DOM
 const startScreen = document.getElementById('startScreen');
 const questionScreen = document.getElementById('questionScreen');
 const resultsScreen = document.getElementById('resultsScreen');
 const leaderboardScreen = document.getElementById('leaderboardScreen');
+const finalResultsScreen = document.getElementById('finalResultsScreen');
 const questionText = document.getElementById('questionText');
 const optionsContainer = document.getElementById('optionsContainer');
 const timerDisplay = document.getElementById('timerDisplay');
@@ -470,12 +598,6 @@ class GameHost {
         
         this.updatePlayerDisplay(answerData);
         updateAnswersProgress();
-        
-        if (answerData.isCorrect && playerStatus[answerData.playerId]) {
-            const points = Math.max(10 - Math.floor(answerData.responseTime / 1000), 1);
-            playerStatus[answerData.playerId].score += points;
-            this.updatePlayerScoreDisplay(answerData.playerId);
-        }
     }
     
     updatePlayerDisplay(answerData) {
@@ -485,61 +607,115 @@ class GameHost {
             
             const icon = playerElement.querySelector('i');
             if (icon) {
-                icon.className = answerData.isCorrect ? 'text-success' : 'fas fa-times text-danger';
-            }
-        }
-    }
-    
-    updatePlayerScoreDisplay(playerId) {
-        const playerElement = document.getElementById(`player-${playerId}`);
-        if (playerElement) {
-            const scoreElement = playerElement.querySelector('.player-score');
-            if (scoreElement) {
-                scoreElement.textContent = `${playerStatus[playerId].score} pts`;
+                icon.className = answerData.isCorrect ? 'fas fa-check text-success' : 'fas fa-times text-danger';
             }
         }
     }
 }
 
-// Inicializar jugadores
-function initializePlayers() {
-    const players = <?php echo json_encode($players); ?>;
-    playersList.innerHTML = '';
-    playerStatus = {};
-    
-    players.forEach(player => {
-        playerStatus[player.id] = {
-            id: player.id,
-            name: player.player_name,
-            team: player.team_name,
-            avatar: player.avatar,
-            score: player.score || 0,
-            answered: false,
-            correct: false,
-            answerTime: null
-        };
+// ACTUALIZADA: Inicializar jugadores con datos REALES
+async function initializePlayers() {
+    try {
+        // Obtener datos actualizados del servidor
+        const response = await fetch('/microservices/tata-trivia/api/get_results.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                trivia_id: triviaId
+            })
+        });
         
-        const playerHTML = `
-            <div class="player-card p-2 mb-2" id="player-${player.id}">
-                <div class="d-flex align-items-center">
-                    <img src="/public/assets/img/default/${player.avatar}.png" 
-                         class="rounded-circle me-2" width="30" height="30">
-                    <div class="flex-grow-1">
-                        <div class="fw-bold">${player.player_name}</div>
-                        ${player.team_name ? `<small class="text-muted">${player.team_name}</small>` : ''}
-                        <div class="small text-warning player-score">${player.score || 0} pts</div>
-                    </div>
-                    <div class="text-warning">
-                        <i class="fas fa-clock"></i>
+        let playersData = <?php echo json_encode($players); ?>;
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.results) {
+                // Usar datos actualizados del servidor
+                playersData = data.results;
+            }
+        }
+        
+        playersList.innerHTML = '';
+        playerStatus = {};
+        
+        playersData.forEach(player => {
+            playerStatus[player.id] = {
+                id: player.id,
+                name: player.player_name || player.name,
+                team: player.team_name || player.team,
+                avatar: player.avatar,
+                score: player.score || 0,
+                correct_answers: player.correct_answers || 0,
+                answered: false,
+                correct: false,
+                answerTime: null
+            };
+            
+            const playerHTML = `
+                <div class="player-card p-2 mb-2" id="player-${player.id}">
+                    <div class="d-flex align-items-center">
+                        <img src="/public/assets/img/default/${player.avatar}.png" 
+                             class="rounded-circle me-2" width="30" height="30">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">${player.player_name || player.name}</div>
+                            ${(player.team_name || player.team) ? `<small class="text-muted">${player.team_name || player.team}</small>` : ''}
+                            <div class="small text-warning player-score">${player.score || 0} pts</div>
+                        </div>
+                        <div class="text-warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
-        playersList.innerHTML += playerHTML;
-    });
-    
-    playersCount.textContent = players.length;
-    totalPlayers.textContent = players.length;
+            `;
+            playersList.innerHTML += playerHTML;
+        });
+        
+        playersCount.textContent = playersData.length;
+        totalPlayers.textContent = playersData.length;
+        
+    } catch (error) {
+        console.error('Error inicializando jugadores:', error);
+        // Fallback a datos PHP
+        const players = <?php echo json_encode($players); ?>;
+        playersList.innerHTML = '';
+        playerStatus = {};
+        
+        players.forEach(player => {
+            playerStatus[player.id] = {
+                id: player.id,
+                name: player.player_name,
+                team: player.team_name,
+                avatar: player.avatar,
+                score: player.score || 0,
+                answered: false,
+                correct: false,
+                answerTime: null
+            };
+            
+            const playerHTML = `
+                <div class="player-card p-2 mb-2" id="player-${player.id}">
+                    <div class="d-flex align-items-center">
+                        <img src="/public/assets/img/default/${player.avatar}.png" 
+                             class="rounded-circle me-2" width="30" height="30">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">${player.player_name}</div>
+                            ${player.team_name ? `<small class="text-muted">${player.team_name}</small>` : ''}
+                            <div class="small text-warning player-score">${player.score || 0} pts</div>
+                        </div>
+                        <div class="text-warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+            playersList.innerHTML += playerHTML;
+        });
+        
+        playersCount.textContent = players.length;
+        totalPlayers.textContent = players.length;
+    }
 }
 
 // FUNCIÓN CRÍTICA - Comenzar siguiente pregunta CORREGIDA
@@ -564,9 +740,9 @@ async function startNextQuestion() {
         
         if (response.success) {
             if (response.game_finished) {
-                // Juego terminado
-                gameHost.showError('¡El juego ha terminado!');
-                endGame();
+                // Juego terminado - MOSTRAR RESULTADOS FINALES
+                console.log('🏁 Juego terminado, mostrando resultados finales...');
+                showFinalResults();
                 return;
             }
             
@@ -628,7 +804,9 @@ function startNextQuestionFallback() {
             
             console.log('✅ Fallback exitoso - Pregunta local mostrada');
         } else {
-            gameHost.showError('No hay más preguntas disponibles');
+            // JUEGO TERMINADO EN FALLBACK
+            console.log('🏁 Juego terminado (fallback), mostrando resultados...');
+            showFinalResults();
         }
     } else {
         gameHost.showError('No hay preguntas configuradas en esta trivia');
@@ -639,10 +817,14 @@ function startNextQuestionFallback() {
 function showQuestionScreen() {
     console.log('🖥️ Mostrando pantalla de pregunta...');
     
+    // Limpiar timers de avance automático
+    clearAutoAdvanceTimers();
+    
     startScreen.style.display = 'none';
     questionScreen.style.display = 'block';
     resultsScreen.style.display = 'none';
     leaderboardScreen.style.display = 'none';
+    finalResultsScreen.style.display = 'none';
     
     // Actualizar contenido de la pregunta
     questionText.textContent = currentQuestion.question_text;
@@ -677,7 +859,7 @@ function displayOptions() {
                 <div class="option-item p-3 bg-light text-dark rounded position-relative">
                     <span class="option-indicator bg-primary text-white">${letters[index]}</span>
                     <span class="option-text">${option.text}</span>
-                    ${option.is_correct ? '<span class="position-absolute top-0 end-0 badge bg-success"></span>' : ''}
+                    ${option.is_correct ? '<span class="position-absolute top-0 end-0 badge bg-success"><i class="fas fa-check"></i></span>' : ''}
                 </div>
             </div>
         `;
@@ -724,6 +906,11 @@ function endQuestion() {
     document.getElementById('btnNextQuestion').disabled = false;
     
     console.log('⏹️ Pregunta finalizada');
+    
+    // Mostrar resultados automáticamente después de 2 segundos
+    setTimeout(() => {
+        showResults();
+    }, 2000);
 }
 
 function showResults() {
@@ -760,26 +947,82 @@ function showResults() {
             </div>
         </div>
     `;
+    
+    // Iniciar contador para avance automático
+    startAutoAdvanceTimer(5, 'autoAdvanceTimer', () => {
+        showLeaderboard();
+    });
 }
 
-function showLeaderboard() {
+// NUEVA FUNCIÓN: Timer para avance automático
+function startAutoAdvanceTimer(seconds, elementId, callback) {
+    let timeLeft = seconds;
+    const timerElement = document.getElementById(elementId);
+    
+    timerElement.textContent = timeLeft;
+    
+    clearInterval(autoAdvanceTimer);
+    autoAdvanceTimer = setInterval(() => {
+        timeLeft--;
+        timerElement.textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+            clearInterval(autoAdvanceTimer);
+            callback();
+        }
+    }, 1000);
+}
+
+// NUEVA FUNCIÓN: Limpiar todos los timers de avance automático
+function clearAutoAdvanceTimers() {
+    clearInterval(autoAdvanceTimer);
+    clearInterval(leaderboardAdvanceTimer);
+}
+
+// ACTUALIZADA: Función showLeaderboard con datos REALES
+async function showLeaderboard() {
     resultsScreen.style.display = 'none';
     leaderboardScreen.style.display = 'block';
     
-    const sortedPlayers = Object.values(playerStatus)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10);
+    // Obtener datos REALES del servidor
+    let leaderboardData = [];
+    try {
+        const response = await fetch('/microservices/tata-trivia/api/player_communication.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'get_leaderboard',
+                trivia_id: triviaId
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                leaderboardData = data.players;
+            }
+        }
+    } catch (error) {
+        console.error('Error obteniendo leaderboard:', error);
+    }
+    
+    // Si no hay datos del servidor, usar datos locales
+    if (leaderboardData.length === 0) {
+        leaderboardData = Object.values(playerStatus)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 10);
+    }
     
     // Notificar a los jugadores el leaderboard
     gameHost.broadcastToPlayers('show_leaderboard', {
-        players: sortedPlayers,
+        players: leaderboardData,
         questionIndex: currentQuestionIndex
     });
     
     const leaderboardList = document.getElementById('leaderboardList');
     leaderboardList.innerHTML = '';
     
-    sortedPlayers.forEach((player, index) => {
+    leaderboardData.forEach((player, index) => {
         const positionClass = index === 0 ? 'bg-warning text-dark' : 
                            index === 1 ? 'bg-secondary' : 
                            index === 2 ? 'bg-danger' : 'bg-dark';
@@ -791,8 +1034,8 @@ function showLeaderboard() {
                     <img src="/public/assets/img/default/${player.avatar}.png" 
                          class="rounded-circle me-2" width="30" height="30">
                     <div class="flex-grow-1">
-                        <div class="fw-bold">${player.name}</div>
-                        ${player.team ? `<small>${player.team}</small>` : ''}
+                        <div class="fw-bold">${player.player_name || player.name}</div>
+                        ${(player.team_name || player.team) ? `<small>${player.team_name || player.team}</small>` : ''}
                     </div>
                     <div class="fw-bold">${player.score} pts</div>
                 </div>
@@ -800,11 +1043,172 @@ function showLeaderboard() {
         `;
         leaderboardList.innerHTML += leaderboardHTML;
     });
+    
+    // Iniciar contador para siguiente pregunta automática
+    startLeaderboardAdvanceTimer(5, 'leaderboardAdvanceTimer', () => {
+        continueToNextQuestion();
+    });
+}
+
+// NUEVA FUNCIÓN: Timer para avance desde leaderboard
+function startLeaderboardAdvanceTimer(seconds, elementId, callback) {
+    let timeLeft = seconds;
+    const timerElement = document.getElementById(elementId);
+    
+    timerElement.textContent = timeLeft;
+    
+    clearInterval(leaderboardAdvanceTimer);
+    leaderboardAdvanceTimer = setInterval(() => {
+        timeLeft--;
+        timerElement.textContent = timeLeft;
+        
+        if (timeLeft <= 0) {
+            clearInterval(leaderboardAdvanceTimer);
+            callback();
+        }
+    }, 1000);
 }
 
 function continueToNextQuestion() {
     leaderboardScreen.style.display = 'none';
     startNextQuestion();
+}
+
+// ACTUALIZADA: Función para mostrar resultados finales con datos REALES
+async function showFinalResults() {
+    try {
+        console.log('🏆 Obteniendo resultados finales...');
+        
+        // Limpiar timers
+        clearAutoAdvanceTimers();
+        
+        // Ocultar todas las pantallas excepto resultados finales
+        startScreen.style.display = 'none';
+        questionScreen.style.display = 'none';
+        resultsScreen.style.display = 'none';
+        leaderboardScreen.style.display = 'none';
+        finalResultsScreen.style.display = 'block';
+        
+        // Finalizar el juego en el servidor
+        try {
+            await gameHost.apiCall('finish_game');
+        } catch (error) {
+            console.warn('⚠️ Error finalizando juego en servidor:', error);
+        }
+        
+        // Notificar a los jugadores que el juego terminó
+        gameHost.broadcastToPlayers('game_ended', {
+            final_results: true
+        });
+        
+        // Obtener resultados finales REALES desde el servidor
+        const response = await fetch('/microservices/tata-trivia/api/get_results.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                trivia_id: triviaId
+            })
+        });
+        
+        let finalResults = [];
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                finalResults = data.results || [];
+            }
+        }
+        
+        // Si no hay resultados de API, usar los datos locales
+        if (finalResults.length === 0) {
+            finalResults = Object.values(playerStatus)
+                .sort((a, b) => b.score - a.score)
+                .map((player, index) => ({
+                    id: player.id,
+                    name: player.name,
+                    avatar: player.avatar,
+                    team: player.team,
+                    score: player.score,
+                    rank: index + 1
+                }));
+        }
+        
+        // Mostrar ganador principal
+        if (finalResults.length > 0) {
+            const winner = finalResults[0];
+            document.getElementById('winnerName').textContent = winner.name;
+            document.getElementById('winnerScore').innerHTML = `<i class="fas fa-star me-1"></i>${winner.score} puntos`;
+            document.getElementById('winnerAvatar').src = `/public/assets/img/default/${winner.avatar}.png`;
+            
+            if (winner.team) {
+                document.getElementById('winnerTeam').textContent = winner.team;
+                document.getElementById('winnerTeam').style.display = 'inline-block';
+            }
+        }
+        
+        // Mostrar podio completo
+        const finalLeaderboard = document.getElementById('finalLeaderboard');
+        finalLeaderboard.innerHTML = '';
+        
+        finalResults.forEach((player, index) => {
+            const rankClass = index < 3 ? `rank-${index + 1}` : 'rank-other';
+            const borderColor = index < 3 ? ['#FFD700', '#C0C0C0', '#CD7F32'][index] : '#667eea';
+            
+            const playerHTML = `
+                <div class="podium-item">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="rank-badge ${rankClass}">
+                                ${index + 1}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <img src="/public/assets/img/default/${player.avatar}.png" 
+                                 alt="Avatar" class="player-avatar"
+                                 style="border-color: ${borderColor};">
+                        </div>
+                        <div class="col">
+                            <h5 class="mb-1 text-dark">${player.name}</h5>
+                            ${player.team ? `<span class="badge bg-primary">${player.team}</span>` : ''}
+                        </div>
+                        <div class="col-auto">
+                            <div class="text-end">
+                                <div class="h4 mb-0 text-dark">${player.score}</div>
+                                <small class="text-muted">puntos</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            finalLeaderboard.innerHTML += playerHTML;
+        });
+        
+        console.log('✅ Resultados finales mostrados');
+        
+    } catch (error) {
+        console.error('❌ Error mostrando resultados finales:', error);
+        gameHost.showError('Error al cargar resultados finales');
+    }
+}
+
+// NUEVAS FUNCIONES PARA BOTONES DE RESULTADOS
+function playAgain() {
+    // Reiniciar juego con misma configuración
+    if (confirm('¿Quieres jugar otra vez con la misma configuración?')) {
+        window.location.href = '/microservices/tata-trivia/host/lobby?trivia_id=' + triviaId;
+    }
+}
+
+function goToSetup() {
+    // Ir a configuración para nueva trivia
+    window.location.href = '/microservices/tata-trivia/host/setup';
+}
+
+function exitToMain() {
+    // Volver al inicio
+    window.location.href = '/microservices/tata-trivia/';
 }
 
 function updateAnswersProgress() {
@@ -821,88 +1225,15 @@ function updateAnswersProgress() {
 
 function endGame() {
     if (confirm('¿Estás seguro de que quieres finalizar el juego?')) {
-        // Notificar a los jugadores
-        gameHost.broadcastToPlayers('game_ended', {});
-        
-        // Redirigir a resultados
-        window.location.href = '/microservices/tata-trivia/results?trivia_id=' + triviaId;
+        showFinalResults();
     }
 }
 
 function skipQuestion() {
     if (confirm('¿Saltar esta pregunta?')) {
         clearInterval(timer);
+        clearAutoAdvanceTimers();
         endQuestion();
-    }
-}
-
-// ==================================================
-// FUNCIONES DE DIAGNÓSTICO Y PRUEBA
-// ==================================================
-
-async function testConnection() {
-    try {
-        console.log('🧪 Probando conexión con el servidor...');
-        const testResponse = await fetch('/microservices/tata-trivia/api/test_connection.php');
-        const testData = await testResponse.json();
-        console.log('✅ Test de conexión:', testData);
-        
-        // Probar game_actions.php específicamente
-        const gameActionsTest = await fetch('/microservices/tata-trivia/api/game_actions.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'get_question_status',
-                trivia_id: triviaId
-            })
-        });
-        
-        const gameActionsData = await gameActionsTest.json();
-        console.log('✅ Test game_actions.php:', gameActionsData);
-        
-    } catch (error) {
-        console.error('❌ Test de conexión falló:', error);
-    }
-}
-
-async function diagnosticTest() {
-    console.log('🔍 Iniciando diagnóstico...');
-    
-    // Test 1: Conexión básica
-    try {
-        const test1 = await fetch('/microservices/tata-trivia/api/test_api.php');
-        const test1Text = await test1.text();
-        console.log('🧪 Test 1 - Conexión básica:', test1Text.substring(0, 200));
-    } catch (e) {
-        console.error('❌ Test 1 falló:', e);
-    }
-    
-    // Test 2: game_actions.php con reset
-    try {
-        const test2 = await fetch('/microservices/tata-trivia/api/game_actions.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'reset_questions', trivia_id: triviaId })
-        });
-        const test2Text = await test2.text();
-        console.log('🧪 Test 2 - game_actions reset:', test2Text.substring(0, 200));
-    } catch (e) {
-        console.error('❌ Test 2 falló:', e);
-    }
-    
-    // Test 3: game_actions.php con get_status
-    try {
-        const test3 = await fetch('/microservices/tata-trivia/api/game_actions.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'get_question_status', trivia_id: triviaId })
-        });
-        const test3Text = await test3.text();
-        console.log('🧪 Test 3 - game_actions status:', test3Text.substring(0, 200));
-    } catch (e) {
-        console.error('❌ Test 3 falló:', e);
     }
 }
 
@@ -919,108 +1250,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Habilitar botón para comenzar
     document.getElementById('btnNextQuestion').disabled = false;
-    
-    // Ejecutar tests automáticamente
-    setTimeout(testConnection, 1000);
-    setTimeout(diagnosticTest, 2000);
-    
-    // Log del estado inicial
-    console.log('📊 Estado inicial:', {
-        triviaId: triviaId,
-        questionsCount: questions.length,
-        playersCount: Object.keys(playerStatus).length,
-        currentQuestionIndex: currentQuestionIndex
-    });
 });
-
-// ==================================================
-// FUNCIONES DE DEBUG (para usar en consola)
-// ==================================================
-
-// Función para forzar el inicio de una pregunta (debug)
-window.debugStartQuestion = function(questionIndex = 0) {
-    console.log('🐛 DEBUG: Forzando inicio de pregunta', questionIndex);
-    
-    if (questions && questions.length > questionIndex) {
-        currentQuestionIndex = questionIndex;
-        currentQuestion = questions[questionIndex];
-        showQuestionScreen();
-        
-        gameHost.broadcastToPlayers('question_started', {
-            question: currentQuestion,
-            questionIndex: currentQuestionIndex,
-            timeLimit: currentQuestion.time_limit || 30
-        });
-        
-        console.log('🐛 DEBUG: Pregunta forzada iniciada');
-    } else {
-        console.error('🐛 DEBUG: No hay preguntas disponibles');
-    }
-};
-
-// Función para simular respuestas de jugadores (debug)
-window.debugSimulateAnswers = function() {
-    console.log('🐛 DEBUG: Simulando respuestas de jugadores');
-    
-    Object.keys(playerStatus).forEach(playerId => {
-        if (!playerAnswers[playerId]) {
-            setTimeout(() => {
-                const randomOption = Math.floor(Math.random() * (currentQuestion?.options?.length || 4));
-                const isCorrect = currentQuestion?.options?.[randomOption]?.is_correct || false;
-                
-                const answerData = {
-                    playerId: playerId,
-                    playerName: playerStatus[playerId].name,
-                    questionIndex: currentQuestionIndex,
-                    optionIndex: randomOption,
-                    isCorrect: isCorrect,
-                    responseTime: 5000 + Math.random() * 20000,
-                    timestamp: Date.now()
-                };
-                
-                localStorage.setItem(`trivia_${triviaId}_to_host`, JSON.stringify({
-                    type: 'player_answer',
-                    data: answerData
-                }));
-                
-            }, Math.random() * 15000);
-        }
-    });
-};
-
-// ==================================================
-// DIAGNÓSTICO AUTOMÁTICO
-// ==================================================
-
-async function diagnosticCheck() {
-    console.log('🔍 Ejecutando diagnóstico...');
-    
-    // Test 1: Verificar que game_actions.php existe y responde
-    try {
-        const testResponse = await fetch('/microservices/tata-trivia/api/game_actions.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'get_question_status',
-                trivia_id: triviaId
-            })
-        });
-        
-        console.log('🧪 Test game_actions - Status:', testResponse.status);
-        
-        if (testResponse.ok) {
-            const testData = await testResponse.json();
-            console.log('✅ game_actions.php funciona:', testData);
-        } else {
-            console.error('❌ game_actions.php error:', testResponse.status);
-        }
-    } catch (e) {
-        console.error('❌ game_actions.php no accesible:', e);
-    }
-}
-
-// Ejecutar diagnóstico al cargar
-setTimeout(diagnosticCheck, 1000);
 </script>
 </body>
 </html>

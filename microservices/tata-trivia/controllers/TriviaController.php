@@ -1,5 +1,5 @@
 <?php
-// microservices/tata-trivia/controllers/TriviaController.php
+// microservices/tata-trivia/controllers/TriviaController.php - VERSIÓN CORREGIDA
 
 class TriviaController {
     private $triviaModel;
@@ -36,88 +36,102 @@ class TriviaController {
         return $this->triviaModel->getCurrentQuestionIndex($triviaId);
     }
     
-    public function recordPlayerAnswer($playerId, $questionId, $optionId, $isCorrect, $responseTime) {
-        return $this->triviaModel->recordAnswer($playerId, $questionId, $optionId, $isCorrect, $responseTime);
+    // ACTUALIZADA: Incluye cálculo de puntos
+    public function recordPlayerAnswer($playerId, $questionId, $optionId, $isCorrect, $responseTime, $pointsEarned = 0) {
+        return $this->triviaModel->recordAnswer($playerId, $questionId, $optionId, $isCorrect, $responseTime, $pointsEarned);
     }
     
     public function finishGame($triviaId) {
         return $this->triviaModel->finishGame($triviaId);
     }
     
-    public function createTrivia($data) {
-    try {
-        $db = getTriviaDatabaseConnection();
-        if (!$db) {
-            throw new Exception('No se pudo conectar a la base de datos');
-        }
-        
-        // Validar datos requeridos
-        $required = ['title', 'theme', 'game_mode', 'max_winners'];
-        foreach ($required as $field) {
-            if (empty($data[$field])) {
-                throw new Exception("Campo requerido faltante: $field");
-            }
-        }
-        
-        // Generar código único
-        $joinCode = $this->generateUniqueCode();
-        
-        // Preparar datos para inserción
-        $stmt = $db->prepare("
-            INSERT INTO trivias 
-            (host_id, title, theme, game_mode, max_winners, background_image, status, join_code, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, 'setup', ?, NOW())
-        ");
-        
-        $result = $stmt->execute([
-            $data['user_id'] ?? null,
-            $data['title'],
-            $data['theme'],
-            $data['game_mode'],
-            intval($data['max_winners']),
-            $data['background_image'] ?? $data['theme'], // Usar tema como imagen de fondo por defecto
-            $joinCode
-        ]);
-        
-        if ($result) {
-            $triviaId = $db->lastInsertId();
-            
-            // Verificar que se insertó correctamente
-            $checkStmt = $db->prepare("SELECT id FROM trivias WHERE id = ?");
-            $checkStmt->execute([$triviaId]);
-            $trivia = $checkStmt->fetch();
-            
-            if ($trivia) {
-                return [
-                    'success' => true,
-                    'trivia_id' => $triviaId,
-                    'join_code' => $joinCode,
-                    'message' => 'Trivia creada exitosamente'
-                ];
-            } else {
-                throw new Exception('Error al verificar la trivia creada');
-            }
-        } else {
-            throw new Exception('Error en la ejecución de la consulta');
-        }
-        
-    } catch (PDOException $e) {
-        error_log("Error PDO creating trivia: " . $e->getMessage());
-        return [
-            'success' => false, 
-            'error' => 'Error de base de datos: ' . $e->getMessage()
-        ];
-    } catch (Exception $e) {
-        error_log("Error creating trivia: " . $e->getMessage());
-        return [
-            'success' => false, 
-            'error' => $e->getMessage()
-        ];
+    // NUEVAS FUNCIONES PARA PUNTAJES Y RESULTADOS
+    public function getLeaderboard($triviaId) {
+        return $this->triviaModel->getLeaderboard($triviaId);
     }
-}
+    
+    public function getFinalResults($triviaId) {
+        return $this->triviaModel->getFinalResults($triviaId);
+    }
+    
+    public function getPlayerRank($triviaId, $playerId) {
+        return $this->triviaModel->getPlayerRank($triviaId, $playerId);
+    }
+    
+    public function createTrivia($data) {
+        // Tu código existente sin cambios
+        try {
+            $db = getTriviaDatabaseConnection();
+            if (!$db) {
+                throw new Exception('No se pudo conectar a la base de datos');
+            }
+            
+            // Validar datos requeridos
+            $required = ['title', 'theme', 'game_mode', 'max_winners'];
+            foreach ($required as $field) {
+                if (empty($data[$field])) {
+                    throw new Exception("Campo requerido faltante: $field");
+                }
+            }
+            
+            // Generar código único
+            $joinCode = $this->generateUniqueCode();
+            
+            // Preparar datos para inserción
+            $stmt = $db->prepare("
+                INSERT INTO trivias 
+                (host_id, title, theme, game_mode, max_winners, background_image, status, join_code, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'setup', ?, NOW())
+            ");
+            
+            $result = $stmt->execute([
+                $data['user_id'] ?? null,
+                $data['title'],
+                $data['theme'],
+                $data['game_mode'],
+                intval($data['max_winners']),
+                $data['background_image'] ?? $data['theme'],
+                $joinCode
+            ]);
+            
+            if ($result) {
+                $triviaId = $db->lastInsertId();
+                
+                $checkStmt = $db->prepare("SELECT id FROM trivias WHERE id = ?");
+                $checkStmt->execute([$triviaId]);
+                $trivia = $checkStmt->fetch();
+                
+                if ($trivia) {
+                    return [
+                        'success' => true,
+                        'trivia_id' => $triviaId,
+                        'join_code' => $joinCode,
+                        'message' => 'Trivia creada exitosamente'
+                    ];
+                } else {
+                    throw new Exception('Error al verificar la trivia creada');
+                }
+            } else {
+                throw new Exception('Error en la ejecución de la consulta');
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error PDO creating trivia: " . $e->getMessage());
+            return [
+                'success' => false, 
+                'error' => 'Error de base de datos: ' . $e->getMessage()
+            ];
+        } catch (Exception $e) {
+            error_log("Error creating trivia: " . $e->getMessage());
+            return [
+                'success' => false, 
+                'error' => $e->getMessage()
+            ];
+        }
+    }
     
     public function addQuestion($triviaId, $questionData) {
-        // Tu código existente para agregar preguntas
+        // Tu código existente sin cambios
         try {
             $db = getTriviaDatabaseConnection();
             
@@ -138,7 +152,6 @@ class TriviaController {
             if ($result) {
                 $questionId = $db->lastInsertId();
                 
-                // Agregar opciones
                 foreach ($questionData['options'] as $option) {
                     $stmt = $db->prepare("
                         INSERT INTO question_options (question_id, option_text, is_correct)
@@ -162,43 +175,40 @@ class TriviaController {
         }
     }
     
-   private function generateUniqueCode($length = 6) {
-    try {
-        $db = getTriviaDatabaseConnection();
-        if (!$db) {
-            throw new Exception('No hay conexión a BD');
+    private function generateUniqueCode($length = 6) {
+        try {
+            $db = getTriviaDatabaseConnection();
+            if (!$db) {
+                throw new Exception('No hay conexión a BD');
+            }
+            
+            $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            $maxAttempts = 10;
+            $attempt = 0;
+            
+            do {
+                $code = '';
+                for ($i = 0; $i < $length; $i++) {
+                    $code .= $characters[rand(0, strlen($characters) - 1)];
+                }
+                
+                $stmt = $db->prepare("SELECT id FROM trivias WHERE join_code = ?");
+                $stmt->execute([$code]);
+                $existing = $stmt->fetch();
+                
+                if (!$existing) {
+                    return $code;
+                }
+                
+                $attempt++;
+            } while ($attempt < $maxAttempts);
+            
+            throw new Exception('No se pudo generar código único después de ' . $maxAttempts . ' intentos');
+            
+        } catch (Exception $e) {
+            error_log("Error generating unique code: " . $e->getMessage());
+            return 'T' . time() % 100000;
         }
-        
-        $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        $maxAttempts = 10;
-        $attempt = 0;
-        
-        do {
-            $code = '';
-            for ($i = 0; $i < $length; $i++) {
-                $code .= $characters[rand(0, strlen($characters) - 1)];
-            }
-            
-            // Verificar si el código ya existe
-            $stmt = $db->prepare("SELECT id FROM trivias WHERE join_code = ?");
-            $stmt->execute([$code]);
-            $existing = $stmt->fetch();
-            
-            if (!$existing) {
-                return $code;
-            }
-            
-            $attempt++;
-        } while ($attempt < $maxAttempts);
-        
-        // Si no se pudo generar único después de varios intentos
-        throw new Exception('No se pudo generar código único después de ' . $maxAttempts . ' intentos');
-        
-    } catch (Exception $e) {
-        error_log("Error generating unique code: " . $e->getMessage());
-        // Fallback: código con timestamp
-        return 'T' . time() % 100000;
     }
-}
 }
 ?>
