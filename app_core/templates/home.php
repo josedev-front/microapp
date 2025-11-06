@@ -137,6 +137,17 @@ $comunicados_globales = $comunicadoController->obtenerComunicadosGlobalesParaCar
         </div>
     </a>
 </div>
+<div class="col-12 col-md-6 col-lg-5">
+    <a href="./?vista=back-admision" class="text-decoration-none">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-tasks"></i> Back de Admisión</h5>
+                <p class="card-text">Gestiona y balancea la carga de SRs y tickets del área Micro&SOHO.</p>
+                <small class="text-muted">Asignación equilibrada de casos</small>
+            </div>
+        </div>
+    </a>
+</div>
         
         <div class="col-12 col-md-6 col-lg-5">
             <a href="./?vista=equiposuser" class="text-decoration-none">

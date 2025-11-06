@@ -1,0 +1,132 @@
+<?php
+class UserSync {
+    private $dbMicroapps;
+    private $dbBackAdmision;
+    
+    public function __construct() {
+        // Conexión a BD principal (solo lectura)
+        $this->dbMicroapps = getDatabaseConnection();
+        // Conexión a BD independiente (lectura/escritura)
+        $this->dbBackAdmision = getBackAdmisionDB();
+    }
+    
+    /**
+     * Sincroniza todos los ejecutivos de un área específica
+     */
+    public function sincronizarEjecutivosPorArea($area = 'Depto Micro&SOHO') {
+        try {
+            $sql = "
+                SELECT id, first_name, last_name, work_area, role, is_active, employee_id
+                FROM core_customuser 
+                WHERE role = 'ejecutivo' 
+                AND is_active = 1
+                AND work_area = ?
+            ";
+            
+            $stmt = $this->dbMicroapps->prepare($sql);
+            $stmt->execute([$area]);
+            $ejecutivos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $sincronizados = 0;
+            foreach ($ejecutivos as $ejecutivo) {
+                if ($this->sincronizarEjecutivoIndividual($ejecutivo)) {
+                    $sincronizados++;
+                }
+            }
+            
+            // Log de sincronización
+            $this->logSincronizacion($sincronizados, $area);
+            
+            return $sincronizados;
+            
+        } catch (Exception $e) {
+            error_log("Error en sincronización: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Sincroniza un ejecutivo individual
+     */
+    private function sincronizarEjecutivoIndividual($ejecutivo) {
+        try {
+            $nombre_completo = trim($ejecutivo['first_name'] . ' ' . $ejecutivo['last_name']);
+            
+            // 1. Sincronizar en estado_usuarios
+            $stmt = $this->dbBackAdmision->prepare("
+                INSERT INTO estado_usuarios (user_id, user_external_id, estado, ultima_actualizacion)
+                VALUES (?, ?, 'activo', NOW())
+                ON DUPLICATE KEY UPDATE 
+                    user_external_id = VALUES(user_external_id),
+                    ultima_actualizacion = NOW()
+            ");
+            
+            $stmt->execute([
+                $ejecutivo['id'],
+                $ejecutivo['id']
+            ]);
+            
+            // 2. Sincronizar horarios base para todos los días
+            $dias_semana = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+            
+            foreach ($dias_semana as $dia) {
+                $stmt = $this->dbBackAdmision->prepare("
+                    INSERT INTO horarios_usuarios 
+                    (user_id, user_external_id, nombre_completo, area, dia_semana, activo)
+                    VALUES (?, ?, ?, ?, ?, 1)
+                    ON DUPLICATE KEY UPDATE 
+                        nombre_completo = VALUES(nombre_completo),
+                        area = VALUES(area),
+                        activo = VALUES(activo),
+                        updated_at = NOW()
+                ");
+                
+                $stmt->execute([
+                    $ejecutivo['id'],
+                    $ejecutivo['id'],
+                    $nombre_completo,
+                    $ejecutivo['work_area'],
+                    $dia
+                ]);
+            }
+            
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Error sincronizando ejecutivo {$ejecutivo['id']}: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Obtiene ejecutivos disponibles desde BD independiente
+     */
+    public function getEjecutivosDisponibles($area = 'Depto Micro&SOHO') {
+        $stmt = $this->dbBackAdmision->prepare("
+            SELECT 
+                hu.user_id,
+                hu.user_external_id,
+                hu.nombre_completo,
+                hu.area,
+                eu.estado,
+                eu.ultima_actualizacion,
+                COUNT(c.id) as casos_activos
+            FROM horarios_usuarios hu
+            LEFT JOIN estado_usuarios eu ON hu.user_id = eu.user_id
+            LEFT JOIN casos c ON hu.user_id = c.analista_id AND c.estado != 'resuelto'
+            WHERE hu.area = ?
+            AND hu.activo = 1
+            AND (eu.estado IS NULL OR eu.estado = 'activo')
+            GROUP BY hu.user_id, hu.nombre_completo, hu.area, eu.estado
+            ORDER BY casos_activos ASC
+        ");
+        
+        $stmt->execute([$area]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    private function logSincronizacion($cantidad, $area) {
+        error_log("✅ Sincronizados $cantidad ejecutivos del área: $area");
+    }
+}
+?>
