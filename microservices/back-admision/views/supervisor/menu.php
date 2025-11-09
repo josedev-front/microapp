@@ -20,37 +20,8 @@ $estadisticas = $supervisorController->getEstadisticasDashboard();
 $ejecutivos_activos = $teamController->getEjecutivosActivos();
 ?>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Back de Admisión - Supervisor</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        .stat-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        .user-status {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-        .status-activo { background-color: #28a745; }
-        .status-colacion { background-color: #ffc107; }
-        .status-inactivo { background-color: #dc3545; }
-        .status-noturno { background-color: #6c757d; }
-    </style>
-</head>
 <body>
-    <?php include __DIR__ . '/../../../../templates/header.php'; ?>
+    
 
     <div class="container-fluid mt-4">
         <div class="row">
@@ -58,7 +29,7 @@ $ejecutivos_activos = $teamController->getEjecutivosActivos();
                 <!-- Breadcrumb -->
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="/?vista=home"><i class="fas fa-home"></i> Home</a></li>
+                        <li class="breadcrumb-item"><a href="/public/index.php?vista=home"><i class="fas fa-home"></i> Home</a></li>
                         <li class="breadcrumb-item active">Back de Admisión - Supervisor</li>
                     </ol>
                 </nav>
@@ -164,115 +135,120 @@ $ejecutivos_activos = $teamController->getEjecutivosActivos();
                 </div>
 
                 <!-- Menú de Opciones de Supervisor -->
-                <div class="row">
-                    <!-- Ingresar Caso como Ejecutivo -->
-                    <div class="col-12 col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm card-hover">
-                            <div class="card-body text-center">
-                                <div class="mb-3">
-                                    <i class="fas fa-user-plus fa-3x text-primary"></i>
-                                </div>
-                                <h5 class="card-title">Ingresar Caso como Ejecutivo</h5>
-                                <p class="card-text text-muted">
-                                    Ingresa un caso que será asignado automáticamente al ejecutivo con menor carga
-                                </p>
-                                <a href="/?vista=admision-ingresar-caso-backup&tipo=ejecutivo" class="btn btn-primary">
-                                    <i class="fas fa-plus me-2"></i>Ingresar Caso
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Ingresar Caso como Backup/Supervisor -->
-                    <div class="col-12 col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm card-hover">
-                            <div class="card-body text-center">
-                                <div class="mb-3">
-                                    <i class="fas fa-user-shield fa-3x text-success"></i>
-                                </div>
-                                <h5 class="card-title">Asignación Manual</h5>
-                                <p class="card-text text-muted">
-                                    Asigna manualmente casos a ejecutivos específicos con opción de reasignación
-                                </p>
-                                <a href="/?vista=admision-ingresar-caso-backup&tipo=supervisor" class="btn btn-success">
-                                    <i class="fas fa-hand-pointer me-2"></i>Asignar Manualmente
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Gestionar Equipos -->
-                    <div class="col-12 col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm card-hover">
-                            <div class="card-body text-center">
-                                <div class="mb-3">
-                                    <i class="fas fa-users-cog fa-3x text-warning"></i>
-                                </div>
-                                <h5 class="card-title">Gestionar Equipos</h5>
-                                <p class="card-text text-muted">
-                                    Administra horarios, estados y configuración del equipo de ejecutivos
-                                </p>
-                                <a href="/?vista=admision-gestionar-equipos" class="btn btn-warning">
-                                    <i class="fas fa-cog me-2"></i>Gestionar Equipos
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Ver Registros -->
-                    <div class="col-12 col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm card-hover">
-                            <div class="card-body text-center">
-                                <div class="mb-3">
-                                    <i class="fas fa-file-alt fa-3x text-info"></i>
-                                </div>
-                                <h5 class="card-title">Ver Registros</h5>
-                                <p class="card-text text-muted">
-                                    Consulta logs del sistema y descarga planillas Excel con todos los registros
-                                </p>
-                                <a href="/?vista=admision-ver-registros" class="btn btn-info">
-                                    <i class="fas fa-download me-2"></i>Ver Registros
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Panel de Asignaciones -->
-                    <div class="col-12 col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm card-hover">
-                            <div class="card-body text-center">
-                                <div class="mb-3">
-                                    <i class="fas fa-chart-pie fa-3x text-danger"></i>
-                                </div>
-                                <h5 class="card-title">Panel de Asignaciones</h5>
-                                <p class="card-text text-muted">
-                                    Visualiza el balance de carga entre ejecutivos y métricas de asignación
-                                </p>
-                                <a href="/?vista=admision-panel-asignaciones" class="btn btn-danger">
-                                    <i class="fas fa-chart-bar me-2"></i>Ver Panel
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Reasignación Rápida -->
-                    <div class="col-12 col-md-6 col-lg-4 mb-4">
-                        <div class="card h-100 shadow-sm card-hover">
-                            <div class="card-body text-center">
-                                <div class="mb-3">
-                                    <i class="fas fa-sync-alt fa-3x text-secondary"></i>
-                                </div>
-                                <h5 class="card-title">Reasignación Rápida</h5>
-                                <p class="card-text text-muted">
-                                    Reasigna casos entre ejecutivos de manera manual y controlada
-                                </p>
-                                <a href="/?vista=admision-reasignacion-rapida" class="btn btn-secondary">
-                                    <i class="fas fa-exchange-alt me-2"></i>Reasignar Casos
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Menú de Opciones de Supervisor -->
+<div class="row">
+    <!-- Ingresar Caso como Ejecutivo -->
+    <!-- Menú de Opciones de Supervisor -->
+<div class="row">
+    <!-- Ingresar Caso como Ejecutivo -->
+    <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm card-hover">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-user-plus fa-3x text-primary"></i>
                 </div>
+                <h5 class="card-title">Ingresar SR</h5>
+                <p class="card-text text-muted">
+                    Ingresa un caso que será asignado automáticamente al ejecutivo con menor carga
+                </p>
+                <a href="./?vista=back-admision&action=ingresar-caso&tipo=ejecutivo" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Ingresar Caso
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ingresar Caso como Backup/Supervisor -->
+    <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm card-hover">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-user-shield fa-3x text-success"></i>
+                </div>
+                <h5 class="card-title">Asignación Manual</h5>
+                <p class="card-text text-muted">
+                    Asigna manualmente casos a ejecutivos específicos con opción de reasignación
+                </p>
+                <a href="./?vista=back-admision&action=ingresar-caso&tipo=supervisor" class="btn btn-success">
+                    <i class="fas fa-hand-pointer me-2"></i>Asignar Manualmente
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gestionar Equipos -->
+    <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm card-hover">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-users-cog fa-3x text-warning"></i>
+                </div>
+                <h5 class="card-title">Gestionar Equipos</h5>
+                <p class="card-text text-muted">
+                    Administra horarios, estados y configuración del equipo de ejecutivos
+                </p>
+                <a href="./?vista=back-admision&action=gestionar-equipos" class="btn btn-warning">
+                    <i class="fas fa-cog me-2"></i>Gestionar Equipos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ver Registros -->
+    <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm card-hover">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-file-alt fa-3x text-info"></i>
+                </div>
+                <h5 class="card-title">Ver Registros</h5>
+                <p class="card-text text-muted">
+                    Consulta logs del sistema y descarga planillas Excel con todos los registros
+                </p>
+                <a href="./?vista=back-admision&action=ver-registros" class="btn btn-info">
+                    <i class="fas fa-download me-2"></i>Ver Registros
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Asignaciones -->
+    <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm card-hover">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-chart-pie fa-3x text-danger"></i>
+                </div>
+                <h5 class="card-title">Panel de Asignaciones</h5>
+                <p class="card-text text-muted">
+                    Visualiza el balance de carga entre ejecutivos y métricas de asignación
+                </p>
+                <a href="./?vista=back-admision&action=panel-asignaciones" class="btn btn-danger">
+                    <i class="fas fa-chart-bar me-2"></i>Ver Panel
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Reasignación Rápida -->
+    <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm card-hover">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-sync-alt fa-3x text-secondary"></i>
+                </div>
+                <h5 class="card-title">Reasignación Rápida</h5>
+                <p class="card-text text-muted">
+                    Reasigna casos entre ejecutivos de manera manual y controlada
+                </p>
+                <a href="./?vista=admision-reasignacion-rapida" class="btn btn-secondary">
+                    <i class="fas fa-exchange-alt me-2"></i>Reasignar Casos
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <!-- Lista Rápida de Ejecutivos Activos -->
                 <div class="row mt-4">
@@ -317,8 +293,4 @@ $ejecutivos_activos = $teamController->getEjecutivosActivos();
         </div>
     </div>
 
-    <?php include __DIR__ . '/../../../../templates/footer.php'; ?>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+  
