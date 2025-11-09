@@ -21,18 +21,28 @@ $ejecutivos_activos = $teamController->getEjecutivosActivos();
 ?>
 
 <body>
-    
+    <style>
+        .breadcrumb {
+            
+            margin-top: 50px;
+            border-radius: 5px;
+        }
+        .breadcrumb-item > a {
+            color: white;
+            text-decoration: none;
+        }
+    </style>
 
     <div class="container-fluid mt-4">
         <div class="row">
             <div class="col-12">
                 <!-- Breadcrumb -->
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
+                <div aria-label="breadcrumb bg-success">
+                    <ol class="breadcrumb bg-success">
                         <li class="breadcrumb-item"><a href="/public/index.php?vista=home"><i class="fas fa-home"></i> Home</a></li>
-                        <li class="breadcrumb-item active">Back de Admisión - Supervisor</li>
+                        <li class="breadcrumb-item">Back de Admisión</li>
                     </ol>
-                </nav>
+                </div>
 
                 <!-- Alertas -->
                 <?php if (isset($_SESSION['notificacion'])): ?>

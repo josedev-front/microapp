@@ -137,14 +137,25 @@ private function obtenerNombreEjecutivo($user_id) {
      * Obtener caso por SR - VERSIÓN SIMPLIFICADA
      */
     public function getCasoPorSR($sr_hijo) {
-        try {
-            // Simular búsqueda - siempre retorna null por ahora
-            return null;
-        } catch (Exception $e) {
-            error_log("ERROR en getCasoPorSR: " . $e->getMessage());
-            return null;
+    try {
+        error_log("🔍 Buscando caso para SR: " . $sr_hijo);
+        
+        // Usar el modelo Caso para buscar en la base de datos
+        $caso = $this->casoModel->getCasoPorSR($sr_hijo);
+        
+        if ($caso) {
+            error_log("✅ Caso encontrado: " . $sr_hijo . " asignado a: " . $caso['analista_nombre']);
+        } else {
+            error_log("❌ Caso NO encontrado: " . $sr_hijo);
         }
+        
+        return $caso;
+        
+    } catch (Exception $e) {
+        error_log("ERROR en getCasoPorSR: " . $e->getMessage());
+        return null;
     }
+}
 
     /**
      * Verificar permisos de supervisor

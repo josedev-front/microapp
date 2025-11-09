@@ -47,7 +47,7 @@ $casos = $admissionController->getBandejaEjecutivo($user_id);
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="/?vista=home"><i class="fas fa-home"></i> Home</a></li>
-                        <li class="breadcrumb-item active">Back de Admisión</li>
+                        <li class="breadcrumb-item">Back de Admisión</li>
                     </ol>
                 </nav>
 

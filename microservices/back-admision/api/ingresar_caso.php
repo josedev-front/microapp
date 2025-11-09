@@ -12,6 +12,44 @@ header('Content-Type: application/json');
 // DESACTIVAR OUTPUT BUFFERING
 if (ob_get_level()) ob_clean();
 
+// FUNCIÓN AUXILIAR PRIMERO para evitar error de $this
+function obtenerNombreEjecutivo($user_id, $db) {
+    try {
+        // Primero intentar con la tabla de horarios
+        $stmt = $db->prepare("
+            SELECT nombre_completo FROM horarios_usuarios 
+            WHERE user_id = ? LIMIT 1
+        ");
+        $stmt->execute([$user_id]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($result && !empty($result['nombre_completo'])) {
+            return $result['nombre_completo'];
+        }
+        
+        // Si no existe, buscar en la base de datos principal
+        require_once __DIR__ . '/../../app_core/config/database.php';
+        $db_core = getDB();
+        
+        $stmt = $db_core->prepare("
+            SELECT first_name, last_name FROM core_customuser 
+            WHERE id = ? LIMIT 1
+        ");
+        $stmt->execute([$user_id]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($result) {
+            return trim($result['first_name'] . ' ' . $result['last_name']);
+        }
+        
+        return "Ejecutivo $user_id";
+        
+    } catch (Exception $e) {
+        error_log("Error obteniendo nombre ejecutivo: " . $e->getMessage());
+        return "Ejecutivo $user_id";
+    }
+}
+
 try {
     // VERIFICAR MÉTODO POST
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -36,7 +74,10 @@ try {
     // OBTENER DATOS DEL USUARIO
     $user_id = $_SESSION['id'] ?? $_SESSION['user_id'] ?? null;
     $user_nombre = ($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '');
-    $user_area = $_SESSION['work_area'] ?? 'Depto Micro&SOHO';
+    
+    // SOLUCIÓN TEMPORAL: Forzar área Micro&SOHO
+    $user_area = 'Depto Micro&SOHO';
+    error_log("🔧 Área forzada a: $user_area");
 
     $sr_hijo = trim($_POST['sr_hijo'] ?? '');
     $confirmar_reasignacion = isset($_POST['confirmar_reasignacion']) && $_POST['confirmar_reasignacion'] == '1';
@@ -47,25 +88,32 @@ try {
     }
 
     // VERIFICAR SI LA SR YA EXISTE
-    $caso_existente = $admissionController->getCasoPorSR($sr_hijo);
-    
+   $caso_existente = $admissionController->getCasoPorSR($sr_hijo);
+
+if ($caso_existente) {
     // 🔄 REGLA 1: Si la SR YA EXISTE y está asignada al USUARIO ACTUAL
-    if ($caso_existente && $caso_existente['analista_id'] == $user_id) {
+    if ($caso_existente['analista_id'] == $user_id) {
         error_log("✅ SR $sr_hijo ya asignada al usuario actual");
         
         $response = [
             'success' => true, 
-            'message' => 'Este caso ya se encontraba asignado a tu cuenta',
+            'message' => '✅ Este caso ya se encontraba asignado a tu cuenta. Redirigiendo a gestión...',
             'redirect' => './?vista=back-admision&action=gestionar-solicitud&sr=' . urlencode($sr_hijo),
             'tipo' => 'info_existente_propio'
         ];
     }
     // 🔄 REGLA 2: Si la SR YA EXISTE y está asignada a OTRO EJECUTIVO
-    else if ($caso_existente && $caso_existente['analista_id'] != $user_id) {
+    else {
+        // Obtener información del siguiente ejecutivo disponible
+        $siguiente_ejecutivo_id = $loadBalancer->asignarCasoEquilibrado($sr_hijo . '_temp', $user_area);
+        $nombre_siguiente = $siguiente_ejecutivo_id ? obtenerNombreEjecutivo($siguiente_ejecutivo_id, $db) : 'otro ejecutivo disponible';
+        
+        $nombre_actual = $caso_existente['analista_nombre'];
+        $estado_actual = $caso_existente['estado'];
         
         // Si viene de confirmación de reasignación
         if ($confirmar_reasignacion) {
-            error_log("🔄 Reasignando SR $sr_hijo de {$caso_existente['analista_nombre']} a $user_nombre");
+            error_log("🔄 Reasignando SR $sr_hijo de $nombre_actual a $user_nombre");
             
             // Actualizar asignación
             $stmt = $db->prepare("
@@ -88,18 +136,43 @@ try {
             ];
             
         } else {
-            // Solicitar confirmación de reasignación
-            error_log("⚠️ SR $sr_hijo asignada a otro ejecutivo: {$caso_existente['analista_nombre']}");
+            // Solicitar confirmación de reasignación con información detallada
+            error_log("⚠️ SR $sr_hijo asignada a otro ejecutivo: $nombre_actual");
+            
+            $mensaje_detallado = "
+                <div class='mb-3 text-dark'>
+                    <strong>📋 Información del caso existente:</strong>
+                    <br>
+                    • <strong>SR:</strong> $sr_hijo
+                    <br>
+                    • <strong>Asignado actualmente a:</strong> $nombre_actual
+                    <br>
+                    • <strong>Estado actual:</strong> " . ucfirst(str_replace('_', ' ', $estado_actual)) . "
+                </div>
+                
+                <div class='alert alert-warning'>
+                    <strong>🔄 ¿Qué deseas hacer?</strong>
+                    <br><br>
+                    <strong>Opción 1 - Reasignar a mí:</strong> El caso se moverá a TU bandeja
+                    <br>
+                    <strong>Opción 2 - Asignar al siguiente:</strong> El sistema lo asignará a <strong>$nombre_siguiente</strong> (ejecutivo con menor carga)
+                </div>
+            ";
             
             $response = [
                 'success' => false, 
                 'message' => 'confirmar_reasignacion',
-                'detalles' => "Este caso ya se encontraba asignado a {$caso_existente['analista_nombre']}. ¿Desea reasignarlo a su cuenta?",
+                'detalles' => $mensaje_detallado,
                 'sr_hijo' => $sr_hijo,
-                'tipo' => 'necesita_confirmacion'
+                'tipo' => 'necesita_confirmacion',
+                'ejecutivo_actual' => $nombre_actual,
+                'siguiente_ejecutivo' => $nombre_siguiente,
+                'estado_actual' => $estado_actual
             ];
         }
     }
+}
+
     // 🔄 REGLA 3: SR NUEVA - ASIGNACIÓN EQUILIBRADA
     else {
         error_log("🆕 SR $sr_hijo es nueva - asignando equilibradamente");
@@ -111,8 +184,8 @@ try {
             throw new Exception("No hay ejecutivos disponibles para asignar el caso en el área $user_area");
         }
         
-        // Obtener nombre del ejecutivo asignado
-        $analista_asignado_nombre = $this->obtenerNombreEjecutivo($analista_asignado_id, $db);
+        // Obtener nombre del ejecutivo asignado (LLAMADA CORREGIDA)
+        $analista_asignado_nombre = obtenerNombreEjecutivo($analista_asignado_id, $db);
         
         // INSERTAR EN BASE DE DATOS CON EJECUTIVO BALANCEADO
         $stmt = $db->prepare("
@@ -166,44 +239,4 @@ try {
 // ENVIAR Y TERMINAR
 echo json_encode($response);
 exit;
-
-/**
- * Función auxiliar para obtener nombre del ejecutivo
- */
-function obtenerNombreEjecutivo($user_id, $db) {
-    try {
-        // Primero intentar con la tabla de horarios
-        $stmt = $db->prepare("
-            SELECT nombre_completo FROM horarios_usuarios 
-            WHERE user_id = ? LIMIT 1
-        ");
-        $stmt->execute([$user_id]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($result && !empty($result['nombre_completo'])) {
-            return $result['nombre_completo'];
-        }
-        
-        // Si no existe, buscar en la base de datos principal
-        require_once __DIR__ . '/../../app_core/config/database.php';
-        $db_core = getDB();
-        
-        $stmt = $db_core->prepare("
-            SELECT first_name, last_name FROM core_customuser 
-            WHERE id = ? LIMIT 1
-        ");
-        $stmt->execute([$user_id]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($result) {
-            return trim($result['first_name'] . ' ' . $result['last_name']);
-        }
-        
-        return "Ejecutivo $user_id";
-        
-    } catch (Exception $e) {
-        error_log("Error obteniendo nombre ejecutivo: " . $e->getMessage());
-        return "Ejecutivo $user_id";
-    }
-}
 ?>
