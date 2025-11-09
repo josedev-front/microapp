@@ -20,27 +20,25 @@ $descripcion = $tipo === 'ejecutivo'
     ? 'El caso será asignado automáticamente al ejecutivo con menor carga'
     : 'Selecciona manualmente el ejecutivo al que asignar el caso';
 ?>
-
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $titulo; ?> - Back de Admisión</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <?php include __DIR__ . '/../../../../templates/header.php'; ?>
-
+<style>
+.breadcrumb {
+            
+            margin-top: 50px;
+            border-radius: 5px;
+        }
+        .breadcrumb-item > a {
+            color: white;
+            text-decoration: none;
+        }
+</style>
     <div class="container-fluid mt-4">
         <div class="row justify-content-center">
             <div class="col-12 col-md-10 col-lg-8">
                 <!-- Breadcrumb -->
                 <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="/?vista=home"><i class="fas fa-home"></i> Home</a></li>
-                        <li class="breadcrumb-item"><a href="/?vista=back-admision">Back de Admisión</a></li>
+                    <ol class="breadcrumb bg-success">
+                        <li class="breadcrumb-item"><a href="/public/?vista=home"><i class="fas fa-home"></i> Home</a></li>
+                        <li class="breadcrumb-item"><a href="/public/?vista=back-admision">Back de Admisión</a></li>
                         <li class="breadcrumb-item active"><?php echo $titulo; ?></li>
                     </ol>
                 </nav>
@@ -179,12 +177,6 @@ $descripcion = $tipo === 'ejecutivo'
             </div>
         </div>
     </div>
-
-    <?php include __DIR__ . '/../../../../templates/footer.php'; ?>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
     <script>
     $(document).ready(function() {
         // Mostrar información del ejecutivo seleccionado
@@ -233,5 +225,3 @@ $descripcion = $tipo === 'ejecutivo'
         });
     });
     </script>
-</body>
-</html>
