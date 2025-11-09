@@ -8,8 +8,8 @@ class BackAdmisionDatabase {
         $config = [
             'host' => $_ENV['BACK_ADMISION_DB_HOST'] ?? 'localhost',
             'dbname' => $_ENV['BACK_ADMISION_DB_NAME'] ?? 'back_admision',
-            'username' => $_ENV['BACK_ADMISION_DB_USER'] ?? 'back_admision_user',
-            'password' => $_ENV['BACK_ADMISION_DB_PASS'] ?? 'secure_password'
+            'username' => $_ENV['BACK_ADMISION_DB_USER'] ?? 'root',
+            'password' => $_ENV['BACK_ADMISION_DB_PASS'] ?? ''
         ];
         
         try {
