@@ -37,28 +37,27 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
     exit;
 }
 ?>
-
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestionar Solicitud - Back de Admisión</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-    <?php include __DIR__ . '/../../../../templates/header.php'; ?>
+<style>
+        .breadcrumb {
+            
+            margin-top: 50px;
+            border-radius: 5px;
+        }
+        .breadcrumb-item > a {
+            color: white;
+            text-decoration: none;
+        }
+    </style>
 
     <div class="container-fluid mt-4">
         <div class="row justify-content-center">
             <div class="col-12 col-lg-10">
                 <!-- Breadcrumb -->
                 <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="/?vista=home"><i class="fas fa-home"></i> Home</a></li>
-                        <li class="breadcrumb-item"><a href="/?vista=back-admision">Back de Admisión</a></li>
-                        <li class="breadcrumb-item active">Gestionar Solicitud</li>
+                    <ol class="breadcrumb bg-success">
+                        <li class="breadcrumb-item"><a href="/public/?vista=home"><i class="fas fa-home"></i> Home</a></li>
+                        <li class="breadcrumb-item"><a href="/public/?vista=back-admision">Back de Admisión</a></li>
+                        <li class="breadcrumb-item">Gestionar Solicitud</li>
                     </ol>
                 </nav>
 
@@ -77,7 +76,7 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
                             <?php unset($_SESSION['notificacion']); ?>
                         <?php endif; ?>
 
-                        <form method="post" action="/?vista=admision-api-gestionar-caso">
+                        <form method="post" action="/?vista=back-admision&action=gestionar-caso">
                             <input type="hidden" name="sr_hijo" value="<?php echo htmlspecialchars($sr_hijo); ?>">
                             
                             <div class="row">
@@ -93,16 +92,16 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
                                     </div>
 
                                     <!-- SRP -->
-                                    <div class="mb-3">
+                                    <div class="mb-3"> <!-- obligatorio este campo -->
                                         <label for="srp" class="form-label">SRP</label>
-                                        <input type="text" class="form-control" id="srp" name="srp"
+                                        <input type="text" class="form-control" id="srp" name="srp"                   
                                                value="<?php echo htmlspecialchars($caso['srp'] ?? ''); ?>"
                                                placeholder="Ingrese SRP si aplica">
                                         <div class="form-text">Número de SR padre o relacionado</div>
                                     </div>
 
                                     <!-- Estado -->
-                                    <div class="mb-3">
+                                    <div class="mb-3"> <!-- obligatorio este campo -->
                                         <label for="estado" class="form-label"><strong>Estado *</strong></label>
                                         <select class="form-select" id="estado" name="estado" required>
                                             <option value="en_curso" <?php echo $caso['estado'] == 'en_curso' ? 'selected' : ''; ?>>En Curso</option>
@@ -113,15 +112,15 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
                                     </div>
 
                                     <!-- Ticket -->
-                                    <div class="mb-3">
+                                    <div class="mb-3"> <!-- opcional este campo -->
                                         <label for="tiket" class="form-label">Ticket</label>
                                         <input type="text" class="form-control" id="tiket" name="tiket"
                                                value="<?php echo htmlspecialchars($caso['tiket'] ?? ''); ?>"
                                                placeholder="Número de ticket relacionado">
                                     </div>
 
-                                    <!-- Motivo del Ticket -->
-                                    <div class="mb-3">
+                                    <!-- Motivo del Ticket --> 
+                                    <div class="mb-3"><!-- opcional este campo -->
                                         <label for="motivo_tiket" class="form-label">Motivo del Ticket</label>
                                         <textarea class="form-control" id="motivo_tiket" name="motivo_tiket" 
                                                   rows="3" placeholder="Descripción del motivo del ticket"><?php echo htmlspecialchars($caso['motivo_tiket'] ?? ''); ?></textarea>
@@ -149,7 +148,7 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
                                     </div>
 
                                     <!-- Biometría -->
-                                    <div class="mb-3">
+                                    <div class="mb-3"> <!-- obligatorio este campo -->
                                         <label for="biometria" class="form-label">Biometría</label>
                                         <select class="form-select" id="biometria" name="biometria">
                                             <option value="">Seleccione...</option>
@@ -159,7 +158,7 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
                                     </div>
 
                                     <!-- Inicio de Actividades -->
-                                    <div class="mb-3">
+                                    <div class="mb-3"> <!-- obligatorio este campo -->
                                         <label for="inicio_actividades" class="form-label">Inicio de Actividades</label>
                                         <select class="form-select" id="inicio_actividades" name="inicio_actividades">
                                             <option value="">Seleccione...</option>
@@ -169,7 +168,7 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
                                     </div>
 
                                     <!-- Acreditación -->
-                                    <div class="mb-3">
+                                    <div class="mb-3"> <!-- obligatorio este campo -->
                                         <label for="acreditacion" class="form-label">Acreditación</label>
                                         <select class="form-select" id="acreditacion" name="acreditacion">
                                             <option value="">Seleccione...</option>
@@ -189,7 +188,7 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
                             </div>
 
                             <!-- Observaciones -->
-                            <div class="row">
+                            <div class="row"><!-- opcional este campo -->
                                 <div class="col-12">
                                     <div class="mb-3">
                                         <label for="observaciones" class="form-label">Observaciones</label>
@@ -231,9 +230,6 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
                                         <button type="submit" name="accion" value="guardar" class="btn btn-primary">
                                             <i class="fas fa-save me-2"></i>Guardar Cambios
                                         </button>
-                                        <button type="submit" name="accion" value="guardar_cerrar" class="btn btn-success">
-                                            <i class="fas fa-check me-2"></i>Guardar y Cerrar
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -243,41 +239,158 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
             </div>
         </div>
     </div>
-
-    <?php include __DIR__ . '/../../../../templates/footer.php'; ?>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form');
-        const estadoSelect = document.getElementById('estado');
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const estadoSelect = document.getElementById('estado');
+    
+    // ÚNICO event listener para submit
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
         
-        // Validación antes de enviar
-        form.addEventListener('submit', function(e) {
-            const sr_hijo = document.getElementById('sr_hijo').value;
-            if (!sr_hijo.trim()) {
-                e.preventDefault();
-                alert('El número de SR hijo es requerido');
+        console.log("=== INICIANDO ENVÍO FORMULARIO GESTIÓN ===");
+        
+        // 1. VALIDACIÓN ANTES DE ENVIAR
+        const sr_hijo = document.getElementById('sr_hijo').value;
+        if (!sr_hijo.trim()) {
+            alert('El número de SR hijo es requerido');
+            return false;
+        }
+        
+        // Confirmar si se marca como resuelto
+        if (estadoSelect.value === 'resuelto') {
+            if (!confirm('¿Está seguro de marcar este caso como RESUELTO? El caso desaparecerá de su bandeja.')) {
                 return false;
             }
-            
-            // Si se marca como resuelto, confirmar
-            if (estadoSelect.value === 'resuelto') {
-                if (!confirm('¿Está seguro de marcar este caso como RESUELTO? El caso desaparecerá de su bandeja.')) {
-                    e.preventDefault();
-                    return false;
-                }
-            }
+        }
+        
+        // 2. MOSTRAR LOADING
+        const submitBtns = this.querySelectorAll('button[type="submit"]');
+        const originalTexts = Array.from(submitBtns).map(btn => btn.innerHTML);
+        
+        submitBtns.forEach(btn => {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando...';
+            btn.disabled = true;
         });
         
-        // Mostrar/ocultar campos según estado
-        estadoSelect.addEventListener('change', function() {
-            if (this.value === 'resuelto') {
-                // Podríamos mostrar campos adicionales para cierre
-                console.log('Caso marcado como resuelto');
+        try {
+            // 3. PREPARAR Y ENVIAR DATOS
+            const formData = new FormData(this);
+            const accion = document.querySelector('button[type="submit"]:focus')?.value || 'guardar';
+            formData.set('accion', accion);
+            
+            // PROBAR DIFERENTES URLS - DEBUG
+            const url = '/microservices/back-admision/api/gestionar_caso.php';
+
+            console.log("📤 Enviando a URL:", url);
+            console.log("📦 Datos:", Object.fromEntries(formData));
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const responseText = await response.text();
+            console.log("📥 Respuesta completa:", responseText.substring(0, 200) + "..."); // Solo primeros 200 chars
+            
+            // 4. DETECTAR SI LA RESPUESTA ES HTML (ERROR)
+            if (responseText.trim().startsWith('<!DOCTYPE') || responseText.includes('<html')) {
+                throw new Error('❌ El servidor devolvió HTML en lugar de JSON. La API no está funcionando.');
             }
-        });
+            
+            // 5. PROCESAR RESPUESTA JSON
+            const data = JSON.parse(responseText);
+            console.log("✅ Datos parseados:", data);
+            
+            if (data.success) {
+                mostrarMensajeGestion(data.message, 'success');
+                
+                // Redirigir si hay URL (solo para guardar y cerrar)
+                if (data.redirect && data.message.includes('Redirigiendo')) {
+                    setTimeout(() => {
+                        console.log("🔄 Redirigiendo a:", data.redirect);
+                        window.location.href = data.redirect;
+                    }, 2000);
+                }
+            } else {
+                mostrarMensajeGestion(data.message, 'error');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error en la solicitud:', error);
+            
+            if (error.message.includes('HTML en lugar de JSON')) {
+                mostrarMensajeGestion(`
+                    ❌ Error de configuración: 
+                    La API no está respondiendo correctamente.
+                    <br><br>
+                    <strong>Posibles causas:</strong>
+                    <br>• La ruta API no existe en routes.php
+                    <br>• Hay un error en el archivo API
+                    <br>• El sistema está cargando una vista HTML por defecto
+                `, 'error');
+            } else if (error instanceof SyntaxError) {
+                mostrarMensajeGestion('❌ Error: El servidor devolvió una respuesta inválida (no JSON)', 'error');
+            } else {
+                mostrarMensajeGestion('❌ Error de conexión: ' + error.message, 'error');
+            }
+        } finally {
+            // 6. RESTAURAR BOTONES
+            submitBtns.forEach((btn, index) => {
+                btn.innerHTML = originalTexts[index];
+                btn.disabled = false;
+            });
+            
+            console.log("=== FINALIZADO ENVÍO FORMULARIO ===");
+        }
     });
-    </script>
-</body>
-</html>
+    
+    // Listener para cambio de estado
+    estadoSelect.addEventListener('change', function() {
+        if (this.value === 'resuelto') {
+            console.log('Caso marcado como resuelto - se eliminará de la bandeja');
+        }
+    });
+});
+
+// FUNCIÓN PARA MOSTRAR MENSAJES EN GESTIÓN
+function mostrarMensajeGestion(mensaje, tipo) {
+    // Remover mensajes existentes
+    const mensajesExistentes = document.querySelectorAll('.alert-dinamico-gestion');
+    mensajesExistentes.forEach(msg => msg.remove());
+    
+    // Crear alerta
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${tipo === 'success' ? 'success' : 'danger'} alert-dismissible fade show alert-dinamico-gestion`;
+    
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${tipo === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            <div>${mensaje}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Insertar después del card-header
+    const cardHeader = document.querySelector('.card-header');
+    if (cardHeader && cardHeader.parentNode) {
+        cardHeader.parentNode.insertBefore(alertDiv, cardHeader.nextSibling);
+    }
+}
+
+// AGREGAR ESTILOS PARA ANIMACIONES
+if (!document.querySelector('#estilos-gestion')) {
+    const style = document.createElement('style');
+    style.id = 'estilos-gestion';
+    style.textContent = `
+        .alert-dinamico-gestion {
+            animation: fadeInGestion 0.5s ease-in;
+        }
+        @keyframes fadeInGestion {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    `;
+    document.head.appendChild(style);
+}
+</script>

@@ -12,7 +12,7 @@ $action = $_GET['action'] ?? '';
 error_log("Back Admision Routes - Vista: " . $vista . ", Action: " . $action);
 
 // IDENTIFICAR SI ES UNA SOLICITUD API (NO DEBE USAR LAYOUT)
-$is_api_request = in_array($action, ['procesar-caso', 'gestionar-caso', 'cambiar-estado', 'get-casos', 'ingresar-caso-supervisor', 'cambiar-estado-usuario', 'get-horarios', 'guardar-horarios', 'descargar-excel', 'exportar-logs']);
+$is_api_request = in_array($action, ['procesar-caso', 'admision-api-gestionar-caso', 'cambiar-estado', 'get-casos', 'ingresar-caso-supervisor', 'cambiar-estado-usuario', 'get-horarios', 'guardar-horarios', 'descargar-excel', 'exportar-logs']);
 
 if ($is_api_request) {
     // PARA APIS: Cargar directamente el archivo y SALIR sin layout
@@ -23,7 +23,7 @@ if ($is_api_request) {
             require_once __DIR__ . '/api/ingresar_caso.php';
             exit;
             
-        case 'gestionar-caso':
+        case 'admision-api-gestionar-caso':
             require_once __DIR__ . '/api/gestionar_caso.php';
             exit;
             

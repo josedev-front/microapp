@@ -20,7 +20,6 @@ $estadisticas = $supervisorController->getEstadisticasDashboard();
 $ejecutivos_activos = $teamController->getEjecutivosActivos();
 ?>
 
-<body>
     <style>
         .breadcrumb {
             

@@ -132,7 +132,46 @@ private function obtenerNombreEjecutivo($user_id) {
             throw $e;
         }
     }
-    
+    public function gestionarSolicitud($data) {
+    try {
+        error_log("📝 Actualizando caso: " . $data['sr_hijo']);
+        
+        // CORRECCIÓN: Usar conexión directa ya que el modelo no tiene actualizarCaso
+        require_once __DIR__ . '/../config/database_back_admision.php';
+        $db = getBackAdmisionDB();
+        
+        $stmt = $db->prepare("
+            UPDATE casos 
+            SET 
+                srp = ?,
+                estado = ?,
+                tiket = ?,
+                motivo_tiket = ?,
+                observaciones = ?,
+                biometria = ?,
+                inicio_actividades = ?,
+                acreditacion = ?,
+                fecha_actualizacion = NOW()
+            WHERE sr_hijo = ?
+        ");
+        
+        return $stmt->execute([
+            $data['srp'],
+            $data['estado'],
+            $data['tiket'],
+            $data['motivo_tiket'],
+            $data['observaciones'],
+            $data['biometria'],
+            $data['inicio_actividades'],
+            $data['acreditacion'],
+            $data['sr_hijo']
+        ]);
+        
+    } catch (Exception $e) {
+        error_log("ERROR en gestionarSolicitud: " . $e->getMessage());
+        return false;
+    }
+}
     /**
      * Obtener caso por SR - VERSIÓN SIMPLIFICADA
      */
