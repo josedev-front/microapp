@@ -41,7 +41,31 @@ class Caso {
             $data['acreditacion'] ?? null
         ]);
     }
-    
+    /**
+ * Reasignar caso a otro analista
+ */
+public function reasignarCaso($sr_hijo, $nuevo_analista_id, $nuevo_analista_nombre) {
+    try {
+        $stmt = $this->db->prepare("
+            UPDATE casos 
+            SET 
+                analista_id = ?,
+                analista_nombre = ?,
+                fecha_actualizacion = NOW()
+            WHERE sr_hijo = ?
+        ");
+        
+        return $stmt->execute([
+            $nuevo_analista_id,
+            $nuevo_analista_nombre,
+            $sr_hijo
+        ]);
+        
+    } catch (Exception $e) {
+        error_log("ERROR en reasignarCaso: " . $e->getMessage());
+        return false;
+    }
+}
     // Sincronización con usuarios de la BD principal
     public function sincronizarEjecutivo($user_data) {
         $stmt = $this->db->prepare("

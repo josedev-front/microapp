@@ -40,170 +40,259 @@ class AdmissionController {
             throw $e;
         }
     }
-   public function getBandejaEjecutivo($user_id) {
-    try {
-        $stmt = $this->casoModel->getDB()->prepare("  // ← ESTA LÍNCA TIENE ERROR
-            SELECT * FROM casos 
-            WHERE analista_id = ? AND estado != 'resuelto'
-            ORDER BY fecha_ingreso DESC
-        ");
-        
-        // CORRECCIÓN:
-        $db = $this->casoModel->getDB(); // Si existe este método
-        // O MEJOR:
-        require_once __DIR__ . '/../config/database_back_admision.php';
-        $db = getBackAdmisionDB();
-        
-        $stmt = $db->prepare("
-            SELECT * FROM casos 
-            WHERE analista_id = ? AND estado != 'resuelto'
-            ORDER BY fecha_ingreso DESC
-        ");
-        
-        $stmt->execute([$user_id]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) {
-        error_log("ERROR en getBandejaEjecutivo: " . $e->getMessage());
-        return [];
-    }
-}
 
-private function obtenerNombreEjecutivo($user_id) {
-    // Implementar según tu base de datos
-    return "Ejecutivo " . $user_id; // Temporal
-}
-    
-    /**
-     * Vista menú para ejecutivos - ELIMINAR ESTE MÉTODO TEMPORALMENTE
-     * Está causando conflicto porque no debería estar en el controller de API
-     */
-    /*
-    public function menuEjecutivo() {
-        $user_id = $_SESSION['user_id'];
-        $user_nombre = $_SESSION['first_name'] . ' ' . $_SESSION['last_name'];
-        
-        // Obtener casos del ejecutivo - ESTA LÍNEA CAUSA ERROR
-        $casos = $this->casoModel->getCasosPorEjecutivo($user_id);
-        
-        include __DIR__ . '/../views/ejecutivo/menu.php';
-    }
-    */
-    
-    /**
-     * Procesar ingreso de caso - VERSIÓN SIMPLIFICADA TEMPORAL
-     */
-    public function ingresarCaso($sr_hijo) {
+    public function getBandejaEjecutivo($user_id) {
         try {
-            error_log("ingresarCaso iniciado para SR: " . $sr_hijo);
+            require_once __DIR__ . '/../config/database_back_admision.php';
+            $db = getBackAdmisionDB();
             
-            // Validación básica
+            $stmt = $db->prepare("
+                SELECT * FROM casos 
+                WHERE analista_id = ? AND estado != 'resuelto'
+                ORDER BY fecha_ingreso DESC
+            ");
+            
+            $stmt->execute([$user_id]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("ERROR en getBandejaEjecutivo: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function obtenerNombreEjecutivo($user_id) {
+        return "Ejecutivo " . $user_id;
+    }
+    
+    /**
+     * Procesar ingreso de caso
+     */
+    public function procesarCaso($sr_hijo, $user_id = null) {
+        try {
+            error_log("procesarCaso iniciado para SR: " . $sr_hijo);
+            
             if (empty($sr_hijo)) {
-                throw new Exception("El número de SR es requerido");
+                return ['success' => false, 'message' => 'El número de SR es requerido'];
             }
             
-            // Simular procesamiento exitoso temporalmente
-            error_log("Caso procesado exitosamente para SR: " . $sr_hijo);
+            // Si no se proporciona user_id, usar el de la sesión
+            if (!$user_id && isset($_SESSION['user_id'])) {
+                $user_id = $_SESSION['user_id'];
+            }
             
-            return 'gestionar-solicitud';
+            // Verificar si la SR ya existe
+            $caso_existente = $this->casoModel->getCasoPorSR($sr_hijo);
+            
+            if ($caso_existente) {
+                // Si el caso ya está asignado al mismo usuario
+                if ($caso_existente['analista_id'] == $user_id) {
+                    return [
+                        'success' => true,
+                        'message' => 'Este caso ya se encontraba asignado a tu cuenta',
+                        'redirect' => './?vista=back-admision&action=gestionar-solicitud&sr=' . urlencode($sr_hijo)
+                    ];
+                } else {
+                    // Caso asignado a otro ejecutivo
+                    return [
+                        'success' => false,
+                        'message' => 'Este caso ya se encontraba asignado a otro ejecutivo: ' . $caso_existente['analista_nombre'],
+                        'caso_existente' => $caso_existente,
+                        'necesita_confirmacion' => true
+                    ];
+                }
+            } else {
+                // Asignar caso nuevo
+                $user_data = $this->userSync->getEjecutivoPorId($user_id);
+                
+                if (!$user_data) {
+                    return ['success' => false, 'message' => 'Usuario no encontrado'];
+                }
+                
+                $caso_data = [
+                    'sr_hijo' => $sr_hijo,
+                    'analista_id' => $user_id,
+                    'analista_nombre' => $user_data['nombre_completo'],
+                    'area_ejecutivo' => $user_data['area'],
+                    'estado' => 'en_curso',
+                    'tipo_negocio' => 'Solicitud de revisión por backoffice'
+                ];
+                
+                if ($this->casoModel->crearCaso($caso_data)) {
+                    $this->assignmentManager->logAsignacion(
+                        $sr_hijo,
+                        $user_id,
+                        'asignacion_automatica',
+                        ['analista' => $user_data['nombre_completo']]
+                    );
+                    
+                    return [
+                        'success' => true,
+                        'message' => 'Caso asignado correctamente',
+                        'redirect' => './?vista=back-admision&action=gestionar-solicitud&sr=' . urlencode($sr_hijo)
+                    ];
+                }
+            }
+            
+            return ['success' => false, 'message' => 'Error al procesar el caso'];
             
         } catch (Exception $e) {
-            error_log("ERROR en ingresarCaso: " . $e->getMessage());
-            throw $e;
+            error_log("ERROR en procesarCaso: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Error interno: ' . $e->getMessage()];
         }
     }
     
     /**
-     * Confirmar reasignación de caso - VERSIÓN SIMPLIFICADA TEMPORAL
+     * Confirmar reasignación de caso
      */
-    public function confirmarReasignacion($sr_hijo, $confirmar) {
+    public function confirmarReasignacion($sr_hijo, $user_id) {
         try {
-            error_log("confirmarReasignacion: SR=" . $sr_hijo . ", confirmar=" . ($confirmar ? 'YES' : 'NO'));
+            error_log("confirmarReasignacion: SR=" . $sr_hijo . ", user_id=" . $user_id);
             
-            if ($confirmar) {
-                // Simular reasignación exitosa
-                error_log("Reasignación confirmada para SR: " . $sr_hijo);
-                return 'gestionar-solicitud';
-            } else {
-                return 'ingresar-caso';
+            $user_data = $this->userSync->getEjecutivoPorId($user_id);
+            $caso_actual = $this->casoModel->getCasoPorSR($sr_hijo);
+            
+            if (!$user_data) {
+                return ['success' => false, 'message' => 'Usuario no encontrado'];
             }
+            
+            if (!$caso_actual) {
+                return ['success' => false, 'message' => 'Caso no encontrado'];
+            }
+            
+            // Reasignar caso
+            $actualizado = $this->casoModel->reasignarCaso(
+                $sr_hijo, 
+                $user_id, 
+                $user_data['nombre_completo']
+            );
+            
+            if ($actualizado) {
+                $this->assignmentManager->logAsignacion(
+                    $sr_hijo,
+                    $user_id,
+                    'reasignacion_manual',
+                    [
+                        'analista_anterior' => $caso_actual['analista_nombre'],
+                        'analista_nuevo' => $user_data['nombre_completo']
+                    ]
+                );
+                
+                return [
+                    'success' => true,
+                    'message' => 'Caso reasignado correctamente a ' . $user_data['nombre_completo'],
+                    'redirect' => './?vista=back-admision&action=gestionar-solicitud&sr=' . urlencode($sr_hijo)
+                ];
+            }
+            
+            return ['success' => false, 'message' => 'Error al reasignar el caso'];
             
         } catch (Exception $e) {
             error_log("ERROR en confirmarReasignacion: " . $e->getMessage());
-            throw $e;
+            return ['success' => false, 'message' => 'Error interno: ' . $e->getMessage()];
         }
     }
+
     public function gestionarSolicitud($data) {
-    try {
-        error_log("📝 Actualizando caso: " . $data['sr_hijo']);
-        
-        // CORRECCIÓN: Usar conexión directa ya que el modelo no tiene actualizarCaso
-        require_once __DIR__ . '/../config/database_back_admision.php';
-        $db = getBackAdmisionDB();
-        
-        $stmt = $db->prepare("
-            UPDATE casos 
-            SET 
-                srp = ?,
-                estado = ?,
-                tiket = ?,
-                motivo_tiket = ?,
-                observaciones = ?,
-                biometria = ?,
-                inicio_actividades = ?,
-                acreditacion = ?,
-                fecha_actualizacion = NOW()
-            WHERE sr_hijo = ?
-        ");
-        
-        return $stmt->execute([
-            $data['srp'],
-            $data['estado'],
-            $data['tiket'],
-            $data['motivo_tiket'],
-            $data['observaciones'],
-            $data['biometria'],
-            $data['inicio_actividades'],
-            $data['acreditacion'],
-            $data['sr_hijo']
-        ]);
-        
-    } catch (Exception $e) {
-        error_log("ERROR en gestionarSolicitud: " . $e->getMessage());
-        return false;
-    }
-}
-    /**
-     * Obtener caso por SR - VERSIÓN SIMPLIFICADA
-     */
-    public function getCasoPorSR($sr_hijo) {
-    try {
-        error_log("🔍 Buscando caso para SR: " . $sr_hijo);
-        
-        // Usar el modelo Caso para buscar en la base de datos
-        $caso = $this->casoModel->getCasoPorSR($sr_hijo);
-        
-        if ($caso) {
-            error_log("✅ Caso encontrado: " . $sr_hijo . " asignado a: " . $caso['analista_nombre']);
-        } else {
-            error_log("❌ Caso NO encontrado: " . $sr_hijo);
+        try {
+            error_log("📝 Actualizando caso: " . $data['sr_hijo']);
+            
+            require_once __DIR__ . '/../config/database_back_admision.php';
+            $db = getBackAdmisionDB();
+            
+            $stmt = $db->prepare("
+                UPDATE casos 
+                SET 
+                    srp = ?,
+                    estado = ?,
+                    tiket = ?,
+                    motivo_tiket = ?,
+                    observaciones = ?,
+                    biometria = ?,
+                    inicio_actividades = ?,
+                    acreditacion = ?,
+                    fecha_actualizacion = NOW()
+                WHERE sr_hijo = ?
+            ");
+            
+            return $stmt->execute([
+                $data['srp'],
+                $data['estado'],
+                $data['tiket'],
+                $data['motivo_tiket'],
+                $data['observaciones'],
+                $data['biometria'],
+                $data['inicio_actividades'],
+                $data['acreditacion'],
+                $data['sr_hijo']
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("ERROR en gestionarSolicitud: " . $e->getMessage());
+            return false;
         }
-        
-        return $caso;
-        
-    } catch (Exception $e) {
-        error_log("ERROR en getCasoPorSR: " . $e->getMessage());
-        return null;
     }
-}
 
     /**
-     * Verificar permisos de supervisor
+     * Obtener caso por SR
+     */
+    public function getCasoPorSR($sr_hijo) {
+        try {
+            error_log("🔍 Buscando caso para SR: " . $sr_hijo);
+            $caso = $this->casoModel->getCasoPorSR($sr_hijo);
+            
+            if ($caso) {
+                error_log("✅ Caso encontrado: " . $sr_hijo . " asignado a: " . $caso['analista_nombre']);
+            } else {
+                error_log("❌ Caso NO encontrado: " . $sr_hijo);
+            }
+            
+            return $caso;
+            
+        } catch (Exception $e) {
+            error_log("ERROR en getCasoPorSR: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Verificar permisos de supervisor - CORREGIDO
      */
     public function tienePermisosSupervisor() {
+        // Obtener rol del usuario desde la sesión o base de datos
+        $user_role = $this->obtenerRolUsuario();
+        
         $roles_permitidos = ['supervisor', 'backup', 'qa', 'superuser', 'developer'];
-        return in_array($_SESSION['user_role'] ?? '', $roles_permitidos);
+        
+        error_log("🔐 Verificando permisos - Rol: " . $user_role . ", Permitidos: " . implode(', ', $roles_permitidos));
+        
+        return in_array($user_role, $roles_permitidos);
     }
     
+    /**
+     * Obtener rol del usuario - NUEVO MÉTODO
+     */
+    private function obtenerRolUsuario() {
+        // Primero intentar desde la sesión
+        if (isset($_SESSION['role'])) {
+            return $_SESSION['role'];
+        }
+        
+        // Si no está en sesión, intentar desde los datos de usuario
+        if (isset($_SESSION['user_id'])) {
+            try {
+                $user_data = $this->userSync->getEjecutivoPorId($_SESSION['user_id']);
+                if ($user_data && isset($user_data['role'])) {
+                    return $user_data['role'];
+                }
+            } catch (Exception $e) {
+                error_log("Error obteniendo rol desde BD: " . $e->getMessage());
+            }
+        }
+        
+        // Si no se puede determinar, usar el rol por defecto de la sesión
+        return $_SESSION['user_role'] ?? 'ejecutivo';
+    }
+
     /**
      * Validar formato de SR
      */
