@@ -29,14 +29,29 @@ if (!in_array($user_role, $roles_permitidos)) {
 // Cargar controladores (igual que en otras vistas)
 require_once __DIR__ . '/../../controllers/TeamController.php';
 require_once __DIR__ . '/../../controllers/ReportController.php';
+require_once __DIR__ . '/../../controllers/AdmissionController.php';
 
 $teamController = new TeamController();
 $reportController = new ReportController();
+$admissionController = new AdmissionController();
 
-// Obtener métricas de balance DIARIO (casos ingresados hoy)
-$metricas = $teamController->getMetricasBalanceDiario();
-$estadisticas_diarias = $reportController->getEstadisticasDiarias();
-$distribucion_estados = $reportController->getDistribucionEstadosPorFecha(date('Y-m-d'));
+// PRIMERO: Obtener parámetros de filtro si existen - ESTO DEBE IR ANTES
+$fecha_desde = $_GET['fecha_desde'] ?? date('Y-m-d', strtotime('-7 days'));
+$fecha_hasta = $_GET['fecha_hasta'] ?? date('Y-m-d');
+
+// Validar fechas
+if (!strtotime($fecha_desde)) $fecha_desde = date('Y-m-d', strtotime('-7 days'));
+if (!strtotime($fecha_hasta)) $fecha_hasta = date('Y-m-d');
+
+// AHORA SÍ: Obtener métricas de balance con los filtros aplicados
+$metricas = $teamController->getMetricasBalanceDiario($fecha_desde, $fecha_hasta);
+$estadisticas_diarias = $reportController->getEstadisticasDiarias($fecha_desde, $fecha_hasta);
+$distribucion_estados = $reportController->getDistribucionEstadosPorFecha($fecha_hasta);
+
+// Si los controladores no soportan parámetros de fecha, usar estos métodos alternativos:
+// $metricas = $teamController->getMetricasBalanceDiario();
+// $estadisticas_diarias = $reportController->getEstadisticasDiarias();
+// $distribucion_estados = $admissionController->getDistribucionEstadosHoy();
 
 // Calcular métricas para gráficos
 $labels = [];
@@ -151,23 +166,29 @@ $js_work_area = $backAdmision->getUserArea();
                     </div>
                     <div class="card-body">
                         <!-- Filtros -->
-                        <div class="row mb-4">
-                            <div class="col-12 col-md-6 col-lg-4">
-                                <label for="fecha_desde" class="form-label">Desde</label>
-                                <input type="date" class="form-control" id="fecha_desde" 
-                                       value="<?php echo date('Y-m-d', strtotime('-7 days')); ?>">
-                            </div>
-                            <div class="col-12 col-md-6 col-lg-4">
-                                <label for="fecha_hasta" class="form-label">Hasta</label>
-                                <input type="date" class="form-control" id="fecha_hasta" 
-                                       value="<?php echo date('Y-m-d'); ?>">
-                            </div>
-                            <div class="col-12 col-lg-4 d-flex align-items-end">
-                                <button class="btn btn-primary w-100" id="btn-aplicar-filtros">
-                                    <i class="fas fa-filter me-2"></i>Aplicar Filtros
-                                </button>
-                            </div>
-                        </div>
+<div class="row mb-4">
+    <div class="col-12 col-md-4">
+        <label for="fecha_desde" class="form-label">Desde</label>
+        <input type="date" class="form-control" id="fecha_desde" 
+               value="<?php echo htmlspecialchars($fecha_desde); ?>">
+    </div>
+    <div class="col-12 col-md-4">
+        <label for="fecha_hasta" class="form-label">Hasta</label>
+        <input type="date" class="form-control" id="fecha_hasta" 
+               value="<?php echo htmlspecialchars($fecha_hasta); ?>">
+    </div>
+    <div class="col-12 col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" id="btn-aplicar-filtros">
+            <i class="fas fa-filter me-2"></i>Aplicar
+        </button>
+    </div>
+    <div class="col-12 col-md-2 d-flex align-items-end">
+        <button class="btn btn-outline-secondary w-100" id="btn-limpiar-filtros">
+            <i class="fas fa-times me-2"></i>Limpiar
+        </button>
+    </div>
+</div>
+
 
                         <!-- Tarjetas de Resumen DIARIO -->
                         <div class="row mb-4">
@@ -217,32 +238,50 @@ $js_work_area = $backAdmision->getUserArea();
                         <div class="row">
                             <!-- Gráfico de Distribución DIARIA -->
                             <div class="col-12 col-lg-8 mb-4">
-                                <div class="card h-100">
-                                    <div class="card-header bg-light">
-                                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Distribución Diaria por Ejecutivo</h5>
-                                        <p class="mb-0 mt-1 small text-muted">Casos ingresados hoy - <?php echo date('d/m/Y'); ?></p>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="chart-container">
-                                            <canvas id="graficoDistribucion"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+    <div class="card h-100">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Distribución por Ejecutivo</h5>
+            <p class="mb-0 mt-1 small text-muted">
+                Estado actual
+            </p>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="graficoDistribucion"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+                        
 
                             <!-- Gráfico de Estados HOY -->
-                            <div class="col-12 col-lg-4 mb-4">
-                                <div class="card h-100">
-                                    <div class="card-header bg-light">
-                                        <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Estados de Casos - Hoy</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="chart-container">
-                                            <canvas id="graficoEstados"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                           <!-- Gráfico de Estados -->
+<div class="col-12 col-lg-4 mb-4">
+    <div class="card h-100">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Estados de Casos por periodo</h5>
+            <p class="mb-0 mt-1 small text-muted">
+                Período: <?php echo date('d/m/Y', strtotime($fecha_desde)); ?> - <?php echo date('d/m/Y', strtotime($fecha_hasta)); ?>
+            </p>
+        </div>
+        <div class="card-body">
+            <?php
+            // Obtener distribución de estados usando AdmissionController con filtros
+            $distribucion_estados = $admissionController->getDistribucionEstadosPorRango($fecha_desde, $fecha_hasta);
+            
+            $total_casos = array_sum($distribucion_estados);
+            ?>
+            
+            <div class="chart-container">
+                <canvas id="graficoEstados" height="200"></canvas>
+            </div>
+            
+            <div class="mt-3 text-center">
+                <small class="text-muted">Total: <?php echo $total_casos; ?> casos en el período</small>
+            </div>
+        </div>
+    </div>
+</div>
                         </div>
 
                         <!-- Sección 2: Lista de Usuarios con Métricas por Estado -->
@@ -386,6 +425,123 @@ $js_work_area = $backAdmision->getUserArea();
                                 </div>
                             </div>
                         </div>
+                          <!-- TABLA DE SRs ACTIVAS - NUEVA SECCIÓN -->
+                        <div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-list-alt me-2"></i>SRs Activas - Micro&SOHO</h5>
+                <p class="mb-0 mt-1 small opacity-75">Casos en curso y en espera - Se actualizan automáticamente al cambiar estado</p>
+            </div>
+            <div class="card-body">
+                <?php
+                // Obtener SRs activas desde AdmissionController
+                $srs_activas = $admissionController->getSRActivasMicroSOHO();
+                ?>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>SR Hijo</th>
+                                <th>Estado</th>
+                                <th>Ejecutivo</th>
+                                <th>Fecha Ingreso</th>
+                                <th>Última Actualización</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($srs_activas)): ?>
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                        No hay SRs activas en este momento
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($srs_activas as $sr): ?>
+                                <tr data-sr-hijo="<?php echo htmlspecialchars($sr['sr_hijo']); ?>">
+                                    <td>
+                                        <strong class="text-primary"><?php echo htmlspecialchars($sr['sr_hijo']); ?></strong>
+                                        <?php if (!empty($sr['srp'])): ?>
+                                            <br><small class="text-muted">SRP: <?php echo htmlspecialchars($sr['srp']); ?></small>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-<?php 
+                                            echo $sr['estado'] == 'en_curso' ? 'primary' : 
+                                                 ($sr['estado'] == 'en_espera' ? 'warning' : 
+                                                 ($sr['estado'] == 'resuelto' ? 'success' : 'danger')); 
+                                        ?>">
+                                            <?php 
+                                            $estados = [
+                                                'en_curso' => 'En Curso',
+                                                'en_espera' => 'En Espera', 
+                                                'resuelto' => 'Resuelto',
+                                                'cancelado' => 'Cancelado'
+                                            ];
+                                            echo $estados[$sr['estado']] ?? $sr['estado'];
+                                            ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="status-indicator status-<?php echo $sr['estado_ejecutivo'] ?? 'inactivo'; ?> me-2"></span>
+                                            <?php echo htmlspecialchars($sr['analista_nombre'] ?? 'No asignado'); ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small><?php echo date('d/m/Y H:i', strtotime($sr['fecha_ingreso'])); ?></small>
+                                    </td>
+                                    <td>
+                                        <small><?php echo date('d/m/Y H:i', strtotime($sr['fecha_actualizacion'])); ?></small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                        <!-- Botón para gestionar SR - abre vista de gestión -->
+                                            <button class="btn btn-outline-primary btn-gestionar-sr" 
+                                                data-sr-hijo="<?php echo htmlspecialchars($sr['sr_hijo']); ?>"  
+                                                data-bs-toggle="tooltip" title="Gestionar SR">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        <!-- Botón para ver logs - abre vista de logs -->
+                                            <button class="btn btn-outline-info btn-ver-log"
+                                                data-sr-hijo="<?php echo htmlspecialchars($sr['sr_hijo']); ?>"
+                                                data-bs-toggle="tooltip" title="Ver Historial">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Contadores -->
+                <div class="row mt-3">
+                    <div class="col-12 col-md-3 text-center">
+                        <span class="badge bg-primary fs-6"><?php echo $distribucion_estados['en_curso']; ?> En Curso</span>
+                    </div>
+                    <div class="col-12 col-md-3 text-center">
+                        <span class="badge bg-warning fs-6"><?php echo $distribucion_estados['en_espera']; ?> En Espera</span>
+                    </div>
+                    <div class="col-12 col-md-3 text-center">
+                        <span class="badge bg-success fs-6"><?php echo $distribucion_estados['resuelto']; ?> Resueltos</span>
+                    </div>
+                    <div class="col-12 col-md-3 text-center">
+                        <span class="badge bg-danger fs-6"><?php echo $distribucion_estados['cancelado']; ?> Cancelados</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
                     </div>
                 </div>
             </div>
@@ -394,7 +550,7 @@ $js_work_area = $backAdmision->getUserArea();
 
 <script>
 // =============================================
-// SOLUCIÓN DEFINITIVA - CÓDIGO COMPLETO CORREGIDO
+// CÓDIGO JAVASCRIPT COMPLETO Y CORREGIDO
 // =============================================
 
 // Función para obtener la URL correcta del API
@@ -402,19 +558,60 @@ function getApiUrl() {
     return '/dashboard/vsm/microapp/microservices/back-admision/api/cambiar_estado_usuario.php';
 }
 
-
-
-// Función principal para cambiar estado - VERSIÓN MEJORADA
-function cambiarEstadoUsuario(userId, nuevoEstado, userName = '') {
-    console.log('🔧 Cambiando estado:', { userId, nuevoEstado, userName });
+// Función para aplicar filtros
+function aplicarFiltros() {
+    const fechaDesde = $('#fecha_desde').val();
+    const fechaHasta = $('#fecha_hasta').val();
     
-    if (!userId || !nuevoEstado) {
-        mostrarMensaje('error', 'Datos incompletos para cambiar estado');
+    if (!fechaDesde || !fechaHasta) {
+        mostrarMensaje('warning', 'Por favor selecciona ambas fechas');
         return;
     }
     
-    // Preparar datos con información de sesión
-      const datos = {
+    if (fechaDesde > fechaHasta) {
+        mostrarMensaje('error', 'La fecha "Desde" no puede ser mayor que la fecha "Hasta"');
+        return;
+    }
+    
+    // Mostrar loading
+    mostrarMensaje('info', `Aplicando filtros desde ${fechaDesde} hasta ${fechaHasta}...`);
+    
+    // Obtener parámetros actuales de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Actualizar solo los parámetros de fecha
+    urlParams.set('fecha_desde', fechaDesde);
+    urlParams.set('fecha_hasta', fechaHasta);
+    
+    // Mantener los parámetros de vista y action si existen
+    if (!urlParams.has('vista')) {
+        urlParams.set('vista', 'back-admision');
+    }
+    if (!urlParams.has('action')) {
+        urlParams.set('action', 'panel-asignaciones');
+    }
+    
+    // Construir nueva URL
+    const nuevaUrl = window.location.pathname + '?' + urlParams.toString();
+    
+    // Recargar la página con los filtros
+    window.location.href = nuevaUrl;
+}
+
+// Función para limpiar filtros
+function limpiarFiltros() {
+    // Restablecer valores por defecto
+    $('#fecha_desde').val('<?php echo date('Y-m-d', strtotime('-7 days')); ?>');
+    $('#fecha_hasta').val('<?php echo date('Y-m-d'); ?>');
+    
+    mostrarMensaje('info', 'Filtros limpiados. Aplica para recargar.');
+}
+
+// Función principal para cambiar estado
+function cambiarEstadoUsuario(userId, nuevoEstado, userName = '') {
+    console.log('🔧 Cambiando estado:', { userId, nuevoEstado, userName });
+    
+    const datos = {
         user_id: parseInt(userId),
         estado: nuevoEstado,
         supervisor_id: <?php echo $js_user_id; ?>,
@@ -422,11 +619,10 @@ function cambiarEstadoUsuario(userId, nuevoEstado, userName = '') {
         work_area: '<?php echo $js_work_area; ?>',
         timestamp: Date.now()
     };
-    const url = getApiUrl();
-    console.log('🌐 URL del endpoint:', url);
-    console.log('📦 Datos enviados:', datos);
     
-    // Mostrar loading en el select
+    const url = getApiUrl();
+    
+    // Mostrar loading
     const select = document.querySelector(`select[data-user-id="${userId}"]`);
     const originalHTML = select ? select.innerHTML : '';
     
@@ -435,109 +631,65 @@ function cambiarEstadoUsuario(userId, nuevoEstado, userName = '') {
         select.innerHTML = '<option value="">🔄 Procesando...</option>';
     }
     
-    mostrarMensaje('info', `Cambiando estado de ${userName} a ${nuevoEstado}...`);
-    
     fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
         },
-        credentials: 'include', // CRUCIAL: Incluir cookies de sesión
+        credentials: 'include',
         body: JSON.stringify(datos)
     })
     .then(response => {
-        console.log('📨 Status:', response.status);
-        console.log('🔗 Response URL:', response.url);
-        console.log('📋 Headers:', Object.fromEntries(response.headers.entries()));
-        
-        // Manejar diferentes códigos de estado
-        if (response.status === 401) {
-            return response.json().then(errorData => {
-                console.error('❌ Error 401 Detallado:', errorData);
-                throw new Error(
-                    'Sesión expirada o no autenticado. ' +
-                    'Por favor recarga la página e inicia sesión nuevamente.\n\n' +
-                    'Detalle: ' + (errorData.message || 'Error de autenticación')
-                );
-            });
-        }
-        
-        if (response.status === 403) {
-            return response.json().then(errorData => {
-                throw new Error(
-                    'Sin permisos: ' + (errorData.message || 'No tienes permisos para esta acción')
-                );
-            });
-        }
-        
-        if (response.status === 404) {
-            throw new Error('Endpoint no encontrado. Verifica la configuración del servidor.');
-        }
-        
         if (!response.ok) {
-            throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+            throw new Error(`Error del servidor: ${response.status}`);
         }
-        
         return response.json();
     })
     .then(data => {
-        console.log('✅ Respuesta exitosa:', data);
-        
         if (data.success) {
-            mostrarMensaje('success', 
-                data.message || `✅ Estado de ${userName} cambiado a ${nuevoEstado}`
-            );
+            mostrarMensaje('success', data.message || `✅ Estado cambiado a ${nuevoEstado}`);
             
             // Actualizar interfaz inmediatamente
             actualizarEstadoEnInterfaz(userId, nuevoEstado, userName);
             
-            // Recargar después de 2 segundos para sincronizar todos los datos
+            // Recargar la página para actualizar gráficos y tabla de SRs
             setTimeout(() => {
-                console.log('🔄 Recargando página para sincronizar cambios...');
+                console.log('🔄 Recargando para actualizar datos...');
                 window.location.reload();
-            }, 2000);
+            }, 1500);
             
         } else {
-            throw new Error(data.message || 'Error desconocido del servidor');
+            throw new Error(data.message || 'Error desconocido');
         }
     })
     .catch(error => {
-        console.error('❌ Error completo:', error);
-        
-        // Mensaje específico según el tipo de error
-        let mensajeError = error.message;
-        let tipoError = 'error';
-        
-        if (error.message.includes('Sesión expirada') || error.message.includes('no autenticado')) {
-            mensajeError = '🔐 ' + error.message;
-            tipoError = 'warning';
-        } else if (error.message.includes('Sin permisos')) {
-            mensajeError = '🚫 ' + error.message;
-            tipoError = 'warning';
-        } else if (error.message.includes('Failed to fetch') || error.message.includes('Network')) {
-            mensajeError = '🌐 Error de conexión. Verifica tu internet e intenta nuevamente.';
-            tipoError = 'error';
-        } else if (error.message.includes('Endpoint no encontrado')) {
-            mensajeError = '📁 ' + error.message + '\n\nRuta probada: ' + url;
-            tipoError = 'error';
-        }
-        
-        mostrarMensaje(tipoError, mensajeError);
+        console.error('❌ Error:', error);
+        mostrarMensaje('error', error.message);
         revertirSelectEstado(userId, originalHTML);
     })
     .finally(() => {
-        // Re-enable select después de un tiempo
         setTimeout(() => {
-            if (select) {
-                select.disabled = false;
-            }
+            if (select) select.disabled = false;
         }, 3000);
     });
 }
 
+// Función para gestionar SR
+function gestionarSR(srHijo) {
+    console.log('📋 Gestionando SR:', srHijo);
+    // Redirigir a la vista de gestión
+    window.location.href = `/dashboard/vsm/microapp/public/?vista=back-admision&action=gestionar-solicitud&sr=${srHijo}`;
+}
+
+// Función para ver log de SR
+function verLogSR(srHijo) {
+    console.log('📊 Viendo log de SR:', srHijo);
+    // Redirigir a la vista de logs
+    window.location.href = `/dashboard/vsm/microapp/public/?vista=back-admision&action=ver-registros&sr=${srHijo}`;
+}
+
 // =============================================
-// FUNCIONES AUXILIARES MEJORADAS
+// FUNCIONES AUXILIARES
 // =============================================
 
 function actualizarEstadoEnInterfaz(userId, nuevoEstado, userName = '') {
@@ -635,19 +787,9 @@ function mostrarMensaje(tipo, mensaje) {
     }, 5000);
 }
 
-// =============================================
-// EVENT HANDLERS Y CONFIGURACIÓN
-// =============================================
-
-$(document).ready(function() {
-    console.log('🚀 Panel de asignaciones inicializado');
-    console.log('📊 Datos cargados:', {
-        metricas: <?php echo count($metricas); ?> + ' ejecutivos',
-        estadisticas: <?php echo json_encode($estadisticas_diarias); ?>,
-        user_session: '<?php echo $_SESSION['user_id'] ?? 'none'; ?>'
-    });
-
-    // Inicializar gráficos
+// Función para inicializar gráficos
+function inicializarGraficos() {
+    // Gráfico de distribución
     const ctxDistribucion = document.getElementById('graficoDistribucion');
     if (ctxDistribucion) {
         new Chart(ctxDistribucion.getContext('2d'), {
@@ -655,7 +797,7 @@ $(document).ready(function() {
             data: {
                 labels: <?php echo json_encode($labels ?? []); ?>,
                 datasets: [{
-                    label: 'Casos Ingresados Hoy',
+                    label: 'Casos en el Período',
                     data: <?php echo json_encode($datos_casos_hoy ?? []); ?>,
                     backgroundColor: <?php echo json_encode($colores ?? ['#007bff']); ?>,
                     borderColor: '#343a40',
@@ -679,11 +821,24 @@ $(document).ready(function() {
                             text: 'Ejecutivos'
                         }
                     }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return tooltipItems[0].label;
+                            },
+                            label: function(context) {
+                                return `Casos: ${context.raw}`;
+                            }
+                        }
+                    }
                 }
             }
         });
     }
 
+    // Gráfico de estados
     const ctxEstados = document.getElementById('graficoEstados');
     if (ctxEstados) {
         new Chart(ctxEstados.getContext('2d'), {
@@ -692,10 +847,10 @@ $(document).ready(function() {
                 labels: ['En Curso', 'En Espera', 'Resueltos', 'Cancelados'],
                 datasets: [{
                     data: [
-                        <?php echo $distribucion_estados['en_curso'] ?? 0; ?>,
-                        <?php echo $distribucion_estados['en_espera'] ?? 0; ?>,
-                        <?php echo $distribucion_estados['resuelto'] ?? 0; ?>,
-                        <?php echo $distribucion_estados['cancelado'] ?? 0; ?>
+                        <?php echo $distribucion_estados['en_curso']; ?>,
+                        <?php echo $distribucion_estados['en_espera']; ?>,
+                        <?php echo $distribucion_estados['resuelto']; ?>,
+                        <?php echo $distribucion_estados['cancelado']; ?>
                     ],
                     backgroundColor: ['#007bff', '#ffc107', '#28a745', '#dc3545'],
                     borderWidth: 2,
@@ -707,12 +862,72 @@ $(document).ready(function() {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
-                }
+                },
+                cutout: '60%'
             }
         });
     }
+}
+
+// =============================================
+// INICIALIZACIÓN Y EVENTOS
+// =============================================
+
+$(document).ready(function() {
+    console.log('🚀 Panel de asignaciones inicializado');
+    console.log('📊 Datos cargados:', {
+        metricas: <?php echo count($metricas); ?> + ' ejecutivos',
+        estadisticas: <?php echo json_encode($estadisticas_diarias); ?>,
+        filtros: {
+            desde: '<?php echo $fecha_desde; ?>',
+            hasta: '<?php echo $fecha_hasta; ?>'
+        }
+    });
+
+    // Inicializar gráficos
+    inicializarGraficos();
+
+    // Evento para aplicar filtros
+    $('#btn-aplicar-filtros').on('click', aplicarFiltros);
+
+    // Evento para limpiar filtros
+    $('#btn-limpiar-filtros').on('click', limpiarFiltros);
+
+    // Enter en campos de fecha aplica filtros
+    $('#fecha_desde, #fecha_hasta').on('keypress', function(e) {
+        if (e.which === 13) {
+            aplicarFiltros();
+        }
+    });
+
+    // Botón gestionar SR
+    $('.btn-gestionar-sr').on('click', function() {
+        const srHijo = $(this).data('sr-hijo');
+        gestionarSR(srHijo);
+    });
+    
+    // Botón ver log
+    $('.btn-ver-log').on('click', function() {
+        const srHijo = $(this).data('sr-hijo');
+        verLogSR(srHijo);
+    });
 
     // Cambiar estado de ejecutivo
     $('.cambiar-estado').on('change', function() {
@@ -745,23 +960,6 @@ $(document).ready(function() {
         $(this).data('previous-value', $(this).val());
     });
 
-    // Botón de aplicar filtros
-    $('#btn-aplicar-filtros').on('click', function() {
-        const fechaDesde = $('#fecha_desde').val();
-        const fechaHasta = $('#fecha_hasta').val();
-        
-        if (!fechaDesde || !fechaHasta) {
-            mostrarMensaje('warning', 'Por favor selecciona ambas fechas');
-            return;
-        }
-        
-        mostrarMensaje('info', `Aplicando filtros desde ${fechaDesde} hasta ${fechaHasta}...`);
-        // Por ahora solo recargamos la página
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
-    });
-
     // Botón de gestionar horarios
     $('.gestionar-horarios').on('click', function() {
         const userId = $(this).data('user-id');
@@ -770,6 +968,9 @@ $(document).ready(function() {
         mostrarMensaje('info', `Redirigiendo a gestión de horarios para ${userName}...`);
         window.location.href = `/dashboard/vsm/microapp/public/?vista=back-admision&action=gestionar-horarios&user_id=${userId}`;
     });
+
+    // Inicializar tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
 });
 
 // =============================================

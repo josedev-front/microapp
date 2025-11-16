@@ -40,8 +40,8 @@ $descripcion = $tipo === 'ejecutivo'
             <!-- Breadcrumb -->
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb bg-success">
-                    <li class="breadcrumb-item"><a href="/public/?vista=home"><i class="fas fa-home"></i> Home</a></li>
-                    <li class="breadcrumb-item"><a href="/public/?vista=back-admision">Back de Admisión</a></li>
+                    <li class="breadcrumb-item"><a href="./?vista=home"><i class="fas fa-home"></i> Home</a></li>
+                    <li class="breadcrumb-item"><a href="./?vista=back-admision">Back de Admisión</a></li>
                     <li class="breadcrumb-item active"><?php echo $titulo; ?></li>
                 </ol>
             </nav>
@@ -117,7 +117,7 @@ $descripcion = $tipo === 'ejecutivo'
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="/public/?vista=back-admision" class="btn btn-secondary me-md-2">
+                            <a href="./?vista=back-admision" class="btn btn-secondary me-md-2">
                                 <i class="fas fa-arrow-left me-2"></i>Volver
                             </a>
                             <button type="submit" class="btn btn-<?php echo $tipo === 'ejecutivo' ? 'primary' : 'success'; ?> btn-lg">
