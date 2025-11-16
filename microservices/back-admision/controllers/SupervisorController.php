@@ -7,11 +7,13 @@ class SupervisorController {
     private $casoModel;
     private $userSync;
     private $assignmentManager;
+    private $db;
     
     public function __construct() {
         $this->casoModel = new Caso();
         $this->userSync = new UserSync();
         $this->assignmentManager = new AssignmentManager();
+        $this->db = getBackAdmisionDB(); // Agregar conexión a DB
     }
     
     /**
@@ -199,6 +201,131 @@ class SupervisorController {
             'success' => false,
             'message' => 'No hay ejecutivos disponibles para asignación automática'
         ];
+    }
+      public function cambiarEstadoUsuario($user_id, $nuevo_estado, $supervisor_id = null) {
+        try {
+            // Validar parámetros
+            if (!$user_id || !$nuevo_estado) {
+                return [
+                    'success' => false,
+                    'message' => 'user_id y estado son requeridos'
+                ];
+            }
+            
+            // Verificar que el usuario existe en horarios_usuarios
+            $stmt = $this->db->prepare("SELECT user_id FROM horarios_usuarios WHERE user_id = ? AND activo = 1");
+            $stmt->execute([$user_id]);
+            $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$usuario) {
+                return [
+                    'success' => false,
+                    'message' => 'Usuario no encontrado o inactivo'
+                ];
+            }
+            
+            // Determinar el estado anterior
+            $stmt = $this->db->prepare("SELECT estado FROM estado_usuarios WHERE user_id = ?");
+            $stmt->execute([$user_id]);
+            $estado_actual = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            $estado_anterior = $estado_actual ? $estado_actual['estado'] : 'inactivo';
+            
+            // Insertar o actualizar estado
+            $stmt = $this->db->prepare("
+                INSERT INTO estado_usuarios (user_id, estado, ultima_actualizacion) 
+                VALUES (?, ?, NOW())
+                ON DUPLICATE KEY UPDATE 
+                    estado = VALUES(estado),
+                    ultima_actualizacion = VALUES(ultima_actualizacion)
+            ");
+            
+            $result = $stmt->execute([$user_id, $nuevo_estado]);
+            
+            if (!$result) {
+                throw new Exception('Error al actualizar estado en la base de datos');
+            }
+            
+            // Registrar en logs
+            $this->registrarCambioEstado($user_id, $estado_anterior, $nuevo_estado, $supervisor_id);
+            
+            return [
+                'success' => true,
+                'message' => "Estado cambiado exitosamente de '{$estado_anterior}' a '{$nuevo_estado}'",
+                'nuevo_estado' => $nuevo_estado,
+                'estado_anterior' => $estado_anterior
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Error en cambiarEstadoUsuario: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error del sistema: ' . $e->getMessage()
+            ];
+        }
+    }
+     /**
+     * 🔄 NUEVO MÉTODO: Registrar cambio de estado en logs
+     */
+    private function registrarCambioEstado($user_id, $estado_anterior, $estado_nuevo, $supervisor_id) {
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO logs_cambio_estado 
+                (user_id, estado_anterior, estado_nuevo, supervisor_id, fecha_cambio) 
+                VALUES (?, ?, ?, ?, NOW())
+            ");
+            
+            $stmt->execute([$user_id, $estado_anterior, $estado_nuevo, $supervisor_id]);
+            
+        } catch (Exception $e) {
+            error_log("Error al registrar log de estado: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * 🔄 NUEVO MÉTODO: Obtener estado actual de usuarios
+     */
+    public function getEstadosUsuarios() {
+        $stmt = $this->db->prepare("
+            SELECT 
+                eu.user_id,
+                hu.nombre_completo,
+                eu.estado,
+                eu.ultima_actualizacion,
+                hu.area
+            FROM estado_usuarios eu
+            INNER JOIN horarios_usuarios hu ON eu.user_id = hu.user_id
+            WHERE hu.activo = 1
+            ORDER BY hu.nombre_completo
+        ");
+        
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+    /**
+     * 🔄 NUEVO MÉTODO: Obtener métricas de balance para panel
+     */
+    public function getMetricasBalancePanel() {
+        $stmt = $this->db->prepare("
+            SELECT 
+                hu.user_id,
+                hu.nombre_completo,
+                hu.area,
+                eu.estado,
+                eu.ultima_actualizacion,
+                COUNT(CASE WHEN DATE(c.fecha_ingreso) = CURDATE() THEN c.id END) as casos_hoy,
+                COUNT(CASE WHEN c.estado != 'resuelto' THEN c.id END) as casos_activos
+            FROM horarios_usuarios hu
+            LEFT JOIN estado_usuarios eu ON hu.user_id = eu.user_id
+            LEFT JOIN casos c ON hu.user_id = c.analista_id
+            WHERE hu.activo = 1 AND hu.area = 'Depto Micro&SOHO'
+            GROUP BY hu.user_id, hu.nombre_completo, hu.area, eu.estado, eu.ultima_actualizacion
+            ORDER BY casos_hoy ASC
+        ");
+        
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
     
     /**

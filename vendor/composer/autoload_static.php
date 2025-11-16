@@ -37,6 +37,7 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
         ),
         'M' => 
         array (
+            'Middy\\' => 6,
             'Matrix\\' => 7,
         ),
         'G' => 
@@ -98,6 +99,10 @@ class ComposerStaticInit2185d2f99bcd56787481d9357a5972d3
         'PHPMailer\\PHPMailer\\' => 
         array (
             0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
+        ),
+        'Middy\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/microservices/middy',
         ),
         'Matrix\\' => 
         array (
