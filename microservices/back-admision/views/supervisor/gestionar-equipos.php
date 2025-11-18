@@ -219,10 +219,10 @@ $viewHelper = new TeamViewHelper();
                                                 <td class="text-center">
                                                     <div class="btn-group btn-group-sm">
                                                         <button class="btn btn-outline-primary gestionar-horarios" 
-                                                                data-user-id="<?php echo $ejecutivo['user_id']; ?>"
-                                                                data-user-name="<?php echo htmlspecialchars($ejecutivo['nombre_completo']); ?>">
-                                                            <i class="fas fa-clock me-1"></i>Horarios
-                                                        </button>
+                                                                        data-user-id="<?php echo $user_id; ?>"
+                                                                        data-user-name="<?php echo $nombre; ?>">
+                                                                    <i class="fas fa-clock me-1"></i>Horarios
+                                                                </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -453,35 +453,6 @@ $viewHelper = new TeamViewHelper();
     </div>
 
     <!-- Modal Gestionar Horarios -->
-    <div class="modal fade" id="modalHorarios" tabindex="-1" aria-labelledby="modalHorariosLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="modalHorariosLabel">
-                    <i class="fas fa-clock me-2"></i>Gestionar Horarios
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="contenidoHorarios">
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando horarios...</span>
-                        </div>
-                        <p class="mt-2">Cargando horarios del ejecutivo...</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-2"></i>Cerrar
-                </button>
-                <button type="button" class="btn btn-primary" id="btn-guardar-horarios">
-                    <i class="fas fa-save me-2"></i>Guardar Cambios
-                </button>
-            </div>
-        </div>
-    </div>
     </div>
 
 

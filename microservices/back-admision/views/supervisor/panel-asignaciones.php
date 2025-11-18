@@ -967,9 +967,9 @@ $(document).ready(function() {
     $('.gestionar-horarios').on('click', function() {
         const userId = $(this).data('user-id');
         const userName = $(this).data('user-name');
-        
-        mostrarMensaje('info', `Redirigiendo a gestión de horarios para ${userName}...`);
-        window.location.href = `/dashboard/vsm/microapp/public/?vista=back-admision&action=gestionar-horarios&user_id=${userId}`;
+    
+        // Redirigir a la vista de gestión de horarios
+        window.location.href = `/dashboard/vsm/microapp/public/?vista=back-admision&action=gestionar-horarios&user_id=${userId}&user_name=${encodeURIComponent(userName)}`;
     });
 
     // Inicializar tooltips

@@ -240,19 +240,19 @@ $ejecutivos_activos = $teamController->getEjecutivosActivos();
     </div>
 
 
-    <!-- Reasignación Rápida -->
+    <!-- Añadir analistas -->
     <div class="col-12 col-md-6 col-lg-4 mb-4">
         <div class="card h-100 shadow-sm card-hover">
             <div class="card-body text-center">
                 <div class="mb-3">
-                    <i class="fas fa-sync-alt fa-3x text-secondary"></i>
+                    <i class="fas fa-user-plus fa-3x text-secondary"></i>
                 </div>
-                <h5 class="card-title">Reasignación Rápida</h5>
+                <h5 class="card-title">Añadir Analistas</h5>
                 <p class="card-text text-muted">
-                    Reasigna casos entre ejecutivos de manera manual y controlada
+                    Añade analistas a back-admision
                 </p>
-                <a href="./?vista=admision-reasignacion-rapida" class="btn btn-secondary">
-                    <i class="fas fa-exchange-alt me-2"></i>Reasignar Casos
+                <a href="./?vista=back-admision&action=añadir-analistas" class="btn btn-secondary">
+                    <i class="fas fa-add me-2"></i>Añadir analista
                 </a>
             </div>
         </div>

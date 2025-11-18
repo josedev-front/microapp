@@ -12,7 +12,21 @@ $action = $_GET['action'] ?? '';
 error_log("Back Admision Routes - Vista: " . $vista . ", Action: " . $action);
 
 // IDENTIFICAR SI ES UNA SOLICITUD API (NO DEBE USAR LAYOUT)
-$is_api_request = in_array($action, ['procesar-caso', 'admision-api-gestionar-caso', 'cambiar-estado', 'get-casos', 'ingresar-caso-supervisor', 'cambiar-estado-usuario', 'get-horarios', 'guardar-horarios', 'descargar-excel', 'exportar-logs']);
+$is_api_request = in_array($action, [
+    'procesar-caso', 
+    'admision-api-gestionar-caso', 
+    'cambiar-estado', 
+    'get-casos', 
+    'ingresar-caso-supervisor', 
+    'cambiar-estado-usuario', 
+    'get-horarios', 
+    'guardar-horarios', 
+    'descargar-excel', 
+    'exportar-logs',
+    'descargar-plantilla-horarios',
+    'importar-horarios-excel'
+    // NOTA: 'añadir-analistas' NO está aquí porque es una VISTA, no una API
+]);
 
 if ($is_api_request) {
     // PARA APIS: Cargar directamente el archivo y SALIR sin layout
@@ -57,6 +71,14 @@ if ($is_api_request) {
             
         case 'exportar-logs':
             require_once __DIR__ . '/api/exportar_logs.php';
+            exit;
+            
+        case 'descargar-plantilla-horarios':
+            require_once __DIR__ . '/api/descargar_plantilla_horarios.php';
+            exit;
+            
+        case 'importar-horarios-excel':
+            require_once __DIR__ . '/api/importar_horarios_excel.php';
             exit;
             
         default:
@@ -105,6 +127,10 @@ switch ($action) {
         
     case 'gestionar-horarios':
         require_once __DIR__ . '/views/supervisor/gestionar-horarios.php';
+        break;
+        
+    case 'añadir-analistas':  // NUEVA VISTA - CORREGIDO
+        require_once __DIR__ . '/views/supervisor/añadir-analistas.php';
         break;
         
     case 'ingresar-caso-ejecutivo':
