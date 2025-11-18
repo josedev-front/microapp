@@ -154,7 +154,7 @@ $ejecutivos_activos = $teamController->getEjecutivosActivos();
         <div class="card h-100 shadow-sm card-hover">
             <div class="card-body text-center">
                 <div class="mb-3">
-                    <i class="fas fa-user-plus fa-3x text-primary"></i>
+                    <i class="fas fa-file-signature fa-3x text-primary"></i><!-- fa-user-plus -->
                 </div>
                 <h5 class="card-title">Ingresar SR</h5>
                 <p class="card-text text-muted">
@@ -172,7 +172,7 @@ $ejecutivos_activos = $teamController->getEjecutivosActivos();
         <div class="card h-100 shadow-sm card-hover">
             <div class="card-body text-center">
                 <div class="mb-3">
-                    <i class="fas fa-user-shield fa-3x text-success"></i>
+                    <i class="fas fa-clipboard-list fa-3x text-success"></i>
                 </div>
                 <h5 class="card-title">Asignación Manual</h5>
                 <p class="card-text text-muted">

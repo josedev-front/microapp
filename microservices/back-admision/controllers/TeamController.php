@@ -205,4 +205,86 @@ class TeamController {
     public function getMetricasBalance() {
         return $this->getMetricasBalanceDiario();
     }
+    /**
+ * Obtener métricas de casos ingresados HOY para el panel de gestión de equipos
+ * Obtener métricas de casos ingresados EXCLUSIVAMENTE HOY para el panel de gestión de equipos
+ */
+public function getMetricasCasosHoy() {
+    try {
+        // FORZAR FECHA CORRECTA
+        date_default_timezone_set('America/Santiago'); // Ajusta según tu zona
+        
+        $hoy = date('Y-m-d'); // Fecha actual REAL
+        
+        error_log("🔍 DIAGNÓSTICO COMPLETO - Fecha usada: " . $hoy);
+        
+        // PRIMERO: Verificar qué casos existen para hoy
+        $stmt_diagnostico = $this->db->prepare("
+            SELECT 
+                c.analista_nombre,
+                c.sr_hijo,
+                DATE(c.fecha_ingreso) as fecha_ingreso,
+                c.estado
+            FROM casos c
+            WHERE DATE(c.fecha_ingreso) = ?
+            ORDER BY c.analista_nombre, c.fecha_ingreso
+        ");
+        
+        $stmt_diagnostico->execute([$hoy]);
+        $casos_hoy = $stmt_diagnostico->fetchAll(PDO::FETCH_ASSOC);
+        
+        error_log("📊 CASOS ENCONTRADOS PARA {$hoy}: " . count($casos_hoy));
+        foreach ($casos_hoy as $caso) {
+            error_log("   - " . $caso['analista_nombre'] . " | " . $caso['sr_hijo'] . " | " . $caso['fecha_ingreso'] . " | " . $caso['estado']);
+        }
+        
+        // SEGUNDO: Consulta principal con COUNT DISTINCT para evitar duplicados
+        $stmt = $this->db->prepare("
+            SELECT 
+                hu.user_id,
+                hu.nombre_completo,
+                hu.area,
+                eu.estado,
+                eu.ultima_actualizacion,
+                -- Casos ingresados EXCLUSIVAMENTE HOY (usar COUNT DISTINCT)
+                COUNT(DISTINCT CASE WHEN DATE(c.fecha_ingreso) = ? THEN c.id END) as casos_hoy,
+                -- Distribución por estado (exclusivamente hoy)
+                COUNT(DISTINCT CASE WHEN DATE(c.fecha_ingreso) = ? AND c.estado = 'en_curso' THEN c.id END) as en_curso_hoy,
+                COUNT(DISTINCT CASE WHEN DATE(c.fecha_ingreso) = ? AND c.estado = 'en_espera' THEN c.id END) as en_espera_hoy,
+                COUNT(DISTINCT CASE WHEN DATE(c.fecha_ingreso) = ? AND c.estado = 'resuelto' THEN c.id END) as resuelto_hoy,
+                COUNT(DISTINCT CASE WHEN DATE(c.fecha_ingreso) = ? AND c.estado = 'cancelado' THEN c.id END) as cancelado_hoy
+            FROM horarios_usuarios hu
+            LEFT JOIN estado_usuarios eu ON hu.user_id = eu.user_id
+            LEFT JOIN casos c ON hu.user_id = c.analista_id
+            WHERE hu.activo = 1 AND hu.area = 'Depto Micro&SOHO'
+            GROUP BY hu.user_id, hu.nombre_completo, hu.area, eu.estado, eu.ultima_actualizacion
+            ORDER BY casos_hoy ASC, hu.nombre_completo
+        ");
+        
+        $stmt->execute([$hoy, $hoy, $hoy, $hoy, $hoy]);
+        $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        error_log("📈 RESULTADOS DE LA CONSULTA:");
+        foreach ($resultados as $resultado) {
+            error_log("   - " . $resultado['nombre_completo'] . ": " . $resultado['casos_hoy'] . " casos hoy");
+        }
+        
+        // Asegurar que todos los campos existan
+        foreach ($resultados as &$fila) {
+            $fila = array_merge([
+                'casos_hoy' => 0,
+                'en_curso_hoy' => 0,
+                'en_espera_hoy' => 0,
+                'resuelto_hoy' => 0,
+                'cancelado_hoy' => 0
+            ], $fila);
+        }
+        
+        return $resultados;
+        
+    } catch (Exception $e) {
+        error_log("❌ Error en getMetricasCasosHoy: " . $e->getMessage());
+        return [];
+    }
+}
 }

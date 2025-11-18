@@ -314,7 +314,46 @@ class ReportController {
         $stmt->execute([$fecha_desde, $fecha_hasta]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+    /**
+ * Obtener lista de SRs únicas para el filtro
+ */
+public function getSRsUnicas($fecha_desde, $fecha_hasta) {
+    try {
+        $stmt = $this->db->prepare("
+            SELECT DISTINCT sr_hijo 
+            FROM logs_sistema 
+            WHERE DATE(fecha_accion) BETWEEN ? AND ?
+            ORDER BY sr_hijo
+            LIMIT 100
+        ");
+        
+        $stmt->execute([$fecha_desde, $fecha_hasta]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        
+    } catch (Exception $e) {
+        error_log("Error obteniendo SRs únicas: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Obtener detalles específicos de un log
+ */
+public function getDetallesLog($log_id) {
+    try {
+        $stmt = $this->db->prepare("
+            SELECT * FROM logs_sistema 
+            WHERE id = ?
+        ");
+        
+        $stmt->execute([$log_id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+        
+    } catch (Exception $e) {
+        error_log("Error obteniendo detalles del log: " . $e->getMessage());
+        return null;
+    }
+}
     /**
      * Obtener distribución por ejecutivo en rango de fechas
      */

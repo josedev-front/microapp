@@ -1,4 +1,5 @@
 <?php
+// microservices/back-admision/api/get_horarios_json.php
 require_once __DIR__ . '/../init.php';
 
 header('Content-Type: application/json');
