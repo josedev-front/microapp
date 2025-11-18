@@ -44,7 +44,7 @@ if (!strtotime($fecha_desde)) $fecha_desde = date('Y-m-d', strtotime('-7 days'))
 if (!strtotime($fecha_hasta)) $fecha_hasta = date('Y-m-d');
 
 // AHORA SÍ: Obtener métricas de balance con los filtros aplicados
-$metricas = $teamController->getMetricasBalanceDiario($fecha_desde, $fecha_hasta);
+$metricas = $admissionController->getMetricasEjecutivosCorregidas($fecha_desde, $fecha_hasta);
 $estadisticas_diarias = $reportController->getEstadisticasDiarias($fecha_desde, $fecha_hasta);
 $distribucion_estados = $reportController->getDistribucionEstadosPorFecha($fecha_hasta);
 
@@ -61,16 +61,17 @@ $colores = [];
 
 foreach ($metricas as $metrica) {
     $labels[] = $metrica['nombre_completo'];
-    $datos_casos_hoy[] = $metrica['casos_hoy'] ?? 0;
-    $datos_casos_totales[] = $metrica['casos_activos'] ?? 0;
     
-    // Asignar colores según la carga de hoy
-    $casos_hoy = $metrica['casos_hoy'] ?? 0;
-    if ($casos_hoy == 0) {
+    // USAR EL CAMPO CORRECTO - 'total_casos' en lugar de 'casos_hoy'
+    $casos_para_grafico = $metrica['total_casos'] ?? $metrica['casos_hoy'] ?? 0;
+    $datos_casos_hoy[] = $casos_para_grafico;
+    
+       // Asignar colores según la carga de hoy
+    if ($casos_para_grafico == 0) {
         $colores[] = '#28a745'; // Verde - Sin casos hoy
-    } elseif ($casos_hoy < 3) {
+    } elseif ($casos_para_grafico < 3) {
         $colores[] = '#17a2b8'; // Azul - Carga baja
-    } elseif ($casos_hoy < 6) {
+    } elseif ($casos_para_grafico < 6) {
         $colores[] = '#ffc107'; // Amarillo - Carga media
     } else {
         $colores[] = '#dc3545'; // Rojo - Carga alta
@@ -188,6 +189,8 @@ $js_work_area = $backAdmision->getUserArea();
         </button>
     </div>
 </div>
+
+
 
 
                         <!-- Tarjetas de Resumen DIARIO -->

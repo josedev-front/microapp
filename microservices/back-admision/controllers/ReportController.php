@@ -6,61 +6,86 @@ class ReportController {
     private $db;
     
     public function __construct() {
+        require_once __DIR__ . '/../config/database_back_admision.php';
         $this->db = getBackAdmisionDB();
     }
     
     /**
-     * Obtener estadísticas diarias para el panel
+     * Obtener estadísticas diarias para el panel - ACTUALIZADO CON PARÁMETROS
      */
-    public function getEstadisticasDiarias() {
-        // Total casos hoy
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as total 
-            FROM casos 
-            WHERE DATE(fecha_ingreso) = CURDATE()
-        ");
-        $stmt->execute();
-        $total_casos_hoy = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-        
-        // Ejecutivos activos
-        $stmt = $this->db->prepare("
-            SELECT COUNT(DISTINCT user_id) as total 
-            FROM estado_usuarios 
-            WHERE estado = 'activo'
-        ");
-        $stmt->execute();
-        $ejecutivos_activos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-        
-        // Promedio por ejecutivo
-        $promedio_por_ejecutivo = $ejecutivos_activos > 0 ? round($total_casos_hoy / $ejecutivos_activos, 1) : 0;
-        
-        // Obtener distribución de casos hoy por ejecutivo para calcular métricas de balance
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) as casos_hoy
-            FROM casos c
-            INNER JOIN horarios_usuarios hu ON c.analista_id = hu.user_id
-            WHERE DATE(c.fecha_ingreso) = CURDATE() AND hu.area = 'Depto Micro&SOHO'
-            GROUP BY c.analista_id
-        ");
-        $stmt->execute();
-        $distribucion = $stmt->fetchAll(PDO::FETCH_COLUMN);
-        
-        // Calcular métricas de balance
-        $metricas_balance = $this->calcularMetricasBalance($distribucion);
-        
-        return array_merge([
-            'total_casos_hoy' => $total_casos_hoy,
-            'ejecutivos_activos' => $ejecutivos_activos,
-            'promedio_por_ejecutivo' => $promedio_por_ejecutivo,
-            'indice_balance' => $metricas_balance['indice_balance'],
-            'desviacion_estandar' => $metricas_balance['desviacion_estandar'],
-            'coeficiente_variacion' => $metricas_balance['coeficiente_variacion'],
-            'indice_gini' => $metricas_balance['indice_gini']
-        ], $metricas_balance);
+      public function getEstadisticasDiarias($fecha_desde = null, $fecha_hasta = null) {
+        try {
+            // Si no se proporcionan fechas, usar hoy
+            if (!$fecha_desde) $fecha_desde = date('Y-m-d');
+            if (!$fecha_hasta) $fecha_hasta = date('Y-m-d');
+            
+            // Total casos en el período
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as total 
+                FROM casos 
+                WHERE DATE(fecha_ingreso) BETWEEN ? AND ?
+                AND area_ejecutivo LIKE '%Micro&SOHO%'
+            ");
+            $stmt->execute([$fecha_desde, $fecha_hasta]);
+            $total_casos_periodo = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            
+            // Ejecutivos activos
+            $stmt = $this->db->prepare("
+                SELECT COUNT(DISTINCT user_id) as total 
+                FROM estado_usuarios 
+                WHERE estado = 'activo'
+                AND user_id IN (SELECT user_id FROM horarios_usuarios WHERE area = 'Depto Micro&SOHO' AND activo = 1)
+            ");
+            $stmt->execute();
+            $ejecutivos_activos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            
+            // Promedio por ejecutivo
+            $promedio_por_ejecutivo = $ejecutivos_activos > 0 ? round($total_casos_periodo / $ejecutivos_activos, 1) : 0;
+            
+            // Obtener distribución de casos por ejecutivo para calcular métricas de balance
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) as casos_periodo
+                FROM casos c
+                INNER JOIN horarios_usuarios hu ON c.analista_id = hu.user_id
+                WHERE DATE(c.fecha_ingreso) BETWEEN ? AND ? 
+                AND hu.area = 'Depto Micro&SOHO'
+                GROUP BY c.analista_id
+            ");
+            $stmt->execute([$fecha_desde, $fecha_hasta]);
+            $distribucion = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            // Calcular métricas de balance
+            $metricas_balance = $this->calcularMetricasBalance($distribucion);
+            
+            $resultado = array_merge([
+                'total_casos_hoy' => $total_casos_periodo,
+                'ejecutivos_activos' => $ejecutivos_activos,
+                'promedio_por_ejecutivo' => $promedio_por_ejecutivo,
+                'indice_balance' => $metricas_balance['indice_balance'],
+                'desviacion_estandar' => $metricas_balance['desviacion_estandar'],
+                'coeficiente_variacion' => $metricas_balance['coeficiente_variacion'],
+                'indice_gini' => $metricas_balance['indice_gini']
+            ], $metricas_balance);
+            
+            error_log("✅ ReportController: Estadísticas para {$fecha_desde} a {$fecha_hasta}: " . $total_casos_periodo . " casos");
+            return $resultado;
+            
+        } catch (Exception $e) {
+            error_log("❌ Error en ReportController::getEstadisticasDiarias: " . $e->getMessage());
+            return [
+                'total_casos_hoy' => 0,
+                'ejecutivos_activos' => 0,
+                'promedio_por_ejecutivo' => 0,
+                'indice_balance' => 0,
+                'desviacion_estandar' => 0,
+                'coeficiente_variacion' => 0,
+                'indice_gini' => 0
+            ];
+        }
     }
     
     /**
-     * Obtener distribución de estados por fecha
+     * Obtener distribución de estados por fecha - ACTUALIZADO CON PARÁMETROS
      */
     public function getDistribucionEstadosPorFecha($fecha = null) {
         if (!$fecha) {
@@ -75,6 +100,7 @@ class ReportController {
                 COUNT(CASE WHEN estado = 'cancelado' THEN id END) as cancelado
             FROM casos 
             WHERE DATE(fecha_ingreso) = ?
+            AND area_ejecutivo LIKE '%Micro&SOHO%'
         ");
         
         $stmt->execute([$fecha]);
@@ -171,9 +197,13 @@ class ReportController {
     }
     
     /**
-     * Obtener métricas de balance DIARIO para el panel de asignaciones
+     * Obtener métricas de balance DIARIO para el panel de asignaciones - ACTUALIZADO CON PARÁMETROS
      */
-    public function getMetricasBalanceDiario() {
+    public function getMetricasBalanceDiario($fecha_desde = null, $fecha_hasta = null) {
+        // Si no se proporcionan fechas, usar hoy
+        if (!$fecha_desde) $fecha_desde = date('Y-m-d');
+        if (!$fecha_hasta) $fecha_hasta = date('Y-m-d');
+        
         $stmt = $this->db->prepare("
             SELECT 
                 hu.user_id,
@@ -181,27 +211,27 @@ class ReportController {
                 hu.area,
                 eu.estado,
                 eu.ultima_actualizacion,
-                -- Casos ingresados hoy
-                COUNT(CASE WHEN DATE(c.fecha_ingreso) = CURDATE() THEN c.id END) as casos_hoy,
+                -- Casos ingresados en el período
+                COUNT(CASE WHEN DATE(c.fecha_ingreso) BETWEEN ? AND ? THEN c.id END) as casos_periodo,
                 -- Casos activos totales
                 COUNT(CASE WHEN c.estado != 'resuelto' THEN c.id END) as casos_activos,
-                -- Distribución por estado (hoy)
-                COUNT(CASE WHEN DATE(c.fecha_ingreso) = CURDATE() AND c.estado = 'en_curso' THEN c.id END) as en_curso,
-                COUNT(CASE WHEN DATE(c.fecha_ingreso) = CURDATE() AND c.estado = 'en_espera' THEN c.id END) as en_espera,
-                COUNT(CASE WHEN DATE(c.fecha_ingreso) = CURDATE() AND c.estado = 'resuelto' THEN c.id END) as resuelto,
-                COUNT(CASE WHEN DATE(c.fecha_ingreso) = CURDATE() AND c.estado = 'cancelado' THEN c.id END) as cancelado
+                -- Distribución por estado (período)
+                COUNT(CASE WHEN DATE(c.fecha_ingreso) BETWEEN ? AND ? AND c.estado = 'en_curso' THEN c.id END) as en_curso,
+                COUNT(CASE WHEN DATE(c.fecha_ingreso) BETWEEN ? AND ? AND c.estado = 'en_espera' THEN c.id END) as en_espera,
+                COUNT(CASE WHEN DATE(c.fecha_ingreso) BETWEEN ? AND ? AND c.estado = 'resuelto' THEN c.id END) as resuelto,
+                COUNT(CASE WHEN DATE(c.fecha_ingreso) BETWEEN ? AND ? AND c.estado = 'cancelado' THEN c.id END) as cancelado
             FROM horarios_usuarios hu
             LEFT JOIN estado_usuarios eu ON hu.user_id = eu.user_id
             LEFT JOIN casos c ON hu.user_id = c.analista_id
             WHERE hu.activo = 1 AND hu.area = 'Depto Micro&SOHO'
             GROUP BY hu.user_id, hu.nombre_completo, hu.area, eu.estado, eu.ultima_actualizacion
-            ORDER BY casos_hoy ASC, hu.nombre_completo
+            ORDER BY casos_periodo ASC, hu.nombre_completo
         ");
         
-        $stmt->execute();
+        $stmt->execute([$fecha_desde, $fecha_hasta, $fecha_desde, $fecha_hasta, $fecha_desde, $fecha_hasta, $fecha_desde, $fecha_hasta]);
         $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Asegurar que todos los campos existan
+        // Asegurar que todos los campos existan y renombrar casos_periodo a casos_hoy para compatibilidad
         foreach ($resultados as &$fila) {
             $fila = array_merge([
                 'casos_hoy' => 0,
@@ -211,77 +241,12 @@ class ReportController {
                 'resuelto' => 0,
                 'cancelado' => 0
             ], $fila);
+            
+            // Mantener compatibilidad con el nombre original
+            $fila['casos_hoy'] = $fila['casos_periodo'] ?? 0;
         }
         
         return $resultados;
-    }
-    
-    /**
-     * Calcular desviación estándar
-     */
-    private function calcularDesviacionEstandar($array) {
-        if (count($array) === 0) return 0;
-        
-        $n = count($array);
-        $mean = array_sum($array) / $n;
-        $carry = 0.0;
-        
-        foreach ($array as $val) {
-            $d = ((double) $val) - $mean;
-            $carry += $d * $d;
-        }
-        
-        return sqrt($carry / $n);
-    }
-    
-    /**
-     * Calcular coeficiente de variación
-     */
-    private function calcularCoeficienteVariacion($array) {
-        if (count($array) === 0) return 0;
-        
-        $mean = array_sum($array) / count($array);
-        if ($mean == 0) return 0;
-        
-        $desviacion = $this->calcularDesviacionEstandar($array);
-        return ($desviacion / $mean) * 100;
-    }
-    
-    /**
-     * Calcular índice de Gini
-     */
-    private function calcularIndiceGini($array) {
-        if (count($array) === 0) return 0;
-        
-        sort($array);
-        $n = count($array);
-        $sum = array_sum($array);
-        
-        if ($sum == 0) return 0;
-        
-        $sumAbsoluteDifferences = 0;
-        for ($i = 0; $i < $n; $i++) {
-            for ($j = 0; $j < $n; $j++) {
-                $sumAbsoluteDifferences += abs($array[$i] - $array[$j]);
-            }
-        }
-        
-        return $sumAbsoluteDifferences / (2 * $n * $sum);
-    }
-    
-    /**
-     * Calcular índice de balance (0-100%)
-     */
-    private function calcularIndiceBalance($array) {
-        if (count($array) === 0) return 100;
-        
-        $max = max($array);
-        if ($max == 0) return 100;
-        
-        $min = min($array);
-        $ratio = $min / $max;
-        
-        return round($ratio * 100);
     }
     
     /**
@@ -341,6 +306,7 @@ class ReportController {
                 COUNT(CASE WHEN estado = 'cancelado' THEN id END) as cancelado
             FROM casos 
             WHERE DATE(fecha_ingreso) BETWEEN ? AND ?
+            AND area_ejecutivo LIKE '%Micro&SOHO%'
             GROUP BY DATE(fecha_ingreso)
             ORDER BY fecha DESC
         ");

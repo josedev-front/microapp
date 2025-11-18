@@ -42,7 +42,7 @@ class AdmissionController {
     }
 
     /**
-     * Obtener conexión a la base de datos - NUEVO MÉTODO
+     * Obtener conexión a la base de datos
      */
     private function getDatabase() {
         require_once __DIR__ . '/../config/database_back_admision.php';
@@ -72,7 +72,7 @@ class AdmissionController {
     }
     
     /**
-     * Obtener todas las SRs activas de Micro&SOHO - CORREGIDO
+     * Obtener todas las SRs activas de Micro&SOHO
      */
     public function getSRActivasMicroSOHO() {
         try {
@@ -112,7 +112,7 @@ class AdmissionController {
     }
 
     /**
-     * Obtener distribución de estados para hoy - NUEVO MÉTODO
+     * Obtener distribución de estados para hoy
      */
     public function getDistribucionEstadosHoy() {
         try {
@@ -154,46 +154,88 @@ class AdmissionController {
         }
     }
     
+    /**
+     * Obtener distribución de estados por rango de fechas - CORREGIDO
+     */
     public function getDistribucionEstadosPorRango($fecha_desde, $fecha_hasta) {
-    try {
-        $db = $this->getDatabase();
-        
-        $query = "
-            SELECT estado, COUNT(*) as total 
-            FROM casos 
-            WHERE DATE(fecha_ingreso) BETWEEN ? AND ?
-            AND area_ejecutivo LIKE '%Micro&SOHO%'
-            GROUP BY estado
-        ";
-        
-        $stmt = $db->prepare($query);
-        $stmt->execute([$fecha_desde, $fecha_hasta]);
-        $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        $distribucion = [
-            'en_curso' => 0,
-            'en_espera' => 0, 
-            'resuelto' => 0,
-            'cancelado' => 0
-        ];
-        
-        foreach ($resultados as $fila) {
-            $distribucion[$fila['estado']] = $fila['total'];
+        try {
+            $db = $this->getDatabase();
+            
+            $query = "
+                SELECT estado, COUNT(*) as total 
+                FROM casos 
+                WHERE DATE(fecha_ingreso) BETWEEN ? AND ?
+                AND area_ejecutivo LIKE '%Micro&SOHO%'
+                GROUP BY estado
+            ";
+            
+            $stmt = $db->prepare($query);
+            $stmt->execute([$fecha_desde, $fecha_hasta]);
+            $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $distribucion = [
+                'en_curso' => 0,
+                'en_espera' => 0, 
+                'resuelto' => 0,
+                'cancelado' => 0
+            ];
+            
+            foreach ($resultados as $fila) {
+                $distribucion[$fila['estado']] = $fila['total'];
+            }
+            
+            error_log("✅ Distribución estados {$fecha_desde} a {$fecha_hasta}: " . json_encode($distribucion));
+            return $distribucion;
+            
+        } catch (Exception $e) {
+            error_log("❌ Error en getDistribucionEstadosPorRango: " . $e->getMessage());
+            return [
+                'en_curso' => 0,
+                'en_espera' => 0, 
+                'resuelto' => 0,
+                'cancelado' => 0
+            ];
         }
-        
-        error_log("✅ Distribución estados {$fecha_desde} a {$fecha_hasta}: " . json_encode($distribucion));
-        return $distribucion;
-        
-    } catch (Exception $e) {
-        error_log("❌ Error en getDistribucionEstadosPorRango: " . $e->getMessage());
-        return [
-            'en_curso' => 0,
-            'en_espera' => 0, 
-            'resuelto' => 0,
-            'cancelado' => 0
-        ];
     }
-}
+
+    /**
+     * Obtener métricas de ejecutivos por rango de fechas - NUEVO MÉTODO
+     */
+    public function getMetricasEjecutivosPorRango($fecha_desde, $fecha_hasta) {
+        try {
+            $db = $this->getDatabase();
+            
+            $query = "
+                SELECT 
+                    c.analista_id as user_id,
+                    c.analista_nombre as nombre_completo,
+                    eu.estado,
+                    COUNT(c.id) as total_casos,
+                    SUM(CASE WHEN c.estado = 'en_curso' THEN 1 ELSE 0 END) as en_curso,
+                    SUM(CASE WHEN c.estado = 'en_espera' THEN 1 ELSE 0 END) as en_espera,
+                    SUM(CASE WHEN c.estado = 'resuelto' THEN 1 ELSE 0 END) as resuelto,
+                    SUM(CASE WHEN c.estado = 'cancelado' THEN 1 ELSE 0 END) as cancelado
+                FROM casos c
+                LEFT JOIN estado_usuarios eu ON c.analista_id = eu.user_id
+                WHERE DATE(c.fecha_ingreso) BETWEEN ? AND ?
+                AND c.area_ejecutivo LIKE '%Micro&SOHO%'
+                GROUP BY c.analista_id, c.analista_nombre, eu.estado
+                ORDER BY c.analista_nombre
+            ";
+            
+            $stmt = $db->prepare($query);
+            $stmt->execute([$fecha_desde, $fecha_hasta]);
+            $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("✅ Métricas ejecutivos {$fecha_desde} a {$fecha_hasta}: " . count($resultados) . " ejecutivos");
+            return $resultados;
+            
+        } catch (Exception $e) {
+            error_log("❌ Error en getMetricasEjecutivosPorRango: " . $e->getMessage());
+            return [];
+        }
+    }
+    
     public function procesarCaso($sr_hijo, $user_id = null) {
         try {
             error_log("procesarCaso iniciado para SR: " . $sr_hijo);
@@ -381,29 +423,63 @@ class AdmissionController {
     }
 
     /**
-     * Verificar permisos de supervisor - CORREGIDO
+     * Verificar permisos de supervisor
      */
     public function tienePermisosSupervisor() {
-        // Obtener rol del usuario desde la sesión o base de datos
         $user_role = $this->obtenerRolUsuario();
-        
         $roles_permitidos = ['supervisor', 'backup', 'qa', 'superuser', 'developer'];
         
         error_log("🔐 Verificando permisos - Rol: " . $user_role . ", Permitidos: " . implode(', ', $roles_permitidos));
         
         return in_array($user_role, $roles_permitidos);
     }
-    
+    public function getMetricasEjecutivosCorregidas($fecha_desde, $fecha_hasta) {
+    try {
+        $db = $this->getDatabase();
+        
+        $query = "
+            SELECT 
+                c.analista_id as user_id,
+                c.analista_nombre as nombre_completo,
+                eu.estado,
+                -- Contar casos únicos por estado
+                COUNT(DISTINCT c.id) as total_casos,
+                COUNT(DISTINCT CASE WHEN c.estado = 'en_curso' THEN c.id END) as en_curso,
+                COUNT(DISTINCT CASE WHEN c.estado = 'en_espera' THEN c.id END) as en_espera,
+                COUNT(DISTINCT CASE WHEN c.estado = 'resuelto' THEN c.id END) as resuelto,
+                COUNT(DISTINCT CASE WHEN c.estado = 'cancelado' THEN c.id END) as cancelado,
+                -- Mantener compatibilidad con campos existentes
+                COUNT(DISTINCT c.id) as casos_hoy,  -- Mismo que total_casos para compatibilidad
+                0 as casos_activos  -- Campo dummy para compatibilidad
+            FROM casos c
+            LEFT JOIN estado_usuarios eu ON c.analista_id = eu.user_id
+            WHERE DATE(c.fecha_ingreso) BETWEEN ? AND ?
+            AND c.area_ejecutivo LIKE '%Micro&SOHO%'
+            GROUP BY c.analista_id, c.analista_nombre, eu.estado
+            ORDER BY c.analista_nombre
+        ";
+        
+        $stmt = $db->prepare($query);
+        $stmt->execute([$fecha_desde, $fecha_hasta]);
+        $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        error_log("✅ Métricas corregidas: " . count($resultados) . " ejecutivos");
+        return $resultados;
+        
+    } catch (Exception $e) {
+        error_log("❌ Error en getMetricasEjecutivosCorregidas: " . $e->getMessage());
+        return [];
+    }
+}
+
     /**
-     * Obtener rol del usuario - NUEVO MÉTODO
+     * Obtener rol del usuario
      */
     private function obtenerRolUsuario() {
-        // Primero intentar desde la sesión
         if (isset($_SESSION['role'])) {
             return $_SESSION['role'];
         }
         
-        // Si no está en sesión, intentar desde los datos de usuario
         if (isset($_SESSION['user_id'])) {
             try {
                 $user_data = $this->userSync->getEjecutivoPorId($_SESSION['user_id']);
@@ -415,7 +491,6 @@ class AdmissionController {
             }
         }
         
-        // Si no se puede determinar, usar el rol por defecto de la sesión
         return $_SESSION['user_role'] ?? 'ejecutivo';
     }
 

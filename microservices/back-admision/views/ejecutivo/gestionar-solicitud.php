@@ -55,8 +55,8 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
                 <!-- Breadcrumb -->
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb bg-success">
-                        <li class="breadcrumb-item"><a href="/public/?vista=home"><i class="fas fa-home"></i> Home</a></li>
-                        <li class="breadcrumb-item"><a href="/public/?vista=back-admision">Back de Admisión</a></li>
+                        <li class="breadcrumb-item"><a href="/dashboard/vsm/microapp/public/?vista=home"><i class="fas fa-home"></i> Home</a></li>
+                        <li class="breadcrumb-item"><a href="/dashboard/vsm/microapp/public/?vista=back-admision">Back de Admisión</a></li>
                         <li class="breadcrumb-item">Gestionar Solicitud</li>
                     </ol>
                 </nav>
@@ -223,8 +223,8 @@ if ($caso['analista_id'] != $user_id && !$admissionController->tienePermisosSupe
                             <!-- Botones -->
                             <div class="row mt-4">
                                 <div class="col-12 d-flex justify-content-between">
-                                    <a href="/?vista=back-admision" class="btn btn-secondary">
-                                        <i class="fas fa-arrow-left me-2"></i>Volver a la Bandeja
+                                    <a href="javascript:history.back()" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Volver
                                     </a>
                                     <div>
                                         <button type="submit" name="accion" value="guardar" class="btn btn-primary">
@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.set('accion', accion);
             
             // PROBAR DIFERENTES URLS - DEBUG
-            const url = '/microservices/back-admision/api/gestionar_caso.php';
+            const url = '/dashboard/vsm/microapp/microservices/back-admision/api/gestionar_caso.php';
 
             console.log("📤 Enviando a URL:", url);
             console.log("📦 Datos:", Object.fromEntries(formData));
