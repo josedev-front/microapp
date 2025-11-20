@@ -91,7 +91,7 @@ class AdmissionController {
                     eu.estado as estado_ejecutivo
                 FROM casos c
                 LEFT JOIN estado_usuarios eu ON c.analista_id = eu.user_id
-                WHERE c.area_ejecutivo LIKE '%Micro&SOHO%'
+                WHERE c.area_ejecutivo = 'Depto Micro&amp;SOHO'
                 AND c.estado IN ('en_curso', 'en_espera')
                 ORDER BY 
                     FIELD(c.estado, 'en_curso', 'en_espera'),
@@ -122,7 +122,7 @@ class AdmissionController {
                 SELECT estado, COUNT(*) as total 
                 FROM casos 
                 WHERE DATE(fecha_ingreso) = CURDATE() 
-                AND area_ejecutivo LIKE '%Micro&SOHO%'
+                AND area_ejecutivo = 'Depto Micro&amp;SOHO' 
                 GROUP BY estado
             ";
             
@@ -165,7 +165,7 @@ class AdmissionController {
                 SELECT estado, COUNT(*) as total 
                 FROM casos 
                 WHERE DATE(fecha_ingreso) BETWEEN ? AND ?
-                AND area_ejecutivo LIKE '%Micro&SOHO%'
+                AND area_ejecutivo = 'Depto Micro&amp;SOHO'
                 GROUP BY estado
             ";
             
@@ -218,7 +218,7 @@ class AdmissionController {
                 FROM casos c
                 LEFT JOIN estado_usuarios eu ON c.analista_id = eu.user_id
                 WHERE DATE(c.fecha_ingreso) BETWEEN ? AND ?
-                AND c.area_ejecutivo LIKE '%Micro&SOHO%'
+                AND c.area_ejecutivo = 'Depto Micro&amp;SOHO'
                 GROUP BY c.analista_id, c.analista_nombre, eu.estado
                 ORDER BY c.analista_nombre
             ";
@@ -454,7 +454,7 @@ class AdmissionController {
             FROM casos c
             LEFT JOIN estado_usuarios eu ON c.analista_id = eu.user_id
             WHERE DATE(c.fecha_ingreso) BETWEEN ? AND ?
-            AND c.area_ejecutivo LIKE '%Micro&SOHO%'
+            AND c.area_ejecutivo = 'Depto Micro&amp;SOHO'
             GROUP BY c.analista_id, c.analista_nombre, eu.estado
             ORDER BY c.analista_nombre
         ";

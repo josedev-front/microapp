@@ -59,7 +59,6 @@ $descripcion = $tipo === 'ejecutivo'
                         <p class="mb-0"><?php echo $descripcion; ?></p>
                     </div>
 
-                    <!-- CORREGIDO: URL del formulario -->
                     <form id="formIngresarCaso" method="post" action="./?vista=back-admision&action=ingresar-caso-supervisor">
                         <input type="hidden" name="tipo_asignacion" value="<?php echo $tipo; ?>">
                         
@@ -104,7 +103,7 @@ $descripcion = $tipo === 'ejecutivo'
 
                             <div class="col-12 mb-3">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="forzar_asignacion" name="forzar_asignacion">
+                                    <input class="form-check-input" type="checkbox" id="forzar_asignacion" name="forzar_asignacion" value="1">
                                     <label class="form-check-label" for="forzar_asignacion">
                                         <strong>Forzar reasignación si la SR ya está asignada</strong>
                                     </label>
@@ -213,27 +212,20 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        console.log("=== INICIANDO ASIGNACIÓN SUPERVISOR ===");
+        console.log("=== INICIANDO ASIGNACIÓN ===");
         
         // 1. VALIDACIÓN
         const sr_hijo = document.getElementById('sr_hijo').value.trim();
         if (!sr_hijo) {
-            alert('Por favor, ingresa el número de SR hijo');
+            mostrarMensaje('Por favor, ingresa el número de SR hijo', 'error');
             return false;
         }
         
         <?php if ($tipo === 'supervisor'): ?>
         const analista_id = document.getElementById('analista_id').value;
         if (!analista_id) {
-            alert('Por favor, selecciona un ejecutivo');
+            mostrarMensaje('Por favor, selecciona un ejecutivo', 'error');
             return false;
-        }
-        
-        const estado = document.getElementById('analista_id').options[document.getElementById('analista_id').selectedIndex].dataset.estado;
-        if (estado !== 'activo') {
-            if (!confirm('⚠️ El ejecutivo seleccionado no está activo. ¿Deseas continuar con la asignación?')) {
-                return false;
-            }
         }
         <?php endif; ?>
         
@@ -249,94 +241,62 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log("📤 Enviando datos:", Object.fromEntries(formData));
             
-            // PROBAR DIFERENTES URLS
-            const urlsToTry = [
-                './?vista=back-admision&action=ingresar-caso-supervisor',
-                '/?vista=back-admision&action=ingresar-caso-supervisor',
-                'index.php?vista=back-admision&action=ingresar-caso-supervisor'
-            ];
+            // USAR SOLO LA URL CORRECTA
+            const url = './?vista=back-admision&action=ingresar-caso-supervisor';
             
-            let response, responseText, data;
-            let success = false;
-            let workingUrl = '';
+            console.log("🔍 Usando URL:", url);
             
-            for (let url of urlsToTry) {
-                console.log("🔍 Probando URL:", url);
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include'
+            });
+            
+            const responseText = await response.text();
+            console.log("📥 Respuesta COMPLETA del servidor:", responseText);
+            
+            // DIAGNÓSTICO MEJORADO
+            if (responseText.includes('<!DOCTYPE') || responseText.includes('<html') || responseText.includes('Warning') || responseText.includes('Notice') || responseText.includes('Fatal error')) {
+                console.error("❌ El servidor está devolviendo HTML/errores en lugar de JSON");
                 
-                try {
-                    response = await fetch(url, {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'include'
-                    });
-                    
-                    responseText = await response.text();
-                    console.log("📥 Respuesta completa:", responseText);
-                    
-                    // Verificar si es HTML (página de error)
-                    if (responseText.trim().startsWith('<!DOCTYPE') || 
-                        responseText.includes('<html') || 
-                        responseText.includes('404 Not Found') ||
-                        responseText.includes('Not Found')) {
-                        console.log("❌ URL devuelve HTML/404, probando siguiente...");
-                        continue;
-                    }
-                    
-                    // Limpiar respuesta de posibles warnings PHP
-                    let cleanResponse = responseText.trim();
-                    
-                    // Si hay warnings PHP, extraer solo el JSON
-                    if (cleanResponse.includes('{') && cleanResponse.includes('}')) {
-                        const jsonStart = cleanResponse.indexOf('{');
-                        const jsonEnd = cleanResponse.lastIndexOf('}') + 1;
-                        cleanResponse = cleanResponse.substring(jsonStart, jsonEnd);
-                    }
-                    
-                    // Verificar que sea JSON válido
-                    if (!cleanResponse.startsWith('{') || !cleanResponse.endsWith('}')) {
-                        console.log("❌ Respuesta no es JSON válido, probando siguiente...");
-                        continue;
-                    }
-                    
-                    // Intentar parsear JSON
-                    data = JSON.parse(cleanResponse);
-                    success = true;
-                    workingUrl = url;
-                    console.log("✅ URL funciona:", url);
-                    console.log("📊 Datos recibidos:", data);
-                    break;
-                    
-                } catch (error) {
-                    console.log("❌ Error con URL", url, ":", error.message);
-                    console.log("📄 Respuesta cruda:", responseText.substring(0, 200));
-                    continue;
+                let errorMessage = 'El servidor devolvió una página HTML/errores en lugar de JSON. ';
+                
+                if (responseText.includes('Fatal error')) {
+                    const fatalMatch = responseText.match(/Fatal error[^<]*/i);
+                    if (fatalMatch) errorMessage += 'Error fatal: ' + fatalMatch[0];
                 }
+                else if (responseText.includes('Warning')) {
+                    const warningMatch = responseText.match(/Warning:[^<]*/i);
+                    if (warningMatch) errorMessage += 'Warning: ' + warningMatch[0];
+                }
+                else if (responseText.includes('Notice')) {
+                    const noticeMatch = responseText.match(/Notice:[^<]*/i);
+                    if (noticeMatch) errorMessage += 'Notice: ' + noticeMatch[0];
+                }
+                
+                throw new Error(errorMessage);
             }
             
-            if (!success) {
-                throw new Error(`
-                    ❌ No se pudo encontrar una API funcionando correctamente.
-                    
-                    <strong>URLs probadas:</strong>
-                    <br>• ./?vista=back-admision&action=ingresar-caso-supervisor
-                    <br>• /?vista=back-admision&action=ingresar-caso-supervisor  
-                    <br>• index.php?vista=back-admision&action=ingresar-caso-supervisor
-                    
-                    <br><br><strong>Posibles problemas:</strong>
-                    <br>• La API está devolviendo HTML en lugar de JSON
-                    <br>• Hay errores PHP en la API que rompen el JSON
-                    <br>• La ruta no está configurada correctamente
-                    
-                    <br><br><strong>Solución:</strong>
-                    <br>1. Verificar el archivo api/ingresar_caso_supervisor.php
-                    <br>2. Revisar los logs de error del servidor
-                    <br>3. Verificar que no haya warnings PHP
-                `);
+            let data;
+            try {
+                // Intentar parsear como JSON
+                data = JSON.parse(responseText);
+                console.log("✅ JSON parseado correctamente:", data);
+            } catch (parseError) {
+                console.error("❌ Error parseando JSON. Respuesta cruda:", responseText);
+                throw new Error(`La API devolvió una respuesta inválida. Detalles: ${parseError.message}`);
             }
             
-            // 4. PROCESAR RESPUESTA
-            console.log("🎉 ÉXITO - Procesando respuesta de:", workingUrl);
+            // DIAGNÓSTICO DETALLADO
+            console.log("🔍 ANALIZANDO RESPUESTA:", {
+                success: data.success,
+                message: data.message,
+                caso_existente: data.caso_existente,
+                tiene_caso_existente: !!data.caso_existente,
+                mensaje_contiene_asignada: data.message && data.message.includes('ya está asignada')
+            });
             
+            // 4. PROCESAR RESPUESTA - VERSIÓN MEJORADA PARA REASIGNACIÓN
             if (data.success) {
                 mostrarMensaje(data.message, 'success');
                 
@@ -345,20 +305,96 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(() => {
                         console.log("🔄 Redirigiendo a:", data.redirect);
                         window.location.href = data.redirect;
-                    }, 2000);
+                    }, 1500);
                 }
             } else {
-                // Mostrar mensaje de error específico
-                if (data.message.includes('ya está asignada') && data.caso_existente) {
-                    // Preguntar si quiere forzar reasignación
-                    const confirmar = confirm(`${data.message}\n\n¿Desea forzar la reasignación?`);
+                // DETECCIÓN MEJORADA: Verificar múltiples patrones de "SR ya asignada"
+                const mensaje = data.message || '';
+                const esSRAsignada = (
+                    mensaje.includes('ya está asignada') || 
+                    mensaje.includes('ya esta asignada') ||
+                    mensaje.includes('asignada a') ||
+                    (data.caso_existente && !data.success)
+                );
+                
+                if (esSRAsignada && data.caso_existente) {
+                    console.log("🔄 SR ya asignada detectada, preguntando por reasignación...", data);
+                    
+                    // Obtener información del caso existente
+                    const analistaActual = data.caso_existente.analista_nombre || 'otro ejecutivo';
+                    const srHijo = data.caso_existente.sr_hijo || sr_hijo;
+                    
+                    // Mostrar confirmación más específica
+                    const confirmar = confirm(
+                        `⚠️ SR YA ASIGNADA\n\n` +
+                        `La SR ${srHijo} ya está asignada a:\n` +
+                        `👤 ${analistaActual}\n\n` +
+                        `¿Desea FORZAR la reasignación al ejecutivo seleccionado?`
+                    );
+                    
                     if (confirmar) {
-                        // Marcar forzar reasignación y enviar nuevamente
-                        document.getElementById('forzar_asignacion').checked = true;
-                        form.dispatchEvent(new Event('submit'));
+                        console.log("✅ Usuario confirmó reasignación forzada");
+                        
+                        // FORMA CORRECTA: Usar el checkbox existente y marcar como checked
+                        const forzarCheckbox = document.getElementById('forzar_asignacion');
+                        if (forzarCheckbox) {
+                            forzarCheckbox.checked = true;
+                            forzarCheckbox.value = '1';
+                            console.log("✅ Checkbox forzar_asignacion marcado");
+                        } else {
+                            console.warn("⚠️ Checkbox forzar_asignacion no encontrado, creando uno temporal");
+                            // Crear input hidden si no existe el checkbox
+                            const hiddenInput = document.createElement('input');
+                            hiddenInput.type = 'hidden';
+                            hiddenInput.name = 'forzar_asignacion';
+                            hiddenInput.value = '1';
+                            form.appendChild(hiddenInput);
+                        }
+                        
+                        // Enviar formulario nuevamente CON LOS MISMOS DATOS
+                        console.log("🔄 Reenviando formulario con forzar_asignacion=1...");
+                        
+                        // Usar el mismo FormData pero agregar forzar_asignacion
+                        const newFormData = new FormData(form);
+                        newFormData.set('forzar_asignacion', '1');
+                        
+                        fetch('./?vista=back-admision&action=ingresar-caso-supervisor', {
+                            method: 'POST',
+                            body: newFormData,
+                            credentials: 'include'
+                        })
+                        .then(response => response.text())
+                        .then(responseText => {
+                            console.log("📥 Segunda respuesta:", responseText);
+                            try {
+                                const secondData = JSON.parse(responseText);
+                                if (secondData.success) {
+                                    mostrarMensaje(secondData.message, 'success');
+                                    if (secondData.redirect) {
+                                        setTimeout(() => {
+                                            window.location.href = secondData.redirect;
+                                        }, 1500);
+                                    }
+                                } else {
+                                    mostrarMensaje(secondData.message, 'error');
+                                }
+                            } catch (e) {
+                                console.error('Error parseando segunda respuesta:', e);
+                                mostrarMensaje('Error en la reasignación', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error en segunda solicitud:', error);
+                            mostrarMensaje('Error de conexión en reasignación', 'error');
+                        });
+                        
+                    } else {
+                        console.log("❌ Usuario canceló reasignación");
+                        mostrarMensaje('Reasignación cancelada. La SR permanece asignada a ' + analistaActual, 'warning');
                     }
                 } else {
-                    mostrarMensaje(data.message, 'error');
+                    // Otros tipos de error
+                    mostrarMensaje(data.message || 'Error desconocido del servidor', 'error');
                 }
             }
             
@@ -366,13 +402,17 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('❌ Error en la solicitud:', error);
             
             // Mostrar error específico según el tipo
-            if (error.message.includes('No se pudo encontrar una API funcionando')) {
-                mostrarMensaje(error.message, 'error');
+            let mensajeError = '❌ Error inesperado: ' + error.message;
+            
+            if (error.message.includes('devuelvió una página HTML')) {
+                mensajeError = '❌ Error del servidor: La API está devolviendo errores PHP. Revisa los logs del servidor.';
+            } else if (error.message.includes('La API devolvió una respuesta inválida')) {
+                mensajeError = '❌ Error del servidor: La API no está devolviendo JSON válido. ' + error.message;
             } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                mostrarMensaje('❌ Error de conexión: No se pudo conectar con el servidor', 'error');
-            } else {
-                mostrarMensaje('❌ Error inesperado: ' + error.message, 'error');
+                mensajeError = '❌ Error de conexión: No se pudo conectar con el servidor';
             }
+            
+            mostrarMensaje(mensajeError, 'error');
         } finally {
             // 5. RESTAURAR BOTÓN
             submitBtn.innerHTML = originalText;
@@ -380,58 +420,58 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("=== FINALIZADO ENVÍO FORMULARIO ===");
         }
     });
-});
 
-function mostrarMensaje(mensaje, tipo) {
-    // Remover mensajes existentes
-    const mensajesExistentes = document.querySelectorAll('.alert-dinamico-asignacion');
-    mensajesExistentes.forEach(msg => msg.remove());
-    
-    // Crear alerta
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${tipo === 'success' ? 'success' : 'danger'} alert-dismissible fade show alert-dinamico-asignacion mt-3`;
-    
-    alertDiv.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="fas fa-${tipo === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-            <div>${mensaje}</div>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-    
-    // Insertar después del card-header
-    const cardHeader = document.querySelector('.card-header');
-    if (cardHeader && cardHeader.parentNode) {
-        cardHeader.parentNode.insertBefore(alertDiv, cardHeader.nextSibling);
+    function mostrarMensaje(mensaje, tipo) {
+        // Remover mensajes existentes
+        const mensajesExistentes = document.querySelectorAll('.alert-dinamico-asignacion');
+        mensajesExistentes.forEach(msg => msg.remove());
+        
+        // Crear alerta
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${tipo === 'success' ? 'success' : tipo === 'warning' ? 'warning' : 'danger'} alert-dismissible fade show alert-dinamico-asignacion mt-3`;
+        
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'} me-2"></i>
+                <div>${mensaje}</div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        // Insertar después del card-header
+        const cardHeader = document.querySelector('.card-header');
+        if (cardHeader && cardHeader.parentNode) {
+            cardHeader.parentNode.insertBefore(alertDiv, cardHeader.nextSibling);
+        }
+        
+        // Auto-eliminar después de 10 segundos para errores
+        if (tipo === 'error' || tipo === 'warning') {
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 10000);
+        }
     }
-    
-    // Auto-eliminar después de 10 segundos para errores
-    if (tipo === 'error') {
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
+
+    // Agregar estilos para animaciones
+    if (!document.querySelector('#estilos-asignacion')) {
+        const style = document.createElement('style');
+        style.id = 'estilos-asignacion';
+        style.textContent = `
+            .alert-dinamico-asignacion {
+                animation: fadeInAsignacion 0.5s ease-in;
             }
-        }, 10000);
+            @keyframes fadeInAsignacion {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .btn:disabled {
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+        `;
+        document.head.appendChild(style);
     }
-}
-
-// Agregar estilos para animaciones
-if (!document.querySelector('#estilos-asignacion')) {
-    const style = document.createElement('style');
-    style.id = 'estilos-asignacion';
-    style.textContent = `
-        .alert-dinamico-asignacion {
-            animation: fadeInAsignacion 0.5s ease-in;
-        }
-        @keyframes fadeInAsignacion {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-    `;
-    document.head.appendChild(style);
-}
+});
 </script>

@@ -82,7 +82,7 @@ public function getEjecutivoPorId($ejecutivo_id) {
      /**
      * Sincroniza todos los ejecutivos de un área específica
      */
-    public function sincronizarEjecutivosPorArea($area = 'Depto Micro&SOHO') {
+    public function sincronizarEjecutivosPorArea($area = 'Depto Micro&amp;SOHO') {
         try {
             $sql = "
                 SELECT id, first_name, last_name, work_area, role, is_active, employee_id
@@ -171,7 +171,7 @@ public function getEjecutivoPorId($ejecutivo_id) {
     /**
      * Obtiene ejecutivos disponibles desde BD independiente
      */
-    public function getEjecutivosDisponibles($area = 'Depto Micro&SOHO') {
+    public function getEjecutivosDisponibles($area = 'Depto Micro&amp;SOHO') {
         $stmt = $this->dbBackAdmision->prepare("
             SELECT 
                 hu.user_id,

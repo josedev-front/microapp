@@ -24,7 +24,7 @@ class ReportController {
                 SELECT COUNT(*) as total 
                 FROM casos 
                 WHERE DATE(fecha_ingreso) BETWEEN ? AND ?
-                AND area_ejecutivo LIKE '%Micro&SOHO%'
+                AND area_ejecutivo = 'Depto Micro&amp;SOHO'
             ");
             $stmt->execute([$fecha_desde, $fecha_hasta]);
             $total_casos_periodo = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
@@ -34,7 +34,7 @@ class ReportController {
                 SELECT COUNT(DISTINCT user_id) as total 
                 FROM estado_usuarios 
                 WHERE estado = 'activo'
-                AND user_id IN (SELECT user_id FROM horarios_usuarios WHERE area = 'Depto Micro&SOHO' AND activo = 1)
+                AND user_id IN (SELECT user_id FROM horarios_usuarios WHERE area = 'Depto Micro&amp;SOHO' AND activo = 1)
             ");
             $stmt->execute();
             $ejecutivos_activos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
@@ -48,7 +48,7 @@ class ReportController {
                 FROM casos c
                 INNER JOIN horarios_usuarios hu ON c.analista_id = hu.user_id
                 WHERE DATE(c.fecha_ingreso) BETWEEN ? AND ? 
-                AND hu.area = 'Depto Micro&SOHO'
+                AND hu.area = 'Depto Micro&amp;SOHO'
                 GROUP BY c.analista_id
             ");
             $stmt->execute([$fecha_desde, $fecha_hasta]);
@@ -100,7 +100,7 @@ class ReportController {
                 COUNT(CASE WHEN estado = 'cancelado' THEN id END) as cancelado
             FROM casos 
             WHERE DATE(fecha_ingreso) = ?
-            AND area_ejecutivo LIKE '%Micro&SOHO%'
+            AND area_ejecutivo = 'Depto Micro&amp;SOHO'
         ");
         
         $stmt->execute([$fecha]);
@@ -223,7 +223,7 @@ class ReportController {
             FROM horarios_usuarios hu
             LEFT JOIN estado_usuarios eu ON hu.user_id = eu.user_id
             LEFT JOIN casos c ON hu.user_id = c.analista_id
-            WHERE hu.activo = 1 AND hu.area = 'Depto Micro&SOHO'
+            WHERE hu.activo = 1 AND hu.area = 'Depto Micro&amp;SOHO'
             GROUP BY hu.user_id, hu.nombre_completo, hu.area, eu.estado, eu.ultima_actualizacion
             ORDER BY casos_periodo ASC, hu.nombre_completo
         ");
@@ -306,7 +306,7 @@ class ReportController {
                 COUNT(CASE WHEN estado = 'cancelado' THEN id END) as cancelado
             FROM casos 
             WHERE DATE(fecha_ingreso) BETWEEN ? AND ?
-            AND area_ejecutivo LIKE '%Micro&SOHO%'
+            AND area_ejecutivo = 'Depto Micro&amp;SOHO'
             GROUP BY DATE(fecha_ingreso)
             ORDER BY fecha DESC
         ");
@@ -369,7 +369,7 @@ public function getDetallesLog($log_id) {
             FROM casos c
             INNER JOIN horarios_usuarios hu ON c.analista_id = hu.user_id
             WHERE DATE(c.fecha_ingreso) BETWEEN ? AND ?
-            AND hu.area = 'Depto Micro&SOHO'
+            AND hu.area = 'Depto Micro&amp;SOHO'
             GROUP BY hu.user_id, hu.nombre_completo
             ORDER BY total_casos DESC
         ");

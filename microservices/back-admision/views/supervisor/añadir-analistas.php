@@ -26,47 +26,82 @@ $teamController = new TeamController();
 $usuarios_micro_soho = $teamController->getUsuariosMicroSOHO();
 $usuarios_back_admision = $teamController->getUsuariosBackAdmision();
 
-// Variables para mensajes
+// Variables para mensajes - INICIALIZAR CORRECTAMENTE
+// Variables para mensajes - INICIALIZAR CORRECTAMENTE
 $mensaje_exito = '';
 $mensaje_error = '';
 
-// Procesar acciones CON REDIRECCIÓN
-if ($_POST['action'] ?? '' == 'agregar_analista') {
-    $user_id = $_POST['user_id'] ?? 0;
-    if ($user_id) {
+// DEBUG: Ver qué está llegando
+error_log("🔍 DEBUG añadir-analistas - POST: " . json_encode($_POST));
+error_log("🔍 DEBUG añadir-analistas - GET: " . json_encode($_GET));
+
+// Procesar acciones CON MEJOR MANEJO DE ERRORES
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    $user_id = intval($_POST['user_id'] ?? 0);
+    
+    error_log("📝 Procesando acción: {$action} para user_id: {$user_id}");
+    
+    if ($action === 'agregar_analista' && $user_id > 0) {
         $result = $teamController->agregarUsuarioBackAdmision($user_id);
         if ($result) {
             // REDIRIGIR para evitar reenvío del formulario
             header('Location: ?vista=back-admision&action=añadir-analistas&exito=agregado&user_id=' . $user_id);
             exit;
         } else {
-            $mensaje_error = "Error al agregar el analista";
+            $mensaje_error = "❌ Error al agregar el analista al sistema";
         }
-    }
-}
-
-if ($_POST['action'] ?? '' == 'eliminar_analista') {
-    $user_id = $_POST['user_id'] ?? 0;
-    if ($user_id) {
+    } 
+    elseif ($action === 'eliminar_analista' && $user_id > 0) {
         $result = $teamController->eliminarUsuarioBackAdmision($user_id);
         if ($result) {
             // REDIRIGIR para evitar reenvío del formulario
             header('Location: ?vista=back-admision&action=añadir-analistas&exito=eliminado&user_id=' . $user_id);
             exit;
         } else {
-            $mensaje_error = "Error al eliminar el analista";
+            $mensaje_error = "❌ Error al eliminar el analista del sistema";
         }
+    }
+    else {
+        $mensaje_error = "❌ Acción no válida o ID de usuario incorrecto";
     }
 }
 
-// Mostrar mensajes de éxito desde GET
-if ($_GET['exito'] ?? '' == 'agregado') {
-    $mensaje_exito = "✅ Analista agregado correctamente al sistema Back Admisión";
+// Mostrar mensajes de éxito desde GET - LÓGICA CORREGIDA
+if (empty($mensaje_error)) {
+    $exito_tipo = $_GET['exito'] ?? '';
+    $user_id_get = $_GET['user_id'] ?? 0;
+    
+    if ($exito_tipo === 'agregado' && $user_id_get > 0) {
+        $mensaje_exito = "✅ Analista agregado correctamente al sistema Back Admisión (ID: {$user_id_get})";
+    }
+    elseif ($exito_tipo === 'eliminado' && $user_id_get > 0) {
+        $mensaje_exito = "✅ Analista eliminado correctamente del sistema Back Admisión (ID: {$user_id_get})";
+    }
+    // Si hay éxito pero no user_id, mostrar mensaje genérico
+    elseif ($exito_tipo === 'agregado') {
+        $mensaje_exito = "✅ Analista agregado correctamente al sistema Back Admisión";
+    }
+    elseif ($exito_tipo === 'eliminado') {
+        $mensaje_exito = "✅ Analista eliminado correctamente del sistema Back Admisión";
+    }
+}
+// Mostrar mensajes de éxito desde GET - SOLO SI NO HAY ERROR
+if (empty($mensaje_error)) {
+    if ($_GET['exito'] ?? '' == 'agregado') {
+        $user_id = $_GET['user_id'] ?? 0;
+        $mensaje_exito = "✅ Analista agregado correctamente al sistema Back Admisión (ID: {$user_id})"; // indiferentemente de que sea añadido o eliminado dice ✅ Analista eliminado correctamente del sistema Back Admisión (ID: {$user_id})"; y no logro comprender porque la pagina siempre esta como cargando pero ya funciona la agregacion o eliminacion
+    }
+    
+    if ($_GET['exito'] ?? '' == 'eliminado') {
+        $user_id = $_GET['user_id'] ?? 0;
+        $mensaje_exito = "✅ Analista eliminado correctamente del sistema Back Admisión (ID: {$user_id})";
+    }
 }
 
-if ($_GET['exito'] ?? '' == 'eliminado') {
-    $mensaje_exito = "✅ Analista eliminado correctamente del sistema Back Admisión";
-}
+// DEBUG: Ver resultados
+error_log("📊 Usuarios Micro&SOHO: " . count($usuarios_micro_soho));
+error_log("📊 Usuarios Back Admisión: " . count($usuarios_back_admision));
 ?>
 
 <style>
@@ -81,6 +116,7 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
 .card-usuario {
     transition: all 0.3s ease;
     border-left: 4px solid #007bff;
+    margin-bottom: 1rem;
 }
 .card-usuario:hover {
     transform: translateY(-2px);
@@ -88,7 +124,7 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
 }
 .usuario-agregado {
     border-left-color: #28a745;
-    opacity: 0.8;
+    background-color: #f8fff8;
 }
 .badge-area {
     font-size: 0.8em;
@@ -98,27 +134,22 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
     height: 50px;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid #dee2e6;
 }
-.btn-loading {
-    position: relative;
-    color: transparent !important;
+.btn-action {
+    transition: all 0.3s ease;
 }
-.btn-loading::after {
-    content: '';
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    top: 50%;
-    left: 50%;
-    margin-left: -8px;
-    margin-top: -8px;
-    border: 2px solid #ffffff;
-    border-radius: 50%;
-    border-right-color: transparent;
-    animation: spin 1s linear infinite;
+.btn-action:hover {
+    transform: scale(1.05);
 }
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.alert {
+    border-left: 4px solid transparent;
+}
+.alert-success {
+    border-left-color: #28a745;
+}
+.alert-danger {
+    border-left-color: #dc3545;
 }
 </style>
 
@@ -145,50 +176,55 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
                         </div>
                         <div class="text-end">
                             <span class="badge bg-light text-dark fs-6">
-                                <?php echo count($usuarios_back_admision); ?> analista(s) activo(s)
+                                <i class="fas fa-users me-1"></i><?php echo count($usuarios_back_admision); ?> analista(s) activo(s)
                             </span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="card-body">
-                    <!-- Alertas -->
-                    <?php if (isset($mensaje_exito)): ?>
-                    <div class="alert alert-success alert-dismissible fade show">
-                        <i class="fas fa-check-circle me-2"></i><?php echo $mensaje_exito; ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <!-- Alertas MEJORADAS -->
+                    <?php if (!empty($mensaje_exito)): ?>
+                    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center">
+                        <i class="fas fa-check-circle me-2 fs-5"></i>
+                        <div class="flex-grow-1"><?php echo $mensaje_exito; ?></div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                     <?php endif; ?>
 
-                    <?php if (isset($mensaje_error)): ?>
-                    <div class="alert alert-danger alert-dismissible fade show">
-                        <i class="fas fa-exclamation-triangle me-2"></i><?php echo $mensaje_error; ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    <?php if (!empty($mensaje_error)): ?>
+                    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-2 fs-5"></i>
+                        <div class="flex-grow-1"><?php echo $mensaje_error; ?></div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                     <?php endif; ?>
 
                     <!-- Resumen -->
                     <div class="row mb-4">
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-4 mb-3">
                             <div class="card bg-primary text-white">
                                 <div class="card-body text-center py-3">
+                                    <i class="fas fa-users fa-2x mb-2"></i>
                                     <h3 class="mb-1"><?php echo count($usuarios_micro_soho); ?></h3>
                                     <p class="mb-0 small">Usuarios Micro&SOHO</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-4 mb-3">
                             <div class="card bg-success text-white">
                                 <div class="card-body text-center py-3">
+                                    <i class="fas fa-check-circle fa-2x mb-2"></i>
                                     <h3 class="mb-1"><?php echo count($usuarios_back_admision); ?></h3>
                                     <p class="mb-0 small">En Back Admisión</p>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-4 mb-3">
                             <div class="card bg-info text-white">
                                 <div class="card-body text-center py-3">
-                                    <h3 class="mb-1"><?php echo count($usuarios_micro_soho) - count($usuarios_back_admision); ?></h3>
+                                    <i class="fas fa-user-plus fa-2x mb-2"></i>
+                                    <h3 class="mb-1"><?php echo max(0, count($usuarios_micro_soho) - count($usuarios_back_admision)); ?></h3>
                                     <p class="mb-0 small">Disponibles para agregar</p>
                                 </div>
                             </div>
@@ -198,7 +234,7 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
                     <!-- Usuarios de Micro&SOHO Disponibles -->
                     <div class="row">
                         <div class="col-12">
-                            <div class="card">
+                            <div class="card border-0 shadow-sm">
                                 <div class="card-header bg-primary text-white">
                                     <h5 class="mb-0">
                                         <i class="fas fa-users me-2"></i>Usuarios Micro&SOHO Disponibles
@@ -209,20 +245,20 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
                                 </div>
                                 <div class="card-body">
                                     <?php if (empty($usuarios_micro_soho)): ?>
-                                        <div class="text-center py-4 text-muted">
-                                            <i class="fas fa-users fa-3x mb-3"></i>
+                                        <div class="text-center py-5 text-muted">
+                                            <i class="fas fa-users fa-4x mb-3 opacity-50"></i>
                                             <h5>No hay usuarios en el área Micro&SOHO</h5>
-                                            <p>Los usuarios deben tener el área "Depto Micro&SOHO" asignada</p>
+                                            <p class="mb-0">Los usuarios deben tener el área "Depto Micro&SOHO" asignada</p>
                                         </div>
                                     <?php else: ?>
-                                        <div class="row">
+                                        <div class="row" id="lista-usuarios">
                                             <?php foreach ($usuarios_micro_soho as $usuario): 
                                                 $ya_agregado = in_array($usuario['id'], array_column($usuarios_back_admision, 'user_id'));
                                             ?>
-                                            <div class="col-12 col-md-6 col-lg-4 mb-3">
-                                                <div class="card card-usuario <?php echo $ya_agregado ? 'usuario-agregado' : ''; ?>">
-                                                    <div class="card-body">
-                                                        <div class="d-flex align-items-start">
+                                            <div class="col-12 col-md-6 col-lg-4 mb-3 usuario-item">
+                                                <div class="card card-usuario h-100 <?php echo $ya_agregado ? 'usuario-agregado' : ''; ?>">
+                                                    <div class="card-body d-flex flex-column">
+                                                        <div class="d-flex align-items-start mb-3">
                                                             <div class="flex-shrink-0">
                                                                 <img src="<?php echo htmlspecialchars($usuario['avatar'] ?? '/dashboard/vsm/microapp/public/assets/img/default/user-default.png'); ?>" 
                                                                      class="avatar-usuario" 
@@ -230,7 +266,7 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
                                                                      onerror="this.src='/dashboard/vsm/microapp/public/assets/img/default/user-default.png'">
                                                             </div>
                                                             <div class="flex-grow-1 ms-3">
-                                                                <h6 class="mb-1"><?php echo htmlspecialchars($usuario['nombre_completo']); ?></h6>
+                                                                <h6 class="mb-1 fw-bold"><?php echo htmlspecialchars($usuario['nombre_completo']); ?></h6>
                                                                 <p class="mb-1 small text-muted">
                                                                     <i class="fas fa-user me-1"></i><?php echo htmlspecialchars($usuario['username']); ?>
                                                                 </p>
@@ -238,26 +274,27 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
                                                                     <i class="fas fa-id-card me-1"></i>ID: <?php echo $usuario['id']; ?>
                                                                 </p>
                                                                 <span class="badge badge-area bg-<?php echo $ya_agregado ? 'success' : 'primary'; ?>">
+                                                                    <i class="fas fa-<?php echo $ya_agregado ? 'check' : 'user'; ?> me-1"></i>
                                                                     <?php echo $ya_agregado ? 'En Back Admisión' : 'Micro&SOHO'; ?>
                                                                 </span>
                                                             </div>
                                                         </div>
                                                         
-                                                        <div class="mt-3">
+                                                        <div class="mt-auto">
                                                             <?php if (!$ya_agregado): ?>
-                                                                <form method="post" class="d-inline">
+                                                                <form method="post" class="d-inline w-100">
                                                                     <input type="hidden" name="action" value="agregar_analista">
                                                                     <input type="hidden" name="user_id" value="<?php echo $usuario['id']; ?>">
-                                                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                                                    <button type="submit" class="btn btn-success btn-sm w-100 btn-action">
                                                                         <i class="fas fa-plus me-1"></i>Agregar a Back Admisión
                                                                     </button>
                                                                 </form>
                                                             <?php else: ?>
-                                                                <form method="post" class="d-inline">
+                                                                <form method="post" class="d-inline w-100">
                                                                     <input type="hidden" name="action" value="eliminar_analista">
                                                                     <input type="hidden" name="user_id" value="<?php echo $usuario['id']; ?>">
-                                                                    <button type="submit" class="btn btn-danger btn-sm w-100" 
-                                                                            onclick="return confirm('¿Estás seguro de eliminar este analista del sistema Back Admisión?')">
+                                                                    <button type="submit" class="btn btn-danger btn-sm w-100 btn-action" 
+                                                                            onclick="return confirm('¿Estás seguro de eliminar a <?php echo htmlspecialchars($usuario['nombre_completo']); ?> del sistema Back Admisión?\n\nEsta acción eliminará sus horarios y estado.')">
                                                                         <i class="fas fa-trash me-1"></i>Eliminar de Back Admisión
                                                                     </button>
                                                                 </form>
@@ -277,7 +314,7 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
                     <!-- Analistas en Back Admisión -->
                     <div class="row mt-4">
                         <div class="col-12">
-                            <div class="card">
+                            <div class="card border-0 shadow-sm">
                                 <div class="card-header bg-success text-white">
                                     <h5 class="mb-0">
                                         <i class="fas fa-check-circle me-2"></i>Analistas en Back Admisión
@@ -288,22 +325,22 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
                                 </div>
                                 <div class="card-body">
                                     <?php if (empty($usuarios_back_admision)): ?>
-                                        <div class="text-center py-4 text-muted">
-                                            <i class="fas fa-user-slash fa-3x mb-3"></i>
+                                        <div class="text-center py-5 text-muted">
+                                            <i class="fas fa-user-slash fa-4x mb-3 opacity-50"></i>
                                             <h5>No hay analistas en Back Admisión</h5>
-                                            <p>Agrega analistas desde la lista de usuarios disponibles</p>
+                                            <p class="mb-0">Agrega analistas desde la lista de usuarios disponibles</p>
                                         </div>
                                     <?php else: ?>
                                         <div class="table-responsive">
                                             <table class="table table-striped table-hover">
                                                 <thead class="table-dark">
                                                     <tr>
-                                                        <th>Usuario</th>
-                                                        <th>ID</th>
-                                                        <th>Área</th>
-                                                        <th>Estado</th>
-                                                        <th>Fecha Registro</th>
-                                                        <th>Acciones</th>
+                                                        <th><i class="fas fa-user me-1"></i> Usuario</th>
+                                                        <th><i class="fas fa-id-card me-1"></i> ID</th>
+                                                        <th><i class="fas fa-building me-1"></i> Área</th>
+                                                        <th><i class="fas fa-circle me-1"></i> Estado</th>
+                                                        <th><i class="fas fa-calendar me-1"></i> Fecha Registro</th>
+                                                        <th><i class="fas fa-cogs me-1"></i> Acciones</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -322,31 +359,39 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td><?php echo $analista['user_id']; ?></td>
+                                                        <td class="fw-bold"><?php echo $analista['user_id']; ?></td>
                                                         <td>
-                                                            <span class="badge bg-primary"><?php echo htmlspecialchars($analista['work_area']); ?></span>
+                                                            <span class="badge bg-primary">
+                                                                <i class="fas fa-building me-1"></i><?php echo htmlspecialchars($analista['work_area']); ?>
+                                                            </span>
                                                         </td>
                                                         <td>
-                                                            <span class="badge bg-<?php echo $analista['estado'] == 'activo' ? 'success' : 'secondary'; ?>">
+                                                            <span class="badge bg-<?php echo ($analista['estado'] ?? 'inactivo') == 'activo' ? 'success' : 'secondary'; ?>">
+                                                                <i class="fas fa-<?php echo ($analista['estado'] ?? 'inactivo') == 'activo' ? 'play' : 'pause'; ?> me-1"></i>
                                                                 <?php echo ucfirst($analista['estado'] ?? 'inactivo'); ?>
                                                             </span>
                                                         </td>
                                                         <td>
-                                                            <small><?php echo date('d/m/Y H:i', strtotime($analista['created_at'])); ?></small>
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-clock me-1"></i>
+                                                                <?php echo date('d/m/Y H:i', strtotime($analista['created_at'] ?? 'now')); ?>
+                                                            </small>
                                                         </td>
                                                         <td>
-                                                            <form method="post" class="d-inline">
-                                                                <input type="hidden" name="action" value="eliminar_analista">
-                                                                <input type="hidden" name="user_id" value="<?php echo $analista['user_id']; ?>">
-                                                                <button type="submit" class="btn btn-danger btn-sm" 
-                                                                        onclick="return confirm('¿Estás seguro de eliminar este analista del sistema Back Admisión?')">
-                                                                    <i class="fas fa-trash me-1"></i>Eliminar
-                                                                </button>
-                                                            </form>
-                                                            <a href="/dashboard/vsm/microapp/public/?vista=back-admision&action=gestionar-horarios&user_id=<?php echo $analista['user_id']; ?>&user_name=<?php echo urlencode($analista['nombre_completo']); ?>" 
-                                                               class="btn btn-primary btn-sm ms-1">
-                                                                <i class="fas fa-clock me-1"></i>Horarios
-                                                            </a>
+                                                            <div class="btn-group btn-group-sm">
+                                                                <form method="post" class="d-inline">
+                                                                    <input type="hidden" name="action" value="eliminar_analista">
+                                                                    <input type="hidden" name="user_id" value="<?php echo $analista['user_id']; ?>">
+                                                                    <button type="submit" class="btn btn-danger btn-action" 
+                                                                            onclick="return confirm('¿Estás seguro de eliminar a <?php echo htmlspecialchars($analista['nombre_completo']); ?> del sistema Back Admisión?\n\nEsta acción eliminará sus horarios y estado.')">
+                                                                        <i class="fas fa-trash me-1"></i>Eliminar
+                                                                    </button>
+                                                                </form>
+                                                                <a href="/dashboard/vsm/microapp/public/?vista=back-admision&action=gestionar-horarios&user_id=<?php echo $analista['user_id']; ?>&user_name=<?php echo urlencode($analista['nombre_completo']); ?>" 
+                                                                   class="btn btn-primary btn-action ms-1">
+                                                                    <i class="fas fa-clock me-1"></i>Horarios
+                                                                </a>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                     <?php endforeach; ?>
@@ -365,51 +410,53 @@ if ($_GET['exito'] ?? '' == 'eliminado') {
 </div>
 
 <script>
-$(document).ready(function() {
-    // Manejar envío de formularios con AJAX
-    $('form').on('submit', function(e) {
-        e.preventDefault();
-        
-        const form = $(this);
-        const button = form.find('button[type="submit"]');
-        const originalText = button.html();
-        
-        // Mostrar loading
-        button.html('<i class="fas fa-spinner fa-spin me-1"></i>Procesando...');
-        button.prop('disabled', true);
-        
-        $.ajax({
-            url: '',
-            type: 'POST',
-            data: form.serialize(),
-            success: function(response) {
-                // Recargar la página para ver los cambios
-                window.location.reload();
-            },
-            error: function() {
-                alert('Error al procesar la solicitud');
-                button.html(originalText);
-                button.prop('disabled', false);
-            }
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Página de gestión de analistas cargada correctamente');
+    
+    // SOLUCIÓN: Remover completamente el manejo de formularios del JavaScript
+    // Los formularios se enviarán de forma tradicional sin intervención JS
+    
+    // Solo mantener funcionalidades que no interfieran con el envío de formularios
+    
+    // Buscador de usuarios (si existe)
+    const buscador = document.getElementById('buscadorUsuarios');
+    if (buscador) {
+        buscador.addEventListener('input', function() {
+            const searchText = this.value.toLowerCase();
+            const usuarios = document.querySelectorAll('.usuario-item');
+            
+            usuarios.forEach(usuario => {
+                const nombre = usuario.querySelector('h6').textContent.toLowerCase();
+                if (nombre.includes(searchText)) {
+                    usuario.style.display = 'block';
+                } else {
+                    usuario.style.display = 'none';
+                }
+            });
         });
-    });
-
-    // Buscador de usuarios
-    $('#buscadorUsuarios').on('keyup', function() {
-        const searchText = $(this).val().toLowerCase();
-        $('.card-usuario').each(function() {
-            const userName = $(this).find('h6').text().toLowerCase();
-            if (userName.includes(searchText)) {
-                $(this).show();
-            } else {
-                $(this).hide();
-            }
-        });
-    });
-
-    // Auto-ocultar alertas después de 5 segundos
-    setTimeout(function() {
-        $('.alert').alert('close');
-    }, 5000);
+    }
+    
+    // Auto-ocultar alertas después de 8 segundos (solo si existen)
+    const alerts = document.querySelectorAll('.alert');
+    if (alerts.length > 0) {
+        setTimeout(function() {
+            alerts.forEach(alert => {
+                try {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                } catch (e) {
+                    // Si falla Bootstrap, ocultar manualmente
+                    alert.style.display = 'none';
+                }
+            });
+        }, 8000);
+    }
+    
+    console.log('✅ JavaScript inicializado sin conflictos');
 });
+
+// Función separada para manejar confirmaciones (no interfiere con envío)
+function confirmarEliminacion(nombre) {
+    return confirm(`¿Estás seguro de eliminar a ${nombre} del sistema Back Admisión?\n\nEsta acción eliminará sus horarios y estado.`);
+}
 </script>

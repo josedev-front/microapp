@@ -13,7 +13,28 @@ class SupervisorController {
         $this->casoModel = new Caso();
         $this->userSync = new UserSync();
         $this->assignmentManager = new AssignmentManager();
-        $this->db = getBackAdmisionDB(); // Agregar conexión a DB
+        $this->db = getBackAdmisionDB();
+    }
+    
+    /**
+     * 🔄 MÉTODO AUXILIAR: Obtener datos de usuario de sesión de forma segura
+     */
+    private function getSessionUserData() {
+        return [
+            'user_id' => $_SESSION['user_id'] ?? $_SESSION['id'] ?? null,
+            'first_name' => $_SESSION['first_name'] ?? '',
+            'last_name' => $_SESSION['last_name'] ?? '',
+            'work_area' => $_SESSION['work_area'] ?? '',
+            'user_role' => $_SESSION['user_role'] ?? $_SESSION['role'] ?? ''
+        ];
+    }
+    
+    /**
+     * 🔄 MÉTODO AUXILIAR: Obtener nombre completo del usuario de sesión
+     */
+    private function getSessionUserName() {
+        $userData = $this->getSessionUserData();
+        return trim($userData['first_name'] . ' ' . $userData['last_name']);
     }
     
     /**
@@ -49,8 +70,19 @@ class SupervisorController {
      * Asignación manual de caso por supervisor
      */
     public function asignarCasoManual($sr_hijo, $analista_id, $forzar_asignacion = false) {
+        $userData = $this->getSessionUserData();
+        
         // Verificar si la SR ya existe
         $caso_existente = $this->casoModel->getCasoPorSR($sr_hijo);
+        
+        // DEBUG TEMPORAL
+        error_log("🔍 DEBUG asignarCasoManual:");
+        error_log("SR: $sr_hijo, Analista: $analista_id, Forzar: $forzar_asignacion");
+        error_log("Caso existente: " . ($caso_existente ? 'SÍ' : 'NO'));
+        if ($caso_existente) {
+            error_log("Analista actual: " . $caso_existente['analista_nombre']);
+            error_log("Analista nuevo ID: $analista_id");
+        }
         
         if ($caso_existente) {
             if (!$forzar_asignacion) {
@@ -88,11 +120,11 @@ class SupervisorController {
                 // Log de asignación manual
                 $this->assignmentManager->logAsignacion(
                     $sr_hijo,
-                    $_SESSION['user_id'],
+                    $userData['user_id'],
                     'asignacion_manual',
                     [
                         'analista_asignado' => $analista_data['nombre_completo'],
-                        'supervisor' => $_SESSION['first_name'] . ' ' . $_SESSION['last_name']
+                        'supervisor' => $this->getSessionUserName()
                     ]
                 );
                 
@@ -113,6 +145,7 @@ class SupervisorController {
      * Reasignar caso manualmente
      */
     private function reasignarCasoManual($sr_hijo, $nuevo_analista_id) {
+        $userData = $this->getSessionUserData();
         $analista_data = $this->userSync->getEjecutivoPorId($nuevo_analista_id);
         $caso_actual = $this->casoModel->getCasoPorSR($sr_hijo);
         
@@ -120,6 +153,14 @@ class SupervisorController {
             return [
                 'success' => false,
                 'message' => 'Ejecutivo no encontrado'
+            ];
+        }
+        
+        // Verificar si ya está asignado al mismo ejecutivo
+        if ($caso_actual['analista_id'] == $nuevo_analista_id) {
+            return [
+                'success' => false,
+                'message' => 'La SR ya está asignada a este ejecutivo (' . $analista_data['nombre_completo'] . ')'
             ];
         }
         
@@ -133,12 +174,12 @@ class SupervisorController {
             // Log de reasignación manual
             $this->assignmentManager->logAsignacion(
                 $sr_hijo,
-                $_SESSION['user_id'],
+                $userData['user_id'],
                 'reasignacion_manual',
                 [
                     'analista_anterior' => $caso_actual['analista_nombre'],
                     'analista_nuevo' => $analista_data['nombre_completo'],
-                    'supervisor' => $_SESSION['first_name'] . ' ' . $_SESSION['last_name']
+                    'supervisor' => $this->getSessionUserName()
                 ]
             );
             
@@ -160,8 +201,9 @@ class SupervisorController {
     public function asignacionEquilibrada($sr_hijo) {
         require_once __DIR__ . '/../lib/LoadBalancer.php';
         
+        $userData = $this->getSessionUserData();
         $loadBalancer = new LoadBalancer();
-        $area = $_SESSION['work_area'];
+        $area = $userData['work_area'] ?? 'Depto Micro&amp;SOHO';
         
         $analista_id = $loadBalancer->asignarCasoEquilibrado($sr_hijo, $area);
         
@@ -181,11 +223,11 @@ class SupervisorController {
                 // Log de asignación equilibrada
                 $this->assignmentManager->logAsignacion(
                     $sr_hijo,
-                    $_SESSION['user_id'],
+                    $userData['user_id'],
                     'asignacion_equilibrada',
                     [
                         'analista_asignado' => $analista_data['nombre_completo'],
-                        'supervisor' => $_SESSION['first_name'] . ' ' . $_SESSION['last_name']
+                        'supervisor' => $this->getSessionUserName()
                     ]
                 );
                 
@@ -202,7 +244,8 @@ class SupervisorController {
             'message' => 'No hay ejecutivos disponibles para asignación automática'
         ];
     }
-      public function cambiarEstadoUsuario($user_id, $nuevo_estado, $supervisor_id = null) {
+    
+    public function cambiarEstadoUsuario($user_id, $nuevo_estado, $supervisor_id = null) {
         try {
             // Validar parámetros
             if (!$user_id || !$nuevo_estado) {
@@ -264,8 +307,9 @@ class SupervisorController {
             ];
         }
     }
-     /**
-     * 🔄 NUEVO MÉTODO: Registrar cambio de estado en logs
+    
+    /**
+     * Registrar cambio de estado en logs
      */
     private function registrarCambioEstado($user_id, $estado_anterior, $estado_nuevo, $supervisor_id) {
         try {
@@ -283,7 +327,7 @@ class SupervisorController {
     }
     
     /**
-     * 🔄 NUEVO MÉTODO: Obtener estado actual de usuarios
+     * Obtener estado actual de usuarios
      */
     public function getEstadosUsuarios() {
         $stmt = $this->db->prepare("
@@ -304,7 +348,7 @@ class SupervisorController {
     }
     
     /**
-     * 🔄 NUEVO MÉTODO: Obtener métricas de balance para panel
+     * Obtener métricas de balance para panel
      */
     public function getMetricasBalancePanel() {
         $stmt = $this->db->prepare("
@@ -319,7 +363,7 @@ class SupervisorController {
             FROM horarios_usuarios hu
             LEFT JOIN estado_usuarios eu ON hu.user_id = eu.user_id
             LEFT JOIN casos c ON hu.user_id = c.analista_id
-            WHERE hu.activo = 1 AND hu.area = 'Depto Micro&SOHO'
+            WHERE hu.activo = 1 AND hu.area = 'Depto Micro&amp;SOHO'
             GROUP BY hu.user_id, hu.nombre_completo, hu.area, eu.estado, eu.ultima_actualizacion
             ORDER BY casos_hoy ASC
         ");

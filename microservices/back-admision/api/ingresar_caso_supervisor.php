@@ -1,7 +1,7 @@
 <?php
-// microservices/back-admision/api/ingresar_caso_supervisor.php
+// microservices/back-admision/api/ingresar_caso_supervisor.php - CORREGIDO
 
-// INICIAR SESIÓN SI NO ESTÁ INICIADA - CON CONFIGURACIÓN
+// INICIAR SESIÓN SI NO ESTÁ INICIADA
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'lifetime' => 86400,
@@ -20,31 +20,22 @@ header('Content-Type: application/json');
 // DESACTIVAR OUTPUT BUFFERING
 if (ob_get_level()) ob_clean();
 
-// DEBUG DETALLADO DE SESIÓN
+// DEBUG DETALLADO DE SESIÓN - CORREGIDO
 error_log("🎯 API ingresar_caso_supervisor.php ejecutándose");
 error_log("🔐 Sesión ID: " . (session_id() ?? 'NO SESION'));
-error_log("🔐 User ID: " . ($_SESSION['user_id'] ?? 'NO USER ID'));
-error_log("🔐 User Role: " . ($_SESSION['user_role'] ?? 'NO ROLE'));
-error_log("🔐 First Name: " . ($_SESSION['first_name'] ?? 'NO NAME'));
+error_log("🔐 User ID: " . ($_SESSION['user_id'] ?? $_SESSION['id'] ?? 'NO USER ID'));
+error_log("🔐 User Role: " . ($_SESSION['user_role'] ?? $_SESSION['role'] ?? 'NO ROLE'));
 
 // VERIFICAR AUTENTICACIÓN USANDO EL SISTEMA DEL CORE
-if (!isset($_SESSION['user_id']) && !isset($_SESSION['id'])) {
-    error_log("❌ USUARIO NO AUTENTICADO - Redirigiendo...");
-    
-    // Intentar cargar el sistema de autenticación del core
-    $core_auth_file = __DIR__ . '/../../app_core/inc/session_start.php';
-    if (file_exists($core_auth_file)) {
-        require_once $core_auth_file;
-    }
-    
-    // Verificar nuevamente después de cargar el core
-    if (!isset($_SESSION['user_id']) && !isset($_SESSION['id'])) {
-        echo json_encode([
-            'success' => false, 
-            'message' => '❌ Usuario no autenticado. Por favor, inicie sesión nuevamente.'
-        ]);
-        exit;
-    }
+$user_id = $_SESSION['user_id'] ?? $_SESSION['id'] ?? null;
+$user_role = $_SESSION['user_role'] ?? $_SESSION['role'] ?? null;
+
+if (!$user_id) {
+    echo json_encode([
+        'success' => false, 
+        'message' => '❌ Usuario no autenticado. Por favor, inicie sesión nuevamente.'
+    ]);
+    exit;
 }
 
 try {
@@ -64,13 +55,6 @@ try {
     $teamController = new TeamController();
     $admissionController = new AdmissionController();
 
-    // OBTENER USER_ID DE LA SESIÓN (compatible con ambos sistemas)
-    $user_id = $_SESSION['user_id'] ?? $_SESSION['id'] ?? null;
-    
-    if (!$user_id) {
-        throw new Exception("No se pudo identificar al usuario");
-    }
-
     // OBTENER DATOS DEL FORMULARIO
     $data = [
         'sr_hijo' => trim($_POST['sr_hijo'] ?? ''),
@@ -84,17 +68,15 @@ try {
         throw new Exception("El número de SR hijo es requerido");
     }
 
-    // VERIFICACIÓN DE PERMISOS - SIMPLIFICADA TEMPORALMENTE
-    error_log("🔐 Verificando permisos para user_id: " . $user_id);
+    // VERIFICACIÓN DE PERMISOS
+    $roles_permitidos = ['supervisor', 'backup', 'qa', 'superuser', 'developer'];
+    $user_role = $_SESSION['user_role'] ?? $_SESSION['role'] ?? '';
     
-    // TEMPORAL: Permitir a todos los usuarios autenticados
-    $tiene_permisos = true;
-    
-    if (!$tiene_permisos) {
-        throw new Exception("No tiene permisos para realizar asignaciones manuales");
+    if ($data['tipo_asignacion'] === 'supervisor' && !in_array($user_role, $roles_permitidos)) {
+    throw new Exception("No tiene permisos para realizar asignaciones manuales. Rol actual: " . $user_role);
     }
-
-    error_log("📝 Procesando caso supervisor - SR: " . $data['sr_hijo'] . ", Tipo: " . $data['tipo_asignacion']);
+    
+    error_log("📝 Procesando caso - SR: {$data['sr_hijo']}, Tipo: {$data['tipo_asignacion']}, User: {$user_id}");
 
     // PROCESAR SEGÚN TIPO DE ASIGNACIÓN
     if ($data['tipo_asignacion'] === 'ejecutivo') {

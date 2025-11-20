@@ -39,7 +39,7 @@ class TeamController {
                 FROM horarios_usuarios hu
                 LEFT JOIN estado_usuarios eu ON hu.user_id = eu.user_id
                 LEFT JOIN casos c ON hu.user_id = c.analista_id
-                WHERE hu.activo = 1 AND hu.area = 'Depto Micro&SOHO'
+                WHERE hu.activo = 1 AND hu.area = 'Depto Micro&amp;SOHO'
                 GROUP BY hu.user_id, hu.nombre_completo, hu.area, eu.estado, eu.ultima_actualizacion
                 ORDER BY casos_periodo ASC, hu.nombre_completo
             ";
@@ -115,9 +115,45 @@ class TeamController {
     /**
      * Obtener ejecutivos disponibles para asignación
      */
-    public function getEjecutivosDisponibles() {
-        return $this->userSync->getEjecutivosDisponibles();
+   public function getEjecutivosDisponibles() {
+    try {
+        error_log("🔍 Buscando ejecutivos disponibles...");
+        
+        // Consulta CORREGIDA - usar el valor EXACTO que está en la BD
+        $query = "
+            SELECT 
+                hu.user_id,
+                hu.nombre_completo,
+                hu.area,
+                eu.estado,
+                eu.ultima_actualizacion,
+                COUNT(CASE WHEN c.estado != 'resuelto' THEN c.id END) as casos_activos
+            FROM horarios_usuarios hu
+            LEFT JOIN estado_usuarios eu ON hu.user_id = eu.user_id
+            LEFT JOIN casos c ON hu.user_id = c.analista_id
+            WHERE hu.activo = 1 
+            AND hu.area = 'Depto Micro&amp;SOHO'  -- ← USAR EL VALOR EXACTO
+            GROUP BY hu.user_id, hu.nombre_completo, hu.area, eu.estado, eu.ultima_actualizacion
+            ORDER BY casos_activos ASC, hu.nombre_completo
+        ";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
+        $ejecutivos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        error_log("✅ Ejecutivos disponibles encontrados: " . count($ejecutivos));
+        
+        foreach ($ejecutivos as $ejecutivo) {
+            error_log("   - " . $ejecutivo['nombre_completo'] . " | Área: " . $ejecutivo['area']);
+        }
+        
+        return $ejecutivos;
+        
+    } catch (Exception $e) {
+        error_log("❌ Error en getEjecutivosDisponibles: " . $e->getMessage());
+        return [];
     }
+}
     
     /**
      * Cambiar estado de un ejecutivo
@@ -256,7 +292,7 @@ public function getMetricasCasosHoy() {
             FROM horarios_usuarios hu
             LEFT JOIN estado_usuarios eu ON hu.user_id = eu.user_id
             LEFT JOIN casos c ON hu.user_id = c.analista_id
-            WHERE hu.activo = 1 AND hu.area = 'Depto Micro&SOHO'
+            WHERE hu.activo = 1 AND hu.area = 'Depto Micro&amp;SOHO'
             GROUP BY hu.user_id, hu.nombre_completo, hu.area, eu.estado, eu.ultima_actualizacion
             ORDER BY casos_hoy ASC, hu.nombre_completo
         ");
@@ -418,7 +454,7 @@ public function getUsuariosMicroSOHO() {
                     CONCAT(first_name, ' ', last_name) as nombre_completo,
                     avatar, avatar_predefinido
              FROM core_customuser 
-             WHERE work_area LIKE '%Micro%' OR work_area LIKE '%SOHO%'
+             WHERE work_area = 'Depto Micro&amp;SOHO'
              ORDER BY first_name, last_name",
             
             // Opción 2: Con prefijo de base de datos
@@ -426,7 +462,7 @@ public function getUsuariosMicroSOHO() {
                     CONCAT(first_name, ' ', last_name) as nombre_completo,
                     avatar, avatar_predefinido
              FROM microapps.core_customuser 
-             WHERE work_area LIKE '%Micro%' OR work_area LIKE '%SOHO%'
+             WHERE work_area = 'Depto Micro&amp;SOHO'
              ORDER BY first_name, last_name",
             
             // Opción 3: Buscar en cualquier área
@@ -536,7 +572,13 @@ public function agregarUsuarioBackAdmision($user_id) {
     $this->db->beginTransaction();
     
     try {
-        // 1. Agregar a estado_usuarios
+        // 1. Obtener información del usuario
+        $user_info = $this->getUsuarioById($user_id);
+        if (!$user_info) {
+            throw new Exception("No se pudo obtener información del usuario ID: " . $user_id);
+        }
+        
+        // 2. Agregar a estado_usuarios
         $sql_estado = "INSERT INTO estado_usuarios (user_id, estado, ultima_actualizacion) 
                        VALUES (?, 'activo', NOW()) 
                        ON DUPLICATE KEY UPDATE estado = 'activo', ultima_actualizacion = NOW()";
@@ -544,39 +586,43 @@ public function agregarUsuarioBackAdmision($user_id) {
         $result_estado = $stmt_estado->execute([$user_id]);
         
         error_log("📝 Estado usuario - Ejecutado: " . ($result_estado ? 'SI' : 'NO'));
-        error_log("📝 Estado usuario - Filas afectadas: " . $stmt_estado->rowCount());
-        
-        // 2. Crear horarios por defecto
-        $dias_semana = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
-        $sql_horario = "INSERT INTO horarios_usuarios (user_id, dia_semana, hora_entrada, hora_salida, hora_almuerzo_inicio, hora_almuerzo_fin, activo) 
-                        VALUES (?, ?, '09:00', '18:00', '13:00', '14:00', 1)";
-        $stmt_horario = $this->db->prepare($sql_horario);
+
+        // 3. VERIFICAR si ya tiene horarios
+        $sql_check_horarios = "SELECT COUNT(*) as total FROM horarios_usuarios WHERE user_id = ?";
+        $stmt_check = $this->db->prepare($sql_check_horarios);
+        $stmt_check->execute([$user_id]);
+        $tiene_horarios = $stmt_check->fetch(PDO::FETCH_ASSOC)['total'] > 0;
         
         $horarios_creados = 0;
-        foreach ($dias_semana as $dia) {
-            $result_horario = $stmt_horario->execute([$user_id, $dia]);
-            if ($result_horario) {
-                $horarios_creados++;
+        
+        if (!$tiene_horarios) {
+            // 4. Crear horarios por defecto SOLO si no existen
+            $dias_semana = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+            $sql_horario = "INSERT INTO horarios_usuarios 
+                           (user_id, nombre_completo, area, dia_semana, hora_entrada, hora_salida, hora_almuerzo_inicio, hora_almuerzo_fin, activo) 
+                           VALUES (?, ?, 'Depto Micro&amp;SOHO', ?, '09:00', '18:00', '13:00', '14:00', 1)";  // ← ÁREA FIJA
+            
+            $stmt_horario = $this->db->prepare($sql_horario);
+            
+            foreach ($dias_semana as $dia) {
+                $result_horario = $stmt_horario->execute([
+                    $user_id, 
+                    $user_info['nombre_completo'],
+                    $dia
+                ]);
+                if ($result_horario) {
+                    $horarios_creados++;
+                }
             }
-            error_log("📅 Horario {$dia} - Ejecutado: " . ($result_horario ? 'SI' : 'NO'));
+        } else {
+            error_log("📅 Usuario ya tiene horarios, no se crean nuevos");
+            $horarios_creados = 5;
         }
         
-        error_log("📅 Total horarios creados: " . $horarios_creados);
+        error_log("📅 Total horarios: " . $horarios_creados);
         
         $this->db->commit();
-        error_log("✅ Transacción completada exitosamente");
-        
-        // Registrar en logs usando método alternativo
-        $this->registrarLogLocal(
-            'USUARIO_AGREGADO',
-            $user_id,
-            [
-                'supervisor_id' => $_SESSION['user_id'] ?? 0,
-                'accion' => 'agregar_analista',
-                'horarios_creados' => $horarios_creados
-            ],
-            'Usuario agregado al sistema Back Admisión'
-        );
+        error_log("✅ Usuario agregado exitosamente al Back Admisión");
         
         return true;
         

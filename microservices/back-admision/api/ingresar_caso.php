@@ -76,7 +76,7 @@ try {
     $user_nombre = ($_SESSION['first_name'] ?? '') . ' ' . ($_SESSION['last_name'] ?? '');
     
     // SOLUCIÓN TEMPORAL: Forzar área Micro&SOHO
-    $user_area = 'Depto Micro&SOHO';
+    $user_area = 'Depto Micro&amp;SOHO';
     error_log("🔧 Área forzada a: $user_area");
 
     $sr_hijo = trim($_POST['sr_hijo'] ?? '');
